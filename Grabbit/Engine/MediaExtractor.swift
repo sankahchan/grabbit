@@ -56,7 +56,8 @@ public final class YTDLPMediaExtractor: MediaExtractorProtocol {
     }
 
     private func helperBinDirs() -> [String] {
-        [.ffmpeg, .deno].compactMap {
+        let components: [MediaRuntimeResolver.Component] = [.ffmpeg, .deno]
+        return components.compactMap {
             guard let url = try? MediaRuntimeResolver.resolve($0).get() else { return nil }
             return url.deletingLastPathComponent().path
         }
