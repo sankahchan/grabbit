@@ -1564,6 +1564,23 @@
           }
         }
       }
+    },
+    "downloads.connections": {
+      "comment": "Connection count shown on a downloading card",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "connections"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချိတ်ဆက်မှုများ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

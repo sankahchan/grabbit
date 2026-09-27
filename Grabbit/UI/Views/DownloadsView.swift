@@ -116,6 +116,10 @@ struct DownloadsView: View {
                 Text("\(String(localized: "downloads.speed")): \(formatSpeed(item.speedBytesPerSec))")
                 Text("•")
                 Text("\(String(localized: "downloads.eta")): \(formatETA(item.etaSeconds))")
+                if item.state == .downloading {
+                    Text("•")
+                    Text("\(item.segments.count) \(String(localized: "downloads.connections"))")
+                }
                 Spacer()
                 Text("\(Int((item.progress * 100).rounded()))%")
                     .fontWeight(.bold)

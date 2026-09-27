@@ -59,7 +59,7 @@ public final class DownloadEngine {
 
     // MARK: - Public control
 
-    /// Adds a download: HEAD-probes the server for size + range support, builds
+    /// Adds a download: HEAD-probes the server for total size, builds
     /// segments, creates the `.grabbit-part` file, persists state, and auto-starts.
     @MainActor
     public func add(
@@ -74,23 +74,28 @@ public final class DownloadEngine {
         let decoded = candidate.removingPercentEncoding ?? candidate
         let name = decoded.isEmpty ? "download" : decoded
 
-        // Probe the server: total size and Accept-Ranges support.
+        // Probe the server for total size. We deliberately do NOT gate
+        // multi-connection on the HEAD's Accept-Ranges header: many
+        // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
+        // (Motrix's engine), we segment optimistically and collapse to a
+        // single stream if a segment is answered with HTTP 200.
         var totalBytes: Int64?
-        var supportsRanges = false
         var head = URLRequest(url: url)
         head.httpMethod = "HEAD"
         if let (_, response) = try? await URLSession.shared.data(for: head),
-           let http = response as? HTTPURLResponse {
-            if let length = http.value(forHTTPHeaderField: "Content-Length"),
-               let parsed = Int64(length) {
-                totalBytes = parsed
-            }
-            supportsRanges = http.value(forHTTPHeaderField: "Accept-Ranges")?
-                .lowercased().contains("bytes") ?? false
+           let http = response as? HTTPURLResponse,
+           let length = http.value(forHTTPHeaderField: "Content-Length"),
+           let parsed = Int64(length) {
+            totalBytes = parsed
         }
 
-        // No range support (or unknown size) -> single connection.
-        let connectionCount = supportsRanges ? max(1, connections ?? maxConnections) : 1
+        // aria2-style: never split into pieces smaller than minSplitSize —
+        // 16 TCP+TLS handshakes for 16 tiny segments would be pure overhead.
+        let minSplitSize: Int64 = 1_048_576 // 1 MiB
+        var connectionCount = max(1, connections ?? maxConnections)
+        if let totalBytes {
+            connectionCount = min(connectionCount, max(1, Int(totalBytes / minSplitSize)))
+        }
 
         let destinationURL: URL
         if let destination {
@@ -302,19 +307,28 @@ public final class DownloadEngine {
         launchGeneration[id] == generation
     }
 
-    /// A segment got a non-2xx status. The transport already cancelled it;
-    /// fail the whole download (the other segments are torn down by fail()).
+    /// A segment got a non-2xx status. 429/503 with several segments means the
+    /// server is throttling connection count — collapse to a single stream and
+    /// retry (at most once: after the collapse only one segment remains, so a
+    /// repeat 429/503 fails cleanly). Anything else fails the download; the
+    /// transport already cancelled the segment and fail() tears down the rest.
     @MainActor
     private func handleHTTPError(id: UUID, status: Int, generation: Int) {
         guard isCurrentGeneration(id: id, generation: generation) else { return }
-        fail(id: id, message: "HTTP \(status)")
+        if (status == 429 || status == 503),
+           let itemIndex = items.firstIndex(where: { $0.id == id }),
+           items[itemIndex].segments.count > 1 {
+            collapseToSingleStream(id: id)
+        } else {
+            fail(id: id, message: "HTTP \(status)")
+        }
     }
 
     /// Server answered 200 to a ranged request: collapse to a single stream.
     @MainActor
     private func handleRangeIgnored(id: UUID, generation: Int) {
         guard isCurrentGeneration(id: id, generation: generation) else { return }
-        fallbackToSingleStream(id: id)
+        collapseToSingleStream(id: id)
     }
 
     @MainActor
@@ -380,10 +394,11 @@ public final class DownloadEngine {
         persistItem(id: id)
     }
 
-    /// Server ignored Range (HTTP 200): discard any mis-offset bytes, collapse
-    /// to one stream from byte 0, and relaunch.
+    /// Server ignored Range (HTTP 200) or throttled connections (429/503):
+    /// discard any mis-offset bytes, collapse to one stream from byte 0, and
+    /// relaunch.
     @MainActor
-    private func fallbackToSingleStream(id: UUID) {
+    private func collapseToSingleStream(id: UUID) {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }),
               items[itemIndex].state == .downloading,
               items[itemIndex].segments.count > 1 else { return }
