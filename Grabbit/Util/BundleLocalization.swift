@@ -1,0 +1,51 @@
+import Foundation
+import ObjectiveC
+
+/// Instant in-app language switching.
+///
+/// `String(localized:)` resolves against the main bundle's preferred
+/// localization, which only follows the `AppleLanguages` default at launch
+/// (hence the old "restart required" note — and the confusion when tapping
+/// မြန်မာ appeared to do nothing). By re-pointing the main bundle at a tiny
+/// subclass that serves `localizedString(forKey:)` from the chosen language's
+/// compiled `.lproj`, the whole UI re-localizes the moment the setting
+/// changes. `AppleLanguages` is kept in sync so a relaunch lands on the
+/// same language, and a missing `.lproj` falls back to the default lookup.
+public enum BundleLocalization {
+    /// Applies the language immediately. Main-actor only (called from UI).
+    public static func apply(_ language: AppLanguage) {
+        let code: String? = switch language {
+        case .system: nil
+        case .en: "en"
+        case .my: "my"
+        }
+        if object_getClass(Bundle.main) != LocalizedBundle.self {
+            object_setClass(Bundle.main, LocalizedBundle.self)
+        }
+        (Bundle.main as? LocalizedBundle)?.languageCode = code
+        // Keep the launch-time default in sync.
+        if let code {
+            UserDefaults.standard.set([code], forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        }
+    }
+}
+
+/// Serves localized strings from the selected language's `.lproj`.
+/// Everything else falls through to the normal bundle behavior.
+private final class LocalizedBundle: Bundle {
+    var languageCode: String?
+
+    override func localizedString(
+        forKey key: String, value: String?, table tableName: String?
+    ) -> String {
+        guard let code = languageCode,
+              let path = super.path(forResource: code, ofType: "lproj"),
+              let langBundle = Bundle(path: path)
+        else {
+            return super.localizedString(forKey: key, value: value, table: tableName)
+        }
+        return langBundle.localizedString(forKey: key, value: value, table: tableName)
+    }
+}

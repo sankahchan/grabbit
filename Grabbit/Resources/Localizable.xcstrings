@@ -1021,19 +1021,36 @@
         }
       }
     },
-    "settings.language.note": {
-      "comment": "Footnote",
+    "settings.language.system": {
+      "comment": "Setting label",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Takes effect after restarting the app."
+            "value": "System"
           }
         },
         "my": {
           "stringUnit": {
             "state": "translated",
-            "value": "အက်ပ်ပြန်ဖွင့်ပြီးမှ အကျိုးသက်ရောက်မည်။"
+            "value": "စနစ်"
+          }
+        }
+      }
+    },
+    "settings.language.note": {
+      "comment": "Setting note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies immediately."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချက်ချင်းအကျိုးသက်ရောက်မည်။"
           }
         }
       }

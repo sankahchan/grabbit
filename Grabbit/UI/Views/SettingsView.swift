@@ -13,19 +13,34 @@ struct SettingsView: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                appearanceCard(settings: settings)
-                languageCard(settings: settings)
+                // Small cards pair up side-by-side; the wide cards
+                // (downloads/torrents) get the full row. Content is capped
+                // so the cards don't stretch across ultra-wide windows.
+                LazyVGrid(
+                    columns: [GridItem(.flexible(), spacing: 16),
+                              GridItem(.flexible(), spacing: 16)],
+                    spacing: 16
+                ) {
+                    appearanceCard(settings: settings)
+                    languageCard(settings: settings)
+                }
                 downloadsCard(settings: settings)
                 torrentsCard(settings: settings)
-                // The updates card only exists when Sparkle can actually run
-                // (signed Release build + real SUPublicEDKey). In dev builds
-                // the updater is disabled, so hide the card instead of
-                // showing controls that pop an error dialog.
-                if GrabbitApp.isUpdaterConfigured {
-                    updatesCard(settings: settings)
+                LazyVGrid(
+                    columns: [GridItem(.flexible(), spacing: 16),
+                              GridItem(.flexible(), spacing: 16)],
+                    spacing: 16
+                ) {
+                    // The updates card only exists when Sparkle can actually
+                    // run (signed Release build + real SUPublicEDKey).
+                    if GrabbitApp.isUpdaterConfigured {
+                        updatesCard(settings: settings)
+                    }
+                    generalCard(settings: settings)
                 }
-                generalCard(settings: settings)
             }
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
             .padding(16)
         }
         .navigationTitle(String(localized: "settings.title"))
@@ -45,17 +60,12 @@ struct SettingsView: View {
 
     // MARK: - Language
 
-    /// Applies the language via the AppleLanguages default; it only takes
-    /// effect on next launch (see `settings.language.note`).
+    /// Applies the language instantly (no restart): the main bundle is
+    /// re-pointed at the chosen language's `.lproj`, and this view
+    /// re-renders on the setting change; other tabs pick it up when
+    /// navigated to.
     private func handleLanguageChange(_ old: AppLanguage, _ new: AppLanguage) {
-        switch new {
-        case .system:
-            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-        case .en:
-            UserDefaults.standard.set(["en"], forKey: "AppleLanguages")
-        case .my:
-            UserDefaults.standard.set(["my"], forKey: "AppleLanguages")
-        }
+        BundleLocalization.apply(new)
         store.save()
     }
 
@@ -85,7 +95,7 @@ struct SettingsView: View {
             sectionHeader(String(localized: "settings.section.language"))
             // Autonyms are shown in their own language by convention.
             Picker(String(localized: "settings.section.language"), selection: settings.language) {
-                Text(String(localized: "settings.theme.system")).tag(AppLanguage.system)
+                Text(String(localized: "settings.language.system")).tag(AppLanguage.system)
                 Text("English").tag(AppLanguage.en)
                 Text("မြန်မာ").tag(AppLanguage.my)
             }

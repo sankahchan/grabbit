@@ -23,4 +23,16 @@ final class SettingsTests: XCTestCase {
         // Regression: "magnet" is not a real SF Symbol and rendered blank.
         XCTAssertEqual(SidebarSelection.torrents.icon, "arrow.triangle.2.circlepath")
     }
+
+    func testBundleLocalizationApplyFallsBackGracefully() {
+        // The swizzle must never break lookup, even when the .lproj is
+        // absent (e.g. unit-test host): unknown keys fall back to the key.
+        BundleLocalization.apply(.system)
+        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        BundleLocalization.apply(.my)
+        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        BundleLocalization.apply(.en)
+        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        BundleLocalization.apply(.system)
+    }
 }

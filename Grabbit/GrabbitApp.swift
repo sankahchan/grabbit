@@ -23,6 +23,9 @@ struct GrabbitApp: App {
         // One SettingsStore shared by the app and the torrent engine (the
         // engine reads the VPN kill-switch and seeding defaults live).
         let sharedSettings = SettingsStore()
+        // Apply the saved language immediately — without this the UI only
+        // follows AppleLanguages at launch.
+        BundleLocalization.apply(sharedSettings.settings.language)
         // One HistoryStore shared by all three engines; completions and
         // failures across downloads/torrents/media land in a single log.
         let sharedHistory = HistoryStore()
