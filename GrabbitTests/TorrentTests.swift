@@ -270,7 +270,7 @@ final class TorrentTests: XCTestCase {
         {"language":"en","theme":"dark","speedLimitBytesPerSec":0,\
         "clipboardMonitorEnabled":true,"autoResumeOnLaunch":false,\
         "autoUpdateEnabled":true,"notificationsEnabled":false,\
-        "defaultConnections":8,"folders":{}}
+        "defaultConnections":8,"folders":[]}
         """
         let settings = try JSONDecoder().decode(AppSettings.self, from: Data(old.utf8))
         XCTAssertEqual(settings.language, .en)
