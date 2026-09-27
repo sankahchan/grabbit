@@ -4,7 +4,7 @@ import Observation
 
 public protocol TorrentEngineProtocol: AnyObject {
     var torrents: [TorrentItem] { get }
-    func add(magnetOrURL: String, savePath: URL, displayName: String? = nil) async throws
+    func add(magnetOrURL: String, savePath: URL, displayName: String?) async throws
     func addTorrentFile(_ data: Data, savePath: URL, name: String?) async throws
     func pause(_ id: UUID)
     func resume(_ id: UUID)
