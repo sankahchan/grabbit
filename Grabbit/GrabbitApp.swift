@@ -50,6 +50,17 @@ struct GrabbitApp: App {
                 .environment(downloadEngine)
                 .environment(torrentEngine)
                 .environment(settings)
+                .onOpenURL { url in
+                    // grabbit://download?url=… — from the browser extension,
+                    // Shortcuts, or anywhere else.
+                    guard let request = GrabbitURLScheme.parse(url) else { return }
+                    Task { @MainActor in
+                        await downloadEngine.add(
+                            url: request.url,
+                            filename: request.filename,
+                            headers: request.headers.isEmpty ? nil : request.headers)
+                    }
+                }
                 .onAppear {
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
@@ -59,7 +70,13 @@ struct GrabbitApp: App {
                             // NativeMessagingHost invokes this on its reader
                             // thread; hop to the main actor for the engine.
                             Task { @MainActor in
-                                await downloadEngine.add(url: message.url)
+                                let scheme = message.url.scheme?.lowercased()
+                                guard scheme == "http" || scheme == "https" else { return }
+                                await downloadEngine.add(
+                                    url: message.url,
+                                    filename: message.filename,
+                                    sourcePageURL: message.pageUrl,
+                                    headers: message.headers)
                             }
                         }
                         host.start()

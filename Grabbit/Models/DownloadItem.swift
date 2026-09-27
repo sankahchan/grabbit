@@ -111,6 +111,10 @@ public struct DownloadItem: Identifiable, Codable {
     /// didn't. Distinct from a generic failure so the UI can offer a
     /// "replace URL" flow instead of a dead retry button.
     public var linkExpired: Bool
+    /// Request headers captured by the browser extension for this download
+    /// (Cookie, Referer, User-Agent, …). Sent on every segment connection so
+    /// authenticated/CDN-gated URLs work exactly like they did in the browser.
+    public var requestHeaders: [String: String]?
 
     public init(
         id: UUID = UUID(),
@@ -129,7 +133,8 @@ public struct DownloadItem: Identifiable, Codable {
         sourcePageURL: URL? = nil,
         eTag: String? = nil,
         lastModified: String? = nil,
-        linkExpired: Bool = false
+        linkExpired: Bool = false,
+        requestHeaders: [String: String]? = nil
     ) {
         self.id = id
         self.url = url
@@ -148,6 +153,7 @@ public struct DownloadItem: Identifiable, Codable {
         self.eTag = eTag
         self.lastModified = lastModified
         self.linkExpired = linkExpired
+        self.requestHeaders = requestHeaders
     }
 
     /// 0...1. Uses the server-advertised total when known, otherwise falls back

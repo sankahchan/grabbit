@@ -173,7 +173,8 @@ public final class DownloadEngine {
         sourceSite: SourceSite = .direct,
         connections: Int? = nil,
         destination: URL? = nil,
-        sourcePageURL: URL? = nil
+        sourcePageURL: URL? = nil,
+        headers: [String: String]? = nil
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
         let url = ShareURLRewriter.rewrite(url)
@@ -233,7 +234,8 @@ public final class DownloadEngine {
             destinationURL: destinationURL,
             sourcePageURL: sourcePageURL,
             eTag: probe.eTag,
-            lastModified: probe.lastModified
+            lastModified: probe.lastModified,
+            requestHeaders: headers
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -435,7 +437,8 @@ public final class DownloadEngine {
                 start: start,
                 end: segment.endByte,
                 coversWholeFile: coversWhole,
-                partialURL: partialURL
+                partialURL: partialURL,
+                headers: item.requestHeaders ?? [:]
             )
         }
     }
@@ -540,7 +543,8 @@ public final class DownloadEngine {
             start: split.mid,
             end: originalEnd,
             coversWholeFile: false,
-            partialURL: resumeStore.partialFileURL(for: item)
+            partialURL: resumeStore.partialFileURL(for: item),
+            headers: item.requestHeaders ?? [:]
         )
         persistItem(id: id)
     }
@@ -634,7 +638,8 @@ public final class DownloadEngine {
             start: seg.startByte + seg.receivedBytes,
             end: seg.endByte,
             coversWholeFile: coversWhole,
-            partialURL: resumeStore.partialFileURL(for: item)
+            partialURL: resumeStore.partialFileURL(for: item),
+            headers: item.requestHeaders ?? [:]
         )
     }
 

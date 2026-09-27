@@ -69,6 +69,7 @@ final class HTTP1Client {
     private let queue: DispatchQueue
     private let rangeValue: String
     private let basicAuth: String?
+    private let extraHeaders: [String: String]
 
     private var url: URL
     private var connection: NWConnection?
@@ -90,9 +91,14 @@ final class HTTP1Client {
     ///   - start: First byte offset (inclusive).
     ///   - end: Last byte offset (inclusive), or `.max` for open-ended.
     ///   - queue: Serial queue every event is delivered on.
-    init(url: URL, start: Int64, end: Int64, queue: DispatchQueue) {
+    ///   - extraHeaders: Per-download headers captured by the browser
+    ///     extension (Cookie, Referer, …). A provided `User-Agent` replaces
+    ///     the default; protocol headers (Host, Range, Connection, …) are
+    ///     never overridden.
+    init(url: URL, start: Int64, end: Int64, queue: DispatchQueue, extraHeaders: [String: String] = [:]) {
         self.url = url
         self.queue = queue
+        self.extraHeaders = extraHeaders
         rangeValue = end == .max ? "bytes=\(start)-" : "bytes=\(start)-\(end)"
         if let user = url.user, !user.isEmpty {
             let credentials = "\(user):\(url.password ?? "")"
@@ -222,6 +228,31 @@ final class HTTP1Client {
         ]
         if let basicAuth {
             lines.append("Authorization: Basic \(basicAuth)")
+        }
+        // Browser-captured headers (Cookie, Referer, custom User-Agent, …).
+        // Protocol-critical headers can never be overridden, and CR/LF are
+        // stripped from names/values to block header injection.
+        let protected: Set<String> = [
+            "host", "range", "connection", "content-length",
+            "transfer-encoding", "accept-encoding",
+        ]
+        for (rawName, rawValue) in extraHeaders {
+            let name = rawName
+                .trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: "\r", with: "")
+                .replacingOccurrences(of: "\n", with: "")
+            let value = rawValue
+                .replacingOccurrences(of: "\r", with: "")
+                .replacingOccurrences(of: "\n", with: "")
+            guard !name.isEmpty, !protected.contains(name.lowercased()) else { continue }
+            if name.lowercased() == "user-agent" {
+                // Replace the default rather than sending two User-Agent lines.
+                lines.removeAll { $0.lowercased().hasPrefix("user-agent:") }
+            }
+            if name.lowercased() == "authorization", basicAuth != nil {
+                lines.removeAll { $0.lowercased().hasPrefix("authorization:") }
+            }
+            lines.append("\(name): \(value)")
         }
         return Data((lines.joined(separator: "\r\n") + "\r\n\r\n").utf8)
     }

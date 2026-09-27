@@ -17,6 +17,34 @@ public final class NativeMessagingHost {
         public var url: URL
         public var source: String?
         public var title: String?
+        public var filename: String?
+        /// Page the link came from — powers the expired-link "reopen source"
+        /// flow. Never a secret.
+        public var pageUrl: URL?
+        /// Request headers captured by the extension (Cookie, Referer, …).
+        public var headers: [String: String]?
+
+        private enum CodingKeys: String, CodingKey {
+            case url, source, title, filename, pageUrl, headers
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            url = try container.decode(URL.self, forKey: .url)
+            source = try container.decodeIfPresent(String.self, forKey: .source)
+            title = try container.decodeIfPresent(String.self, forKey: .title)
+            filename = try container.decodeIfPresent(String.self, forKey: .filename)
+            // Lenient: the extension may send "" when there is no page URL;
+            // that must not fail the whole message.
+            if let raw = try container.decodeIfPresent(String.self, forKey: .pageUrl),
+               !raw.isEmpty
+            {
+                pageUrl = URL(string: raw)
+            } else {
+                pageUrl = nil
+            }
+            headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
+        }
     }
 
     private struct Ack: Encodable {

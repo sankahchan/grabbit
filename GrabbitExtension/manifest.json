@@ -1,1 +1,52 @@
-{"action":{"default_title":"Grabbit"},"background":{"service_worker":"background.js"},"content_scripts":[{"all_frames":false,"js":["content.js"],"matches":["<all_urls>"],"run_at":"document_idle"}],"description":"Send videos and files from any web page to the Grabbit download manager.","host_permissions":["<all_urls>"],"icons":{"128":"icons/icon128.png","16":"icons/icon16.png","48":"icons/icon48.png"},"manifest_version":3,"name":"Grabbit Web Grabber","permissions":["activeTab","scripting","contextMenus","nativeMessaging","notifications"],"version":"0.1.0"}
+{
+  "action": {
+    "default_title": "Grabbit",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "all_frames": false,
+      "js": [
+        "content.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "description": "Send videos and files from any web page to the Grabbit download manager.",
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "128": "icons/icon128.png",
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png"
+  },
+  "manifest_version": 3,
+  "name": "Grabbit Web Grabber",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "contextMenus",
+    "nativeMessaging",
+    "notifications",
+    "webRequest",
+    "cookies"
+  ],
+  "version": "0.1.0",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "page-hook.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

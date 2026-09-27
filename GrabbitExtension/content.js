@@ -48,6 +48,47 @@
     });
   }
 
+  // Inject the page-world hook (page-hook.js) so we also see the media URLs
+  // the page's own players fetch via XHR/fetch — content scripts run in an
+  // isolated world and can't observe those directly.
+  function injectPageHook() {
+    try {
+      const el = document.createElement('script');
+      el.src = chrome.runtime.getURL('page-hook.js');
+      el.onload = () => el.remove();
+      (document.head || document.documentElement).appendChild(el);
+    } catch {
+      // Restricted page (e.g. chrome://) — DOM scan still works.
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+    const msg = event.data;
+    if (!msg || msg.source !== 'grabbit-page-hook' || msg.type !== 'grabbit-network-media') return;
+    if (!msg.url || SEEN.has(msg.url)) return;
+    SEEN.add(msg.url);
+    chrome.runtime.sendMessage({
+      type: 'grabbit-media',
+      items: [{
+        url: msg.url,
+        title: msg.pageTitle || document.title,
+        pageUrl: msg.pageUrl || location.href,
+        site: SITE,
+        isBlob: false,
+        via: 'network',
+      }],
+    }).catch(() => {
+      SEEN.delete(msg.url);
+    });
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectPageHook, { once: true });
+  } else {
+    injectPageHook();
+  }
+
   // Initial scan.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', publish, { once: true });

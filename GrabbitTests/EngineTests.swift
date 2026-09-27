@@ -321,4 +321,67 @@ final class EngineTests: XCTestCase {
         XCTAssertFalse(DownloadItem.validatorsChanged(
             storedETag: "\"abc\"", storedLastModified: nil, headers: [:]))
     }
+
+    // MARK: - GrabbitURLScheme
+
+    func testSchemeParsesFullURL() {
+        let raw = "grabbit://download?url=" + "https://cdn.example.com/f.zip".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            + "&filename=" + "my file.zip".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            + "&cookie=" + "a=b; c=d".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            + "&referer=" + "https://example.com/p".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            + "&userAgent=TestAgent/1.0"
+        let req = GrabbitURLScheme.parse(URL(string: raw)!)
+        XCTAssertNotNil(req)
+        XCTAssertEqual(req?.url.absoluteString, "https://cdn.example.com/f.zip")
+        XCTAssertEqual(req?.filename, "my file.zip")
+        XCTAssertEqual(req?.headers["Cookie"], "a=b; c=d")
+        XCTAssertEqual(req?.headers["Referer"], "https://example.com/p")
+        XCTAssertEqual(req?.headers["User-Agent"], "TestAgent/1.0")
+    }
+
+    func testSchemeParsesMinimalURL() {
+        let req = GrabbitURLScheme.parse(URL(string: "grabbit://download?url=https://example.com/a.bin")!)
+        XCTAssertNotNil(req)
+        XCTAssertEqual(req?.url.absoluteString, "https://example.com/a.bin")
+        XCTAssertNil(req?.filename)
+        XCTAssertTrue(req?.headers.isEmpty ?? false)
+    }
+
+    func testSchemeRejectsNonGrabbit() {
+        XCTAssertNil(GrabbitURLScheme.parse(URL(string: "https://example.com/a.bin")!))
+        XCTAssertNil(GrabbitURLScheme.parse(URL(string: "grabbit://open?url=https://example.com/a.bin")!))
+    }
+
+    func testSchemeRejectsNonHTTPTarget() {
+        XCTAssertNil(GrabbitURLScheme.parse(URL(string: "grabbit://download?url=ftp://example.com/a.bin")!))
+        XCTAssertNil(GrabbitURLScheme.parse(URL(string: "grabbit://download?url=blob:https://example.com/123")!))
+        XCTAssertNil(GrabbitURLScheme.parse(URL(string: "grabbit://download")!))
+    }
+
+    // MARK: - Request headers plumbing
+
+    func testRequestHeadersStoredOnItem() {
+        let item = DownloadItem(
+            url: URL(string: "https://example.com/a.bin")!,
+            filename: "a.bin",
+            destinationURL: URL(fileURLWithPath: "/tmp/a.bin"),
+            requestHeaders: ["Cookie": "a=b", "Referer": "https://example.com/"])
+        XCTAssertEqual(item.requestHeaders?["Cookie"], "a=b")
+        // Backward compatible: missing key decodes to nil.
+        let data = try! JSONEncoder().encode(item)
+        let json = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertNotNil(json["requestHeaders"])
+    }
+
+    func testNativeMessageLenientPageUrl() throws {
+        let host = NativeMessagingHost()
+        XCTAssertNotNil(host)
+        let json = """
+        {"url":"https://example.com/a.bin","source":"context-menu","pageUrl":"","headers":{"Cookie":"a=b"}}
+        """.data(using: .utf8)!
+        let msg = try JSONDecoder().decode(NativeMessagingHost.NativeMessage.self, from: json)
+        XCTAssertEqual(msg.url.absoluteString, "https://example.com/a.bin")
+        XCTAssertNil(msg.pageUrl)
+        XCTAssertEqual(msg.headers?["Cookie"], "a=b")
+    }
 }

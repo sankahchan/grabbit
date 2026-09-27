@@ -59,12 +59,14 @@ final class SegmentTransport {
         start: Int64,
         end: Int64,
         coversWholeFile: Bool,
-        partialURL: URL
+        partialURL: URL,
+        headers: [String: String] = [:]
     ) {
         queue.async { [weak self] in
             self?.startSegmentSync(
                 index: index, url: url, start: start, end: end,
-                coversWholeFile: coversWholeFile, partialURL: partialURL)
+                coversWholeFile: coversWholeFile, partialURL: partialURL,
+                headers: headers)
         }
     }
 
@@ -74,7 +76,8 @@ final class SegmentTransport {
         start: Int64,
         end: Int64,
         coversWholeFile: Bool,
-        partialURL: URL
+        partialURL: URL,
+        headers: [String: String] = [:]
     ) {
         let handle: FileHandle
         do {
@@ -85,7 +88,7 @@ final class SegmentTransport {
             return
         }
 
-        let client = HTTP1Client(url: url, start: start, end: end, queue: queue)
+        let client = HTTP1Client(url: url, start: start, end: end, queue: queue, extraHeaders: headers)
         jobs[index] = Job(
             segmentIndex: index, startByte: start, endByte: end,
             coversWholeFile: coversWholeFile, client: client,
