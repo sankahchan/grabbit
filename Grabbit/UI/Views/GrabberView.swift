@@ -46,7 +46,8 @@ struct GrabberView: View {
     // MARK: - Status
 
     private var statusCard: some View {
-        HStack(spacing: 10) {
+        let bg = extensionConnected ? Neo.green : Neo.paper(scheme)
+        return HStack(spacing: 10) {
             Circle()
                 .fill(extensionConnected ? Neo.green : Neo.red)
                 .frame(width: 14, height: 14)
@@ -57,7 +58,8 @@ struct GrabberView: View {
                 .font(.headline.weight(.bold))
             Spacer()
         }
-        .neoCard(bg: extensionConnected ? Neo.green : Neo.paper(scheme))
+        .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+        .neoCard(bg: bg)
     }
 
     // MARK: - Detected media
@@ -125,6 +127,7 @@ struct GrabberView: View {
     private var hintCard: some View {
         Text(String(localized: "grabber.hint"))
             .font(.subheadline)
+            .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
             .frame(maxWidth: .infinity, alignment: .leading)
             .neoCard(bg: Neo.yellow)
     }

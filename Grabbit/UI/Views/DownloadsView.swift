@@ -53,6 +53,7 @@ struct DownloadsView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
         }
+        .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
         .neoCard(bg: Neo.yellow)
     }
 

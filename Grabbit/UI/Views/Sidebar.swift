@@ -59,6 +59,7 @@ struct Sidebar: View {
                 if let count = count(for: item) {
                     Text("\(count)")
                         .font(.caption.weight(.bold))
+                        .foregroundStyle(Neo.onAccent(Neo.paper(scheme), scheme: scheme))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                         .background(Neo.paper(scheme))
