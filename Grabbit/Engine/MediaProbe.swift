@@ -122,11 +122,22 @@ public enum MediaProbe {
         // Best: highest video + best audio merged.
         if let v = videos.compactMap(\.filesize).max() {
             presets.append(MediaPreset(
-                id: "best", label: "Best",
+                id: "best", label: String(localized: "media.preset.best"),
                 formatSpec: "bv*+ba/b",
                 estimatedSize: v + (bestAudioSize ?? 0)))
         }
-        for (id, label, cap) in [("1080p", "1080p", 1080), ("720p", "720p", 720), ("480p", "480p", 480), ("360p", "360p", 360)] as [(String, String, Int)] {
+        // Height-capped presets, highest first. A row is only added when the
+        // probe actually lists formats at or below that height, so 4K/1440p
+        // appear only when available and degrade gracefully otherwise.
+        let rows: [(id: String, label: String, cap: Int)] = [
+            ("2160p", String(localized: "media.preset.2160p"), 2160),
+            ("1440p", String(localized: "media.preset.1440p"), 1440),
+            ("1080p", String(localized: "media.preset.1080p"), 1080),
+            ("720p", String(localized: "media.preset.720p"), 720),
+            ("480p", String(localized: "media.preset.480p"), 480),
+            ("360p", String(localized: "media.preset.360p"), 360),
+        ]
+        for (id, label, cap) in rows {
             if let size = sizeFor(heightCap: cap) {
                 presets.append(MediaPreset(
                     id: id, label: label,
@@ -136,7 +147,7 @@ public enum MediaProbe {
         }
         if !audios.isEmpty {
             presets.append(MediaPreset(
-                id: "audio", label: "Audio (MP3)",
+                id: "audio", label: String(localized: "media.preset.audio"),
                 formatSpec: "bestaudio",
                 isAudioOnly: true,
                 estimatedSize: bestAudioSize))

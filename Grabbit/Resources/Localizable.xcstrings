@@ -2499,6 +2499,176 @@
           }
         }
       }
+    },
+    "media.preset.best": {
+      "comment": "Media quality preset",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကောင်းဆုံး"
+          }
+        }
+      }
+    },
+    "media.preset.2160p": {
+      "comment": "Media quality preset: 2160p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4K"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4K"
+          }
+        }
+      }
+    },
+    "media.preset.1440p": {
+      "comment": "Media quality preset: 1440p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1440p"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1440p"
+          }
+        }
+      }
+    },
+    "media.preset.1080p": {
+      "comment": "Media quality preset: 1080p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1080p"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1080p"
+          }
+        }
+      }
+    },
+    "media.preset.720p": {
+      "comment": "Media quality preset: 720p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "720p"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "720p"
+          }
+        }
+      }
+    },
+    "media.preset.480p": {
+      "comment": "Media quality preset: 480p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "480p"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "480p"
+          }
+        }
+      }
+    },
+    "media.preset.360p": {
+      "comment": "Media quality preset: 360p",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "360p"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "360p"
+          }
+        }
+      }
+    },
+    "media.preset.audio": {
+      "comment": "Media quality preset: audio only",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio (MP3)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံ (MP3)"
+          }
+        }
+      }
+    },
+    "torrents.status.waitingMetadata": {
+      "comment": "Torrent waiting on magnet metadata",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for metadata…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မက်တာဒေတာ စောင့်ဆိုင်းနေပါတယ်…"
+          }
+        }
+      }
+    },
+    "torrents.status.connecting": {
+      "comment": "Torrent looking for peers",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting to peers…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peers များနှင့် ချိတ်ဆက်နေပါတယ်…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

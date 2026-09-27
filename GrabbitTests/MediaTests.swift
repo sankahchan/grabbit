@@ -128,4 +128,41 @@ final class MediaTests: XCTestCase {
         let result = await task.value
         XCTAssertTrue(result.wasCancelled)
     }
+
+    // MARK: - 4K / 1440p presets
+
+    private func uhdJSON() -> Data {
+        let formats: [[String: Any]] = [
+            ["format_id": "h2160", "height": 2160, "filesize": 400_000_000 as Int64,
+             "vcodec": "avc1", "acodec": "none", "ext": "mp4"],
+            ["format_id": "h1440", "height": 1440, "filesize": 200_000_000 as Int64,
+             "vcodec": "avc1", "acodec": "none", "ext": "mp4"],
+            ["format_id": "h1080", "height": 1080, "filesize": 50_000_000 as Int64,
+             "vcodec": "avc1", "acodec": "none", "ext": "mp4"],
+            ["format_id": "audio", "height": NSNull(), "filesize": 5_000_000 as Int64,
+             "vcodec": "none", "acodec": "opus", "ext": "webm"],
+        ]
+        let json: [String: Any] = ["title": "UHD", "formats": formats]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }
+
+    func testProbeParseBuilds4KAnd1440pPresets() throws {
+        let media = try MediaProbe.parse(uhdJSON())
+        let ids = media.presets.map(\.id)
+        XCTAssertEqual(ids, ["best", "2160p", "1440p", "1080p", "audio"])
+        let p4k = media.presets.first { $0.id == "2160p" }!
+        XCTAssertEqual(p4k.formatSpec, "bv*[height<=2160]+ba/b[height<=2160]")
+        XCTAssertEqual(p4k.estimatedSize, 405_000_000) // 4K video + audio
+        let p1440 = media.presets.first { $0.id == "1440p" }!
+        XCTAssertEqual(p1440.formatSpec, "bv*[height<=1440]+ba/b[height<=1440]")
+        XCTAssertEqual(p1440.estimatedSize, 205_000_000)
+    }
+
+    func testProbeParseOmits4KWhenUnavailable() throws {
+        // The 1080p-only fixture must not gain 2160p/1440p rows.
+        let media = try MediaProbe.parse(sampleJSON())
+        let ids = media.presets.map(\.id)
+        XCTAssertFalse(ids.contains("2160p"))
+        XCTAssertFalse(ids.contains("1440p"))
+    }
 }
