@@ -24,6 +24,9 @@ public final class DownloadEngine {
     private var launchGeneration: [UUID: Int] = [:]
     private var speedSamples: [UUID: [(date: Date, bytes: Int64)]] = [:]
 
+    /// AsyncBytes yields single bytes — buffer them and flush to disk in chunks.
+    private static let writeBufferSize = 64 * 1024
+
     /// Immutable snapshot handed to a detached segment worker.
     private struct SegmentSnapshot {
         let url: URL
@@ -319,10 +322,21 @@ public final class DownloadEngine {
             try handle.seek(toOffset: UInt64(snap.start))
 
             var absoluteReceived = snap.start
-            for try await chunk in bytes {
+            var buffer = Data()
+            buffer.reserveCapacity(Self.writeBufferSize)
+            for try await byte in bytes {
+                buffer.append(byte)
+                guard buffer.count >= Self.writeBufferSize else { continue }
                 try Task.checkCancellation()
-                try handle.write(contentsOf: chunk)
-                absoluteReceived += Int64(chunk.count)
+                try handle.write(contentsOf: buffer)
+                absoluteReceived += Int64(buffer.count)
+                await reportProgress(id: id, segmentIndex: snap.segmentIndex, absoluteReceived: absoluteReceived)
+                buffer.removeAll(keepingCapacity: true)
+            }
+            if !buffer.isEmpty {
+                try Task.checkCancellation()
+                try handle.write(contentsOf: buffer)
+                absoluteReceived += Int64(buffer.count)
                 await reportProgress(id: id, segmentIndex: snap.segmentIndex, absoluteReceived: absoluteReceived)
             }
             try handle.synchronize()
