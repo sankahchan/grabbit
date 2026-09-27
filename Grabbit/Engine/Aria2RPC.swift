@@ -335,6 +335,17 @@ public struct TorrentStatus: Sendable, Equatable {
     public var errorCode: String?
     public var errorMessage: String?
 
+    /// Human-readable failure line for the UI, including aria2's numeric
+    /// errorCode (e.g. "Not a directory (code 1)") so failures are
+    /// diagnosable without guessing. Only meaningful when status == "error".
+    public var errorDisplay: String {
+        let base = errorMessage ?? "Unknown error"
+        if let code = errorCode, !code.isEmpty, code != "0" {
+            return "\(base) (code \(code))"
+        }
+        return base
+    }
+
     public static func parse(_ json: JSONValue) -> TorrentStatus? {
         guard let gid = json["gid"]?.stringValue,
               let status = json["status"]?.stringValue

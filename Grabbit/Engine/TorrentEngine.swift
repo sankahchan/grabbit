@@ -160,16 +160,26 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
     // MARK: - Adding torrents
 
+    /// Returns a usable download directory: the requested one when it really
+    /// is a directory, otherwise a repaired fallback from Settings. Never
+    /// returns a file path (aria2 fails those with "Not a directory").
+    func resolvedSaveDir(_ url: URL) -> URL {
+        if SettingsStore.isExistingDirectory(url) { return url }
+        NSLog("[Grabbit] TorrentEngine: save path %@ is not a directory; re-resolving", url.path)
+        return settings.folderURL(for: .other)
+    }
+
     public func add(magnetOrURL: String, savePath: URL) async throws {
         let input = magnetOrURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { throw TorrentError.invalidInput }
+        let dir = resolvedSaveDir(savePath)
         // A .torrent file URL: fetch the bytes first, then addTorrent.
         if input.lowercased().hasSuffix(".torrent"),
            let url = URL(string: input),
            url.scheme?.lowercased().hasPrefix("http") == true
         {
             let (data, _) = try await URLSession.shared.data(from: url)
-            try await addTorrentFile(data, savePath: savePath, name: url.lastPathComponent)
+            try await addTorrentFile(data, savePath: dir, name: url.lastPathComponent)
             return
         }
         try await ensureStarted()
@@ -186,13 +196,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
             sourceURI: input,
             infoHash: isMagnet ? MagnetParser.infoHash(from: input) : nil,
             state: .downloading,
-            savePath: savePath)
+            savePath: dir)
         // Persist before the RPC call (cross-cutting crash-recovery rule):
         // a lost response retries by GID/info-hash lookup, never double-adds.
         torrents.append(item)
         save()
         do {
-            let gid = try await rpc.addUri([input], options: addOptions(dir: savePath))
+            let gid = try await rpc.addUri([input], options: addOptions(dir: dir))
             setGid(item.id, gid: gid)
             lineage.register(gid: gid, item: item.id)
         } catch {
@@ -203,6 +213,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
     public func addTorrentFile(_ data: Data, savePath: URL, name: String? = nil) async throws {
         guard !data.isEmpty else { throw TorrentError.invalidInput }
+        let dir = resolvedSaveDir(savePath)
         try await ensureStarted()
         guard let rpc else { throw TorrentError.daemonFailed("RPC not connected") }
 
@@ -211,14 +222,14 @@ public final class TorrentEngine: TorrentEngineProtocol {
             magnetURI: "",
             sourceURI: "",
             state: .downloading,
-            savePath: savePath)
+            savePath: dir)
         if data.count < 2_000_000 {
             item.torrentFileBase64 = data.base64EncodedString()
         }
         torrents.append(item)
         save()
         do {
-            let gid = try await rpc.addTorrent(data.base64EncodedString(), options: addOptions(dir: savePath))
+            let gid = try await rpc.addTorrent(data.base64EncodedString(), options: addOptions(dir: dir))
             setGid(item.id, gid: gid)
             lineage.register(gid: gid, item: item.id)
         } catch {
@@ -401,7 +412,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     changed = true
                 }
                 if st.status == "error" {
-                    let message = st.errorMessage ?? "Unknown error"
+                    let message = st.errorDisplay
                     if item.errorMessage != message {
                         item.errorMessage = message
                         changed = true

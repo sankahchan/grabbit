@@ -95,11 +95,32 @@ public final class SettingsStore {
 
     /// Resolves the download folder for a category: expands `~`, falls back to
     /// `~/Downloads/Grabbit/Other` when unconfigured, and creates it on demand.
+    /// If a *file* (or anything uncreatable) blocks the wanted path, falls
+    /// back to `<name>-2`, `<name>-3`, … and logs the switch. Never returns
+    /// a file path as a directory (aria2 fails those with "Not a directory").
     public func folderURL(for category: DownloadCategory) -> URL {
         let raw = settings.folders[category] ?? "~/Downloads/Grabbit/Other"
         let expanded = (raw as NSString).expandingTildeInPath
-        let url = URL(fileURLWithPath: expanded, isDirectory: true)
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        return url
+        let base = URL(fileURLWithPath: expanded, isDirectory: true)
+        for attempt in 1..<100 {
+            let candidate = attempt == 1
+                ? base
+                : base.deletingLastPathComponent().appendingPathComponent(
+                    "\(base.lastPathComponent)-\(attempt)", isDirectory: true)
+            try? FileManager.default.createDirectory(at: candidate, withIntermediateDirectories: true)
+            if Self.isExistingDirectory(candidate) {
+                if candidate != base {
+                    NSLog("[Grabbit] folderURL: %@ is blocked by a file; using fallback %@",
+                          base.path, candidate.path)
+                }
+                return candidate
+            }
+        }
+        return base
+    }
+
+    /// True when the URL exists and is really a directory. Never throws.
+    public static func isExistingDirectory(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
     }
 }

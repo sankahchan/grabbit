@@ -376,4 +376,127 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(
             TorrentDisplayStatus.of(displayItem(state: .failed)), .failed)
     }
+
+    // MARK: - SettingsStore.folderURL fallback
+
+    private func makeTempDir() throws -> URL {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        return tmp
+    }
+
+    private func blockFile(at url: URL) throws {
+        try "blocked".write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    func testFolderURLFallsBackWhenBlockedByFile() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let blocked = tmp.appendingPathComponent("Other")
+        try blockFile(at: blocked)
+
+        let store = SettingsStore()
+        store.settings.folders[.other] = blocked.path
+        let resolved = store.folderURL(for: .other)
+
+        XCTAssertTrue(SettingsStore.isExistingDirectory(resolved))
+        XCTAssertNotEqual(resolved, blocked)
+        XCTAssertEqual(resolved.lastPathComponent, "Other-2")
+    }
+
+    func testFolderURLFallsBackTwiceWhenBothBlocked() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let blocked = tmp.appendingPathComponent("Other")
+        try blockFile(at: blocked)
+        try blockFile(at: tmp.appendingPathComponent("Other-2"))
+
+        let store = SettingsStore()
+        store.settings.folders[.other] = blocked.path
+        let resolved = store.folderURL(for: .other)
+
+        XCTAssertTrue(SettingsStore.isExistingDirectory(resolved))
+        XCTAssertEqual(resolved.lastPathComponent, "Other-3")
+    }
+
+    func testFolderURLPassesThroughRealDirectory() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let store = SettingsStore()
+        store.settings.folders[.other] = tmp.path
+        XCTAssertEqual(store.folderURL(for: .other), tmp)
+    }
+
+    func testIsExistingDirectoryRejectsFiles() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let file = tmp.appendingPathComponent("f")
+        try blockFile(at: file)
+        XCTAssertFalse(SettingsStore.isExistingDirectory(file))
+        XCTAssertTrue(SettingsStore.isExistingDirectory(tmp))
+        XCTAssertFalse(SettingsStore.isExistingDirectory(tmp.appendingPathComponent("missing")))
+    }
+
+    // MARK: - TorrentEngine.resolvedSaveDir
+
+    func testResolvedSaveDirRepairsFilePath() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let file = tmp.appendingPathComponent("notadir")
+        try blockFile(at: file)
+        let fallback = tmp.appendingPathComponent("Fallback", isDirectory: true)
+
+        let store = SettingsStore()
+        store.settings.folders[.other] = fallback.path
+        let engine = TorrentEngine(settings: store)
+
+        let resolved = engine.resolvedSaveDir(file)
+        XCTAssertTrue(SettingsStore.isExistingDirectory(resolved))
+        XCTAssertEqual(resolved, fallback)
+    }
+
+    func testResolvedSaveDirPassesThroughRealDirectory() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let engine = TorrentEngine(settings: SettingsStore())
+        XCTAssertEqual(engine.resolvedSaveDir(tmp), tmp)
+    }
+
+    // MARK: - TorrentStatus.errorDisplay
+
+    private func errorStatus(code: String?, message: String?) -> TorrentStatus {
+        TorrentStatus(
+            gid: "g", status: "error",
+            totalLength: 0, completedLength: 0, uploadLength: 0,
+            downloadSpeed: 0, uploadSpeed: 0, connections: 0, numSeeders: 0,
+            dir: "", name: nil, infoHash: nil,
+            followedBy: [], following: nil,
+            errorCode: code, errorMessage: message)
+    }
+
+    func testErrorDisplayIncludesCode() {
+        XCTAssertEqual(
+            errorStatus(code: "1", message: "Not a directory").errorDisplay,
+            "Not a directory (code 1)")
+    }
+
+    func testErrorDisplayOmitsZeroCode() {
+        XCTAssertEqual(
+            errorStatus(code: "0", message: "Not a directory").errorDisplay,
+            "Not a directory")
+    }
+
+    func testErrorDisplayOmitsMissingCode() {
+        XCTAssertEqual(
+            errorStatus(code: nil, message: "Boom").errorDisplay, "Boom")
+    }
+
+    func testErrorDisplayFallsBackToUnknown() {
+        XCTAssertEqual(
+            errorStatus(code: "24", message: nil).errorDisplay,
+            "Unknown error (code 24)")
+    }
 }
