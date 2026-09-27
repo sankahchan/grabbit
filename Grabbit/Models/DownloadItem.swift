@@ -7,6 +7,20 @@ public enum DownloadState: String, Codable, CaseIterable {
     case completed
     case failed
     case interrupted
+
+    /// Static-key lookup. NOTE: `String(localized: "state.\(rawValue)")`
+    /// does NOT work — interpolation builds the key "state.%@" which never
+    /// matches the catalog, so the raw key leaks into the UI.
+    public var localizedName: String {
+        switch self {
+        case .queued: String(localized: "state.queued")
+        case .downloading: String(localized: "state.downloading")
+        case .paused: String(localized: "state.paused")
+        case .completed: String(localized: "state.completed")
+        case .failed: String(localized: "state.failed")
+        case .interrupted: String(localized: "state.interrupted")
+        }
+    }
 }
 
 public enum DownloadCategory: String, Codable, CaseIterable {
@@ -14,6 +28,26 @@ public enum DownloadCategory: String, Codable, CaseIterable {
     case audio
     case document
     case other
+
+    /// See DownloadState.localizedName — same interpolation pitfall.
+    public var localizedName: String {
+        switch self {
+        case .video: String(localized: "category.video")
+        case .audio: String(localized: "category.audio")
+        case .document: String(localized: "category.document")
+        case .other: String(localized: "category.other")
+        }
+    }
+
+    /// "settings.folders.video" etc. for the Settings folder rows.
+    public var settingsFolderName: String {
+        switch self {
+        case .video: String(localized: "settings.folders.video")
+        case .audio: String(localized: "settings.folders.audio")
+        case .document: String(localized: "settings.folders.document")
+        case .other: String(localized: "settings.folders.other")
+        }
+    }
 }
 
 public enum SourceSite: String, Codable {

@@ -72,7 +72,7 @@ struct AddDownloadSheet: View {
             // MARK: Category
             Picker(String(localized: "add.category"), selection: $category) {
                 ForEach(DownloadCategory.allCases, id: \.self) { c in
-                    Text(String(localized: "category.\(c.rawValue)")).tag(c)
+                    Text(c.localizedName).tag(c)
                 }
             }
             .pickerStyle(.segmented)
@@ -124,7 +124,9 @@ struct AddDownloadSheet: View {
             }
         }
         .padding(20)
-        .frame(width: 560)
+        // Flexible width: a fixed 560pt sheet overflows (and gets clipped)
+        // when the main window is narrower, e.g. on scaled displays.
+        .frame(minWidth: 420, idealWidth: 520, maxWidth: 600)
         .onAppear {
             connections = settings.settings.defaultConnections
         }

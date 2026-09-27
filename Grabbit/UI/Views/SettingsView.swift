@@ -130,7 +130,7 @@ struct SettingsView: View {
 
     private func folderRow(for category: DownloadCategory, settings: Binding<AppSettings>) -> some View {
         HStack {
-            Text(String(localized: "settings.folders.\(category.rawValue)"))
+            Text(category.settingsFolderName)
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Text(currentFolderPath(for: category, settings: settings))

@@ -92,8 +92,18 @@ struct DownloadsView: View {
 
             HStack(spacing: 6) {
                 SourceBadge(site: item.sourceSite)
-                Text(String(localized: "category.\(item.category.rawValue)"))
+                Text(item.category.localizedName)
                     .neoBadge(bg: Neo.purple)
+            }
+
+            // Surface the failure reason — without this a failed download
+            // shows just "FAILED" and nobody knows why (HTTP 403? no range
+            // support? connection dropped?).
+            if item.state == .failed, let message = item.errorMessage, !message.isEmpty {
+                Text(message)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Neo.red)
+                    .lineLimit(2)
             }
 
             Text(String(localized: "downloads.segments"))
@@ -121,7 +131,7 @@ struct DownloadsView: View {
     }
 
     private func stateBadge(for state: DownloadState) -> some View {
-        Text(String(localized: "state.\(state.rawValue)"))
+        Text(state.localizedName)
             .neoBadge(bg: badgeColor(for: state))
     }
 

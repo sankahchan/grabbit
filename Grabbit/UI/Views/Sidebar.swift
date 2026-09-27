@@ -68,7 +68,8 @@ struct Sidebar: View {
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(Neo.ink(scheme))
+            // Selected row sits on bright yellow — dark text in both modes.
+            .foregroundStyle(Neo.onAccent(isSelected ? Neo.yellow : Neo.paper(scheme), scheme: scheme))
             .background(isSelected ? Neo.yellow : Neo.paper(scheme))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(

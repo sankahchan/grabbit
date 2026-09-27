@@ -67,7 +67,7 @@ struct TorrentsView: View {
                     .font(.headline.weight(.bold))
                     .lineLimit(1)
                 Spacer()
-                Text(String(localized: "state.\(item.state.rawValue)"))
+                Text(item.state.localizedName)
                     .neoBadge(bg: badgeColor(for: item.state))
             }
 

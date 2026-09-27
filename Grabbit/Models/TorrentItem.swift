@@ -6,6 +6,17 @@ public enum TorrentState: String, Codable, CaseIterable {
     case paused
     case completed
     case failed
+
+    /// Static-key lookup — see DownloadState.localizedName.
+    public var localizedName: String {
+        switch self {
+        case .downloading: String(localized: "state.downloading")
+        case .seeding: String(localized: "state.seeding")
+        case .paused: String(localized: "state.paused")
+        case .completed: String(localized: "state.completed")
+        case .failed: String(localized: "state.failed")
+        }
+    }
 }
 
 public struct TorrentItem: Identifiable, Codable {

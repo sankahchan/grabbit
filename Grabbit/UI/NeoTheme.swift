@@ -56,6 +56,23 @@ enum NeoPalette {
     static func paper(_ scheme: ColorScheme) -> Color {
         scheme == .dark ? paperDark : paperLight
     }
+
+    /// Foreground for a filled background: dark ink on bright fills
+    /// (yellow/green/blue/…), scheme-adaptive ink on dark fills.
+    /// Without this, dark mode renders white text on bright accents
+    /// (white-on-yellow, white-on-green) which is unreadable.
+    static func onAccent(_ bg: Color, scheme: ColorScheme) -> Color {
+        isBright(bg) ? inkLight : ink(scheme)
+    }
+
+    private static func isBright(_ color: Color) -> Bool {
+        let ns = NSColor(color)
+        guard let rgb = ns.usingColorSpace(.sRGB) else { return true }
+        let luminance = 0.299 * rgb.redComponent
+            + 0.587 * rgb.greenComponent
+            + 0.114 * rgb.blueComponent
+        return luminance > 0.55
+    }
 }
 
 /// Terse alias so call sites read `Neo.yellow`, `Neo.ink(scheme)`, …
@@ -91,7 +108,7 @@ struct NeoBadgeModifier: ViewModifier {
         content
             .font(.caption2.weight(.bold))
             .textCase(.uppercase)
-            .foregroundStyle(Neo.ink(scheme))
+            .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(bg)
@@ -111,7 +128,7 @@ struct NeoButtonStyle: ButtonStyle {
         configuration.label
             .font(compact ? .subheadline.weight(.bold) : .headline.weight(.semibold))
             .textCase(.uppercase)
-            .foregroundStyle(Neo.ink(scheme))
+            .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
             .padding(.horizontal, compact ? 10 : 16)
             .padding(.vertical, compact ? 6 : 10)
             .background(bg)
