@@ -40,9 +40,12 @@ public struct AppSettings: Codable {
             .other: "~/Downloads/Grabbit/Other",
         ])
     }
+}
 
-    // Backward-compatible decoding: settings saved before these fields
-    // existed still decode, with the new fields defaulted.
+// Backward-compatible decoding: settings saved before the torrent fields
+// existed still decode, with the new fields defaulted. Lives in an
+// extension so the memberwise initializer is preserved.
+extension AppSettings {
     private enum CodingKeys: String, CodingKey {
         case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
         case autoResumeOnLaunch, autoUpdateEnabled, notificationsEnabled

@@ -133,7 +133,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
             startPollLoop()
             startVPNMonitor()
         } catch {
-            if let daemonError = error as? DaemonError, daemonError == .blocked {
+            if let daemonError = error as? Aria2Daemon.DaemonError, daemonError == .blocked {
                 daemonState = .suspendedVPN
                 rpc = nil
                 throw TorrentError.vpnBlocked(interface: settings.settings.vpnInterfaceName)
@@ -314,11 +314,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
     }
 
     private func pollOnce() async {
-        guard let rpc else { return }
+        // `client` (not `rpc`) — the poll loop may nil out the property
+        // after repeated failures, which the shadowed name would forbid.
+        guard let client = rpc else { return }
         do {
-            let active = try await rpc.tellActive()
-            let waiting = try await rpc.tellWaiting()
-            let stopped = try await rpc.tellStopped()
+            let active = try await client.tellActive()
+            let waiting = try await client.tellWaiting()
+            let stopped = try await client.tellStopped()
             pollFailures = 0
 
             var byGid: [String: TorrentStatus] = [:]
