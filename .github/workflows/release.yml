@@ -60,6 +60,11 @@ jobs:
         # NOTE: versions are pinned inside scripts/vendor-media-runtime.sh
         # (see DEPENDENCIES.md) so builds stay reproducible.
 
+      - name: Vendor torrent runtime (aria2-next)
+        run: ./scripts/vendor-torrent-runtime.sh
+        # NOTE: version + SHA-256 are pinned inside
+        # scripts/vendor-torrent-runtime.sh (see DEPENDENCIES.md).
+
       - name: Build (Release, unsigned)
         run: >
           xcodebuild -scheme Grabbit

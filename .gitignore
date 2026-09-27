@@ -28,6 +28,7 @@ dist/
 
 # Vendored binaries (downloaded by release.yml, not committed)
 Grabbit/Resources/bin/
+Grabbit/Resources/lib/
 
 # Secrets — never commit
 .env
