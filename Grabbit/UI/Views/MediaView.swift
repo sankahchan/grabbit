@@ -6,6 +6,7 @@ import SwiftUI
 /// independent yt-dlp updater.
 struct MediaView: View {
     @Environment(MediaEngine.self) private var media
+    @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
     @State private var urlText = ""
@@ -188,10 +189,11 @@ struct MediaView: View {
     }
 
     private func startDownload() {
-        guard let preset = selectedPreset,
-              let dir = chooseDirectory(initial: nil)
-        else { return }
-        Task { await media.download(preset: preset, to: dir) }
+        guard let preset = selectedPreset else { return }
+        // Auto-save into the category download folder (user-changeable in
+        // Settings) — no save dialog.
+        let directory = settings.folderURL(for: preset.isAudioOnly ? .audio : .video)
+        Task { await media.download(preset: preset, to: directory) }
     }
 
     // MARK: - Progress / completion / error
