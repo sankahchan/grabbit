@@ -229,7 +229,7 @@ struct MediaView: View {
                     .lineLimit(1)
             }
             .font(.headline.weight(.heavy))
-            .foregroundStyle(Neo.green)
+            .foregroundStyle(Neo.ink(scheme))
             Button(String(localized: "media.new")) {
                 urlText = ""
                 Task { await media.reset() }
@@ -243,7 +243,7 @@ struct MediaView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label(String(localized: "media.failed"), systemImage: "exclamationmark.triangle.fill")
                 .font(.headline.weight(.heavy))
-                .foregroundStyle(Neo.red)
+                .foregroundStyle(Neo.ink(scheme))
             Text(message)
                 .font(.subheadline)
             Button(String(localized: "media.retry")) { probe() }

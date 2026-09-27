@@ -81,6 +81,11 @@ typealias Neo = NeoPalette
 // MARK: - Neo modifiers
 
 /// Card: 3pt ink border, 6pt hard offset shadow, 14pt radius.
+///
+/// The offset block is a plain filled shape behind the card — NOT
+/// `.shadow()`: a zero-blur shadow re-renders the *entire content* (text
+/// included) as a solid ghost copy, which in dark mode is near-white and
+/// looks like doubled text.
 struct NeoCardModifier: ViewModifier {
     /// Pass nil (default) for theme-aware paper.
     var bg: Color?
@@ -91,11 +96,15 @@ struct NeoCardModifier: ViewModifier {
             .padding(14)
             .background(bg ?? Neo.paper(scheme))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Neo.ink(scheme))
+                    .offset(x: 6, y: 6)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Neo.ink(scheme), lineWidth: 3)
             )
-            .shadow(color: Neo.ink(scheme), radius: 0, x: 6, y: 6)
     }
 }
 
@@ -125,22 +134,27 @@ struct NeoButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var scheme
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let radius: CGFloat = compact ? 8 : 10
+        let shift: CGFloat = configuration.isPressed ? 1 : 4
+        return configuration.label
             .font(compact ? .subheadline.weight(.bold) : .headline.weight(.semibold))
             .textCase(.uppercase)
             .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
             .padding(.horizontal, compact ? 10 : 16)
             .padding(.vertical, compact ? 6 : 10)
             .background(bg)
-            .clipShape(RoundedRectangle(cornerRadius: compact ? 8 : 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: compact ? 8 : 10, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: 3)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            // Hard offset block as a plain shape, not `.shadow()`: a
+            // zero-blur shadow duplicates the label text as a solid ghost
+            // copy (near-white in dark mode = "doubled text").
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(Neo.ink(scheme))
+                    .offset(x: shift, y: shift)
             )
-            .shadow(
-                color: Neo.ink(scheme), radius: 0,
-                x: configuration.isPressed ? 1 : 4,
-                y: configuration.isPressed ? 1 : 4
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Neo.ink(scheme), lineWidth: 3)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
