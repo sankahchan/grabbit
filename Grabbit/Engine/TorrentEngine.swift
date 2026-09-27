@@ -133,11 +133,6 @@ public final class TorrentEngine: TorrentEngineProtocol {
             startPollLoop()
             startVPNMonitor()
         } catch {
-            if let daemonError = error as? Aria2Daemon.DaemonError, daemonError == .blocked {
-                daemonState = .suspendedVPN
-                rpc = nil
-                throw TorrentError.vpnBlocked(interface: settings.settings.vpnInterfaceName)
-            }
             daemonState = .failed(error.localizedDescription)
             rpc = nil
             throw TorrentError.daemonFailed(error.localizedDescription)
