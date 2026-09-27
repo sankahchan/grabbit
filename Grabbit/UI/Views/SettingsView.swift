@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Settings tab: neo-styled cards for appearance, language, downloads,
-/// updates, and general. Everything binds to `SettingsStore` and persists
+/// torrents, updates, and general. Everything binds to `SettingsStore` and persists
 /// via `save()` on change.
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
@@ -16,6 +16,7 @@ struct SettingsView: View {
                 appearanceCard(settings: settings)
                 languageCard(settings: settings)
                 downloadsCard(settings: settings)
+                torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually run
                 // (signed Release build + real SUPublicEDKey). In dev builds
                 // the updater is disabled, so hide the card instead of
@@ -36,6 +37,10 @@ struct SettingsView: View {
         .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
         .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
         .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
+        .onChange(of: store.settings.vpnKillSwitchEnabled) { _, _ in store.save() }
+        .onChange(of: store.settings.vpnInterfaceName) { _, _ in store.save() }
+        .onChange(of: store.settings.defaultSeedRatio) { _, _ in store.save() }
+        .onChange(of: store.settings.defaultSeedTimeMinutes) { _, _ in store.save() }
     }
 
     // MARK: - Language
@@ -104,6 +109,74 @@ struct SettingsView: View {
             Toggle(String(localized: "settings.autoResume"), isOn: settings.autoResumeOnLaunch)
         }
         .neoCard()
+    }
+
+    private func torrentsCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.torrents"))
+            Toggle(String(localized: "settings.vpnKillSwitch"), isOn: settings.vpnKillSwitchEnabled)
+            Text(String(localized: "settings.vpnKillSwitch.note"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack {
+                Text(String(localized: "settings.vpnInterface"))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                TextField(
+                    "utun3",
+                    text: settings.vpnInterfaceName,
+                    prompt: Text(String(localized: "settings.vpnInterface")))
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 160)
+                    .disabled(!settings.wrappedValue.vpnKillSwitchEnabled)
+            }
+            Divider()
+            seedRatioRow(settings: settings)
+            seedTimeRow(settings: settings)
+        }
+        .neoCard()
+    }
+
+    private func seedRatioRow(settings: Binding<AppSettings>) -> some View {
+        let ratio = Binding<Double>(
+            get: { settings.wrappedValue.defaultSeedRatio },
+            set: {
+                settings.wrappedValue.defaultSeedRatio = $0
+                store.save()
+            }
+        )
+        return HStack {
+            Text(String(localized: "settings.seedRatio"))
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Stepper(value: ratio, in: 0...10, step: 0.5) {
+                Text(ratio.wrappedValue == 0
+                     ? String(localized: "settings.unlimited")
+                     : String(format: "%.1f", ratio.wrappedValue))
+                    .font(.subheadline)
+            }
+        }
+    }
+
+    private func seedTimeRow(settings: Binding<AppSettings>) -> some View {
+        let minutes = Binding<Int>(
+            get: { settings.wrappedValue.defaultSeedTimeMinutes },
+            set: {
+                settings.wrappedValue.defaultSeedTimeMinutes = $0
+                store.save()
+            }
+        )
+        return HStack {
+            Text(String(localized: "settings.seedTime"))
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Stepper(value: minutes, in: 0...10080, step: 30) {
+                Text(minutes.wrappedValue == 0
+                     ? String(localized: "settings.unlimited")
+                     : "\(minutes.wrappedValue)")
+                    .font(.subheadline)
+            }
+        }
     }
 
     private func updatesCard(settings: Binding<AppSettings>) -> some View {

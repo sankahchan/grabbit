@@ -1904,6 +1904,601 @@
           }
         }
       }
+    },
+    "torrents.runtime.hint": {
+      "comment": "Hint when the aria2-next binary is missing",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install the torrent engine: run scripts/vendor-torrent-runtime.sh, or set ARIA2_NEXT_PATH."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်အင်ဂျင် ထည့်သွင်းပါ — scripts/vendor-torrent-runtime.sh ကို run ပါ၊ သို့မဟုတ် ARIA2_NEXT_PATH သတ်မှတ်ပါ။"
+          }
+        }
+      }
+    },
+    "torrents.daemon.starting": {
+      "comment": "Torrent daemon status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting torrent engine…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်အင်ဂျင် စတင်နေသည်…"
+          }
+        }
+      }
+    },
+    "torrents.daemon.running": {
+      "comment": "Torrent daemon status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine running"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အင်ဂျင် လုပ်ဆောင်နေသည်"
+          }
+        }
+      }
+    },
+    "torrents.daemon.stopped": {
+      "comment": "Torrent daemon status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine stopped"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အင်ဂျင် ရပ်ထားသည်"
+          }
+        }
+      }
+    },
+    "torrents.daemon.suspended": {
+      "comment": "Torrent daemon status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused — VPN interface down"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခေတ္တရပ် — VPN interface ကျသွားသည်"
+          }
+        }
+      }
+    },
+    "torrents.daemon.failed": {
+      "comment": "Torrent daemon status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အင်ဂျင် မအောင်မြင်ပါ"
+          }
+        }
+      }
+    },
+    "torrents.retry": {
+      "comment": "Retry starting the torrent engine",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်ကြိုးစား"
+          }
+        }
+      }
+    },
+    "torrents.files": {
+      "comment": "Torrent files button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်များ"
+          }
+        }
+      }
+    },
+    "torrents.seeding": {
+      "comment": "Torrent seeding button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeding"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီးဒ်"
+          }
+        }
+      }
+    },
+    "torrents.vpn.suspended": {
+      "comment": "VPN kill-switch warning",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN interface is down — torrents are paused and the engine is stopped."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN interface ကျသွားပါပြီ — တောရန့်များ ခေတ္တရပ်ပြီး အင်ဂျင် ရပ်ထားပါတယ်။"
+          }
+        }
+      }
+    },
+    "torrents.add.linkTab": {
+      "comment": "Add torrent mode tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်"
+          }
+        }
+      }
+    },
+    "torrents.add.fileTab": {
+      "comment": "Add torrent mode tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်"
+          }
+        }
+      }
+    },
+    "torrents.add.chooseFile": {
+      "comment": "Choose .torrent file button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose .torrent file…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".torrent ဖိုင် ရွေးပါ…"
+          }
+        }
+      }
+    },
+    "torrents.files.title": {
+      "comment": "File selection sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose files to download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းမည့်ဖိုင်များ ရွေးပါ"
+          }
+        }
+      }
+    },
+    "torrents.files.apply": {
+      "comment": "Apply button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apply"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသုံးချ"
+          }
+        }
+      }
+    },
+    "torrents.seeding.title": {
+      "comment": "Seeding limits sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeding limits"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီးဒ်ကန့်သတ်ချက်များ"
+          }
+        }
+      }
+    },
+    "torrents.seeding.ratio": {
+      "comment": "Seed ratio row",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share ratio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မျှဝေမှုအချိုး"
+          }
+        }
+      }
+    },
+    "torrents.seeding.time": {
+      "comment": "Seed time row",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seed time (min)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီးဒ်လုပ်ချိန် (မိနစ်)"
+          }
+        }
+      }
+    },
+    "torrents.seeding.unlimited": {
+      "comment": "Unlimited seeding value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကန့်အသတ်မရှိ"
+          }
+        }
+      }
+    },
+    "torrents.seeding.useGlobal": {
+      "comment": "Use global seeding default",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use global"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံသေတန်ဖိုး သုံးမည်"
+          }
+        }
+      }
+    },
+    "torrents.seeding.note": {
+      "comment": "Seeding sheet note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step down to −1 for the global default from Settings. 0 means unlimited."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆက်တင်မှ ပုံသေတန်ဖိုးအတွက် −1 အထိ နှိမ့်ချပါ။ 0 ဆိုလျှင် အကန့်အသတ်မရှိ။"
+          }
+        }
+      }
+    },
+    "torrents.remove.title": {
+      "comment": "Remove torrent sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove torrent?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်ကို ဖယ်ရှားမလား?"
+          }
+        }
+      }
+    },
+    "torrents.remove.deleteData": {
+      "comment": "Delete downloaded data toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also delete downloaded files"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းထားသောဖိုင်များပါ ဖျက်မည်"
+          }
+        }
+      }
+    },
+    "torrents.remove.remove": {
+      "comment": "Remove torrent button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖယ်ရှား"
+          }
+        }
+      }
+    },
+    "torrents.error.vpnBlocked": {
+      "comment": "VPN kill-switch blocked error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN kill-switch is on and interface %@ is down. Torrents are paused."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN kill-switch ဖွင့်ထားပြီး %@ interface ကျသွားပါပြီ။ တောရန့်များ ခေတ္တရပ်ထားပါတယ်။"
+          }
+        }
+      }
+    },
+    "torrents.error.daemonFailed": {
+      "comment": "Torrent daemon failed error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrent engine failed to start: %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်အင်ဂျင် စတင်မရပါ — %@"
+          }
+        }
+      }
+    },
+    "torrents.error.rpcFailed": {
+      "comment": "Torrent RPC error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrent engine error: %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်အင်ဂျင် အမှား — %@"
+          }
+        }
+      }
+    },
+    "torrents.error.invalidInput": {
+      "comment": "Invalid torrent input error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a magnet link, a .torrent URL, or pick a .torrent file."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet လင့်ခ်၊ .torrent URL ထည့်ပါ သို့မဟုတ် .torrent ဖိုင် ရွေးပါ။"
+          }
+        }
+      }
+    },
+    "settings.section.torrents": {
+      "comment": "Settings section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်များ"
+          }
+        }
+      }
+    },
+    "settings.vpnKillSwitch": {
+      "comment": "VPN kill-switch toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN kill-switch"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN kill-switch"
+          }
+        }
+      }
+    },
+    "settings.vpnKillSwitch.note": {
+      "comment": "VPN kill-switch explanation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While the interface is down, torrents pause, the engine stops, and it refuses to start."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface ကျသွားပါက တောရန့်များ ခေတ္တရပ်ပြီး အင်ဂျင် ရပ်ကာ စတင်မည် မဟုတ်ပါ။"
+          }
+        }
+      }
+    },
+    "settings.vpnInterface": {
+      "comment": "VPN interface field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface (e.g. utun3)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface (ဥပမာ utun3)"
+          }
+        }
+      }
+    },
+    "settings.seedRatio": {
+      "comment": "Default share ratio setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default share ratio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံသေမျှဝေမှုအချိုး"
+          }
+        }
+      }
+    },
+    "settings.seedTime": {
+      "comment": "Default seed time setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default seed time (min)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံသေဆီးဒ်လုပ်ချိန် (မိနစ်)"
+          }
+        }
+      }
+    },
+    "settings.unlimited": {
+      "comment": "Unlimited setting value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကန့်အသတ်မရှိ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
