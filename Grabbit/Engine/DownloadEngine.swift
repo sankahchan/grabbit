@@ -4,12 +4,12 @@ import Observation
 /// Segmented, resumable HTTP download engine.
 ///
 /// Each download is split into byte-range segments (`DownloadItem.makeSegments`);
-/// every incomplete segment gets its own `URLSessionDataTask` inside a
-/// `SegmentTransport`, which streams `Data` chunks straight to the
-/// `.grabbit-part` file at absolute offsets. (The delegate API is used instead
-/// of `URLSession.bytes(for:)` because the latter yields individual UInt8 —
-/// millions of async suspensions per second — which capped throughput at
-/// ~100 KB/s.)
+/// every incomplete segment gets its own HTTP/1.1 TCP connection inside a
+/// `SegmentTransport` (via `HTTP1Client`), which streams `Data` chunks straight
+/// to the `.grabbit-part` file at absolute offsets. Raw HTTP/1.1 is used
+/// instead of URLSession because URLSession negotiates HTTP/2 via ALPN and
+/// multiplexes every segment onto a single TCP connection, which caps total
+/// throughput at one connection's share on high-latency links.
 /// All model mutations happen on `@MainActor`; transport callbacks hop back
 /// for state updates.
 ///

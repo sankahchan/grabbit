@@ -133,4 +133,50 @@ final class EngineTests: XCTestCase {
         stalled.speedBytesPerSec = 0
         XCTAssertNil(stalled.etaSeconds)
     }
+
+    // MARK: - ChunkedDecoder
+
+    func testChunkedDecoderSingleFeed() {
+        var decoder = ChunkedDecoder()
+        let pieces = decoder.feed(Data("4\r\nWiki\r\n5\r\npedia\r\n0\r\n\r\n".utf8))
+        XCTAssertEqual(pieces.map { String(data: $0, encoding: .utf8) }, ["Wiki", "pedia"])
+        XCTAssertTrue(decoder.isFinished)
+    }
+
+    func testChunkedDecoderSplitFeeds() {
+        var decoder = ChunkedDecoder()
+        var out: [Data] = []
+        // Deliberately awkward splits: mid-size-line, mid-chunk, mid-terminator.
+        for part in ["4\r\nWi", "ki\r\n5\r\npedi", "a\r\n0\r", "\n\r\n"] {
+            out += decoder.feed(Data(part.utf8))
+        }
+        XCTAssertEqual(out.map { String(data: $0, encoding: .utf8) }, ["Wiki", "pedia"])
+        XCTAssertTrue(decoder.isFinished)
+    }
+
+    func testChunkedDecoderIncompleteWaits() {
+        var decoder = ChunkedDecoder()
+        XCTAssertEqual(decoder.feed(Data("4\r\nWi".utf8)).count, 0)
+        XCTAssertFalse(decoder.isFinished)
+        let pieces = decoder.feed(Data("ki\r\n0\r\n\r\n".utf8))
+        XCTAssertEqual(pieces.map { String(data: $0, encoding: .utf8) }, ["Wiki"])
+        XCTAssertTrue(decoder.isFinished)
+    }
+
+    func testChunkedDecoderWithTrailers() {
+        var decoder = ChunkedDecoder()
+        let pieces = decoder.feed(Data("3\r\nabc\r\n0\r\nX-Trailer: yes\r\n\r\n".utf8))
+        XCTAssertEqual(pieces.map { String(data: $0, encoding: .utf8) }, ["abc"])
+        XCTAssertTrue(decoder.isFinished)
+    }
+
+    func testChunkedDecoderSplitTerminator() {
+        var decoder = ChunkedDecoder()
+        var out: [Data] = []
+        for part in ["2\r\nhi\r\n0\r\n", "\r\n"] {
+            out += decoder.feed(Data(part.utf8))
+        }
+        XCTAssertEqual(out.map { String(data: $0, encoding: .utf8) }, ["hi"])
+        XCTAssertTrue(decoder.isFinished)
+    }
 }
