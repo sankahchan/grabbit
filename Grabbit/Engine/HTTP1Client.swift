@@ -128,10 +128,11 @@ final class HTTP1Client {
         let parameters: NWParameters
         if isTLS {
             let tlsOptions = NWProtocolTLS.Options()
-            // Without this the server may negotiate h2 via ALPN and then our
-            // raw HTTP/1.1 bytes would be garbage to it.
-            sec_protocol_options_set_tls_alpn(
-                tlsOptions.securityProtocolOptions, ["http/1.1"] as CFArray)
+            // Advertise ONLY http/1.1 via ALPN. Without this the server may
+            // negotiate h2 and then our raw HTTP/1.1 bytes would be garbage
+            // to it (this is also what defeats URLSession's h2 multiplexing).
+            sec_protocol_options_clear_tls_application_protocols(tlsOptions.securityProtocolOptions)
+            sec_protocol_options_add_tls_application_protocol(tlsOptions.securityProtocolOptions, "http/1.1")
             parameters = NWParameters(tls: tlsOptions)
         } else {
             parameters = NWParameters.tcp
