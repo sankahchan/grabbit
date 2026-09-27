@@ -114,7 +114,18 @@ public struct DownloadItem: Identifiable, Codable {
     /// Request headers captured by the browser extension for this download
     /// (Cookie, Referer, User-Agent, …). Sent on every segment connection so
     /// authenticated/CDN-gated URLs work exactly like they did in the browser.
+    ///
+    /// Secrets hygiene (QDM `serde(skip)` pattern): cookies / Authorization
+    /// are runtime-only and deliberately EXCLUDED from Codable — they are
+    /// never written to the resume store on disk.
     public var requestHeaders: [String: String]?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, url, filename, totalBytes, downloadedBytes, segments, state,
+             speedBytesPerSec, category, sourceSite, destinationURL, addedAt,
+             errorMessage, sourcePageURL, eTag, lastModified, linkExpired
+        // requestHeaders intentionally absent: runtime-only secret.
+    }
 
     public init(
         id: UUID = UUID(),

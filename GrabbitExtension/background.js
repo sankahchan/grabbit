@@ -16,6 +16,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ items: detectedTabs.get(msg.tabId) || [] });
     return true;
   }
+  if (msg?.type === 'grabbit-send-url' && typeof msg.url === 'string') {
+    if (!/^https?:\/\//i.test(msg.url)) {
+      sendResponse({ ok: false });
+      return true;
+    }
+    sendToApp({
+      url: msg.url,
+      source: 'popup-manual',
+      title: '',
+      pageUrl: '',
+      filename: filenameFromUrl(msg.url),
+    });
+    sendResponse({ ok: true });
+    return true;
+  }
   if (msg?.type === 'grabbit-send-media' && typeof msg.url === 'string') {
     const items = detectedTabs.get(msg.tabId) || [];
     const item = items.find((i) => i.url === msg.url) || { url: msg.url };
@@ -81,6 +96,47 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // The toolbar button now opens popup.html (manifest action.default_popup),
 // which lists detected media for the current tab. No onClicked handler.
 
+// --- IDM-style auto-intercept (QDM idea) ------------------------------------
+//
+// When the browser itself starts a download, cancel it and reroute it into
+// Grabbit with full request context. Toggleable from the popup; on by default.
+
+async function autoInterceptEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get('autoIntercept');
+    return stored.autoIntercept !== false;
+  } catch {
+    return true;
+  }
+}
+
+function basename(path) {
+  return (path || '').split(/[\\/]/).pop() || undefined;
+}
+
+try {
+  chrome.downloads.onCreated.addListener(async (item) => {
+    try {
+      if (!(await autoInterceptEnabled())) return;
+      const url = item.finalUrl || item.url;
+      if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) return;
+      await chrome.downloads.cancel(item.id).catch(() => {});
+      await chrome.downloads.erase({ id: item.id }).catch(() => {});
+      sendToApp({
+        url,
+        source: 'auto-intercept',
+        title: '',
+        pageUrl: item.referrer || '',
+        filename: basename(item.filename) || filenameFromUrl(url),
+      });
+    } catch {
+      // Never break the browser's own download UI.
+    }
+  });
+} catch {
+  // downloads permission unavailable — context menu + popup still work.
+}
+
 // --- Request-context capture (XDM idea) ------------------------------------
 //
 // A bare URL is often useless: the download only works with the browser's
@@ -117,8 +173,49 @@ try {
   // webRequest unavailable — cookie capture below still works.
 }
 
+// --- Redirect-chain capture (QDM idea) --------------------------------------
+//
+// When a download URL is the tail of a redirect chain, the earliest URL is
+// the natural Referer. redirectSource maps a redirect TARGET url -> the
+// first url in its chain (60s TTL). captureContext falls back to it when no
+// Referer header was observed.
+//
+// Hop-by-hop scrubbing is structural: we only ever forward an allowlist
+// (Referer, User-Agent, Authorization, Origin, Cookie), so hop-by-hop
+// headers (Connection, Keep-Alive, TE, Trailer, Upgrade, …) can never leak
+// into the replayed request.
+
+const redirectSource = new Map(); // targetUrl -> firstUrl
+const redirectChainStart = new Map(); // requestId -> firstUrl
+
+function ttlDelete(map, key, ms = 60000) {
+  setTimeout(() => map.delete(key), ms);
+}
+
+try {
+  chrome.webRequest.onBeforeRedirect.addListener(
+    (details) => {
+      let first = redirectChainStart.get(details.requestId);
+      if (!first) {
+        first = details.url;
+        redirectChainStart.set(details.requestId, first);
+        ttlDelete(redirectChainStart, details.requestId);
+      }
+      redirectSource.set(details.redirectUrl, first);
+      ttlDelete(redirectSource, details.redirectUrl);
+    },
+    { urls: ['<all_urls>'] }
+  );
+} catch {
+  // webRequest unavailable — direct header capture still works.
+}
+
 async function captureContext(url) {
   const headers = { ...(headerCache.get(url) || {}) };
+  if (!headers['Referer']) {
+    const first = redirectSource.get(url);
+    if (first) headers['Referer'] = first;
+  }
   try {
     // Cookie is not reliably visible via webRequest; read it directly.
     const cookies = await chrome.cookies.getAll({ url });

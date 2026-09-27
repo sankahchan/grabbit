@@ -360,17 +360,22 @@ final class EngineTests: XCTestCase {
 
     // MARK: - Request headers plumbing
 
-    func testRequestHeadersStoredOnItem() {
+    func testRequestHeadersRuntimeOnly() {
         let item = DownloadItem(
             url: URL(string: "https://example.com/a.bin")!,
             filename: "a.bin",
             destinationURL: URL(fileURLWithPath: "/tmp/a.bin"),
             requestHeaders: ["Cookie": "a=b", "Referer": "https://example.com/"])
         XCTAssertEqual(item.requestHeaders?["Cookie"], "a=b")
-        // Backward compatible: missing key decodes to nil.
+        // Secrets hygiene: cookies/Authorization are runtime-only and must
+        // never be written to the resume store on disk.
         let data = try! JSONEncoder().encode(item)
         let json = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
-        XCTAssertNotNil(json["requestHeaders"])
+        XCTAssertNil(json["requestHeaders"])
+        // …and decoding old/new payloads still works (defaults to nil).
+        let decoded = try! JSONDecoder().decode(DownloadItem.self, from: data)
+        XCTAssertNil(decoded.requestHeaders)
+        XCTAssertEqual(decoded.filename, "a.bin")
     }
 
     func testNativeMessageLenientPageUrl() throws {

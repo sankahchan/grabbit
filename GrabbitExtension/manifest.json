@@ -36,7 +36,9 @@
     "nativeMessaging",
     "notifications",
     "webRequest",
-    "cookies"
+    "cookies",
+    "downloads",
+    "storage"
   ],
   "version": "0.1.0",
   "web_accessible_resources": [

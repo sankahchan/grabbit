@@ -12,6 +12,7 @@ function shortUrl(url) {
 }
 
 async function main() {
+  await initControls();
   const list = document.getElementById('list');
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) {
@@ -31,39 +32,87 @@ async function main() {
   }
   list.innerHTML = '';
   for (const item of items) {
-    const div = document.createElement('div');
-    div.className = 'item';
-    const via = item.via === 'network' ? ' · via network' : '';
-    div.innerHTML =
-      `<div class="url"></div><div class="meta"></div><div class="actions"></div>`;
-    div.querySelector('.url').textContent = shortUrl(item.url);
-    div.querySelector('.meta').textContent = (item.site || '') + via;
-    const actions = div.querySelector('.actions');
-    if (item.isBlob) {
-      const note = document.createElement('span');
-      note.className = 'blob-note';
-      note.textContent = 'In-page stream — use the in-page player download if available.';
-      actions.appendChild(note);
-    } else {
-      const btn = document.createElement('button');
-      btn.textContent = 'Download with Grabbit';
-      btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        btn.textContent = 'Sent ✓';
-        try {
-          await chrome.runtime.sendMessage({
-            type: 'grabbit-send-media',
-            tabId: tab.id,
-            url: item.url,
-          });
-        } catch {
-          btn.textContent = 'Failed — retry';
-          btn.disabled = false;
-        }
-      });
-      actions.appendChild(btn);
+    list.appendChild(mediaRow(item, tab.id));
+  }
+}
+
+function mediaRow(item, tabId) {
+  const div = document.createElement('div');
+  div.className = 'item';
+  const via = item.via === 'network' ? ' · via network' : '';
+  div.innerHTML = `<div class="url"></div><div class="meta"></div><div class="actions"></div>`;
+  div.querySelector('.url').textContent = shortUrl(item.url);
+  div.querySelector('.meta').textContent = (item.site || '') + via;
+  const actions = div.querySelector('.actions');
+  if (item.isBlob) {
+    const note = document.createElement('span');
+    note.className = 'blob-note';
+    note.textContent = 'In-page stream — use the in-page player download if available.';
+    actions.appendChild(note);
+  } else {
+    actions.appendChild(downloadButton(item.url, tabId));
+  }
+  return div;
+}
+
+function downloadButton(url, tabId, label = 'Download with Grabbit') {
+  const btn = document.createElement('button');
+  btn.textContent = label;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Sent ✓';
+    try {
+      await chrome.runtime.sendMessage({ type: 'grabbit-send-media', tabId, url });
+    } catch {
+      btn.textContent = 'Failed — retry';
+      btn.disabled = false;
     }
-    list.appendChild(div);
+  });
+  return btn;
+}
+
+async function initControls() {
+  // Auto-intercept toggle (persisted).
+  const toggle = document.getElementById('autoIntercept');
+  try {
+    const stored = await chrome.storage.sync.get('autoIntercept');
+    toggle.checked = stored.autoIntercept !== false;
+  } catch { /* default checked */ }
+  toggle.addEventListener('change', () => {
+    chrome.storage.sync.set({ autoIntercept: toggle.checked }).catch(() => {});
+  });
+
+  // Manual URL entry.
+  const input = document.getElementById('manualUrl');
+  const go = document.getElementById('manualGo');
+  go.addEventListener('click', async () => {
+    const url = (input.value || '').trim();
+    if (!/^https?:\/\//i.test(url)) return;
+    go.disabled = true;
+    try {
+      await chrome.runtime.sendMessage({ type: 'grabbit-send-url', url });
+      input.value = '';
+    } catch { /* ignore */ }
+    go.disabled = false;
+  });
+
+  // Clipboard monitor (QDM idea). MV3 service workers are ephemeral and have
+  // no clipboard access, so the poll lives here: while the popup is open we
+  // check once for a URL on the clipboard and offer it (deduped per open).
+  try {
+    const text = await navigator.clipboard.readText();
+    const url = (text || '').trim();
+    if (/^https?:\/\/\S+$/i.test(url)) {
+      const row = document.getElementById('clipboardRow');
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `<div class="meta">Clipboard</div><div class="url"></div><div class="actions"></div>`;
+      div.querySelector('.url').textContent = shortUrl(url);
+      div.querySelector('.actions').appendChild(downloadButton(url, 0, 'Grab clipboard URL'));
+      row.appendChild(div);
+    }
+  } catch {
+    // Clipboard unreadable (permissions/focus) — manual entry still works.
   }
 }
 

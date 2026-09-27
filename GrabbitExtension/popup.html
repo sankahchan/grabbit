@@ -5,17 +5,33 @@
 <style>
   body { width: 340px; margin: 0; padding: 12px; font: 13px -apple-system, sans-serif; background: #FAFAF7; color: #1A1A1A; }
   h1 { font-size: 14px; margin: 0 0 8px; }
+  .row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .item { border: 2px solid #1A1A1A; border-radius: 8px; padding: 8px; margin-bottom: 8px; background: #fff; box-shadow: 2px 2px 0 #1A1A1A; }
   .url { word-break: break-all; font-size: 11px; color: #555; margin-bottom: 6px; }
   .meta { font-size: 11px; color: #777; margin-bottom: 6px; }
   button { font: inherit; font-weight: 700; background: #FFD02F; border: 2px solid #1A1A1A; border-radius: 6px; padding: 4px 10px; cursor: pointer; box-shadow: 2px 2px 0 #1A1A1A; }
   button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #1A1A1A; }
+  button:disabled { opacity: 0.6; }
   .blob-note { font-size: 11px; color: #777; }
   .empty { color: #777; }
+  input[type=text] { flex: 1; font: inherit; border: 2px solid #1A1A1A; border-radius: 6px; padding: 4px 8px; }
+  label.toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  hr { border: none; border-top: 2px solid #1A1A1A; margin: 10px 0; }
+  .section-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; }
 </style>
 </head>
 <body>
-<h1>Grabbit — media on this page</h1>
+<h1>Grabbit — web grabber</h1>
+<div class="row">
+  <label class="toggle"><input type="checkbox" id="autoIntercept" checked> Auto-grab browser downloads</label>
+</div>
+<div class="row">
+  <input type="text" id="manualUrl" placeholder="Paste a download URL…">
+  <button id="manualGo">Grab</button>
+</div>
+<div id="clipboardRow"></div>
+<hr>
+<p class="section-title">Media on this page</p>
 <div id="list"><p class="empty">Scanning…</p></div>
 <script src="popup.js"></script>
 </body>
