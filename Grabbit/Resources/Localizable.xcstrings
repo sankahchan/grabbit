@@ -2669,6 +2669,23 @@
           }
         }
       }
+    },
+    "media.url.paste": {
+      "comment": "Button: paste URL from clipboard",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကူးထည့်ရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

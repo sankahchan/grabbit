@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Media tab: paste a video/page URL (YouTube, X, TikTok, IG, …), probe it
 /// with yt-dlp, pick a quality preset, and download. Also shows the media
@@ -112,6 +113,8 @@ struct MediaView: View {
                 TextField(String(localized: "media.url.placeholder"), text: $urlText)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { probe() }
+                Button(String(localized: "media.url.paste")) { pasteURL() }
+                    .neoButton(bg: Neo.paper(scheme))
                 Button(String(localized: "media.url.probe")) { probe() }
                     .neoButton(bg: Neo.yellow)
                     .disabled(!canProbe)
@@ -128,6 +131,11 @@ struct MediaView: View {
               url.scheme?.hasPrefix("http") == true
         else { return false }
         return media.state != .probing && media.state != .downloading
+    }
+
+    private func pasteURL() {
+        guard let s = NSPasteboard.general.string(forType: .string) else { return }
+        urlText = s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func probe() {
@@ -154,7 +162,6 @@ struct MediaView: View {
             if let duration = probed.duration {
                 Text(Self.formatDuration(duration))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             Picker(String(localized: "media.quality"), selection: $selectedPresetID) {
                 ForEach(probed.presets) { preset in
