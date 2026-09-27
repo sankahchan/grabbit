@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 /// Torrents tab: daemon status, one neo card per torrent with progress,
@@ -260,12 +261,16 @@ struct TorrentAddSheet: View {
             .pickerStyle(.segmented)
 
             if mode == 0 {
-                TextField(
-                    String(localized: "torrents.add"),
-                    text: $input,
-                    prompt: Text(String(localized: "torrents.add.placeholder"))
-                )
-                .textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
+                    TextField(
+                        String(localized: "torrents.add"),
+                        text: $input,
+                        prompt: Text(String(localized: "torrents.add.placeholder"))
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    Button(String(localized: "common.paste")) { pasteInput() }
+                        .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                }
             } else {
                 Button(String(localized: "torrents.add.chooseFile")) {
                     showingPicker = true
@@ -323,6 +328,12 @@ struct TorrentAddSheet: View {
             return !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         return torrentData != nil
+    }
+
+    private func pasteInput() {
+        if let s = NSPasteboard.general.string(forType: .string) {
+            input = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
     }
 
     private func addTorrent() {

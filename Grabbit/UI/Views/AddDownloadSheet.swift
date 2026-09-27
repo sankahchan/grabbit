@@ -36,12 +36,16 @@ struct AddDownloadSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(String(localized: "add.url.label"))
                     .font(.headline)
-                TextField(
-                    String(localized: "add.url.label"),
-                    text: $urlString,
-                    prompt: Text(String(localized: "add.url.placeholder"))
-                )
-                .textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
+                    TextField(
+                        String(localized: "add.url.label"),
+                        text: $urlString,
+                        prompt: Text(String(localized: "add.url.placeholder"))
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    Button(String(localized: "common.paste")) { pasteURL() }
+                        .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                }
                 siteBadge
             }
 
@@ -136,6 +140,12 @@ struct AddDownloadSheet: View {
     }
 
     // MARK: - Helpers
+
+    private func pasteURL() {
+        if let s = NSPasteboard.general.string(forType: .string) {
+            urlString = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
 
     private var siteBadge: some View {
         Group {

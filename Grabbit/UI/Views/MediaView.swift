@@ -113,7 +113,7 @@ struct MediaView: View {
                 TextField(String(localized: "media.url.placeholder"), text: $urlText)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { probe() }
-                Button(String(localized: "media.url.paste")) { pasteURL() }
+                Button(String(localized: "common.paste")) { pasteURL() }
                     .neoButton(bg: Neo.paper(scheme))
                 Button(String(localized: "media.url.probe")) { probe() }
                     .neoButton(bg: Neo.yellow)
