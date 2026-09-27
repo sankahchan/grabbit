@@ -116,7 +116,6 @@ struct GrabberView: View {
                 filename: media.title,
                 category: .video,
                 sourceSite: media.site,
-                connections: engine.maxConnections,
                 destination: destination
             )
         }

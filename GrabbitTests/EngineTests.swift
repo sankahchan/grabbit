@@ -179,4 +179,146 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(out.map { String(data: $0, encoding: .utf8) }, ["hi"])
         XCTAssertTrue(decoder.isFinished)
     }
+
+    // MARK: - ShareURLRewriter
+
+    func testRewriteDropboxLink() {
+        let rewritten = ShareURLRewriter.rewrite(URL(string: "https://www.dropbox.com/s/abc123/file.zip?dl=0")!)
+        XCTAssertEqual(rewritten.absoluteString, "https://www.dropbox.com/s/abc123/file.zip?dl=1")
+    }
+
+    func testRewriteDropboxAddsDlParam() {
+        let rewritten = ShareURLRewriter.rewrite(URL(string: "https://www.dropbox.com/s/abc123/file.zip")!)
+        XCTAssertTrue(rewritten.absoluteString.contains("dl=1"))
+    }
+
+    func testRewriteGoogleDriveLink() {
+        let rewritten = ShareURLRewriter.rewrite(URL(string: "https://drive.google.com/file/d/1ABCxyz/view?usp=sharing")!)
+        XCTAssertEqual(rewritten.absoluteString, "https://drive.google.com/uc?id=1ABCxyz&export=download")
+    }
+
+    func testRewriteOneDriveLink() {
+        let rewritten = ShareURLRewriter.rewrite(URL(string: "https://contoso.sharepoint.com/:u:/g/xyz?e=abc")!)
+        XCTAssertTrue(rewritten.absoluteString.contains("download=1"))
+    }
+
+    func testRewriteLeavesPlainURLsAlone() {
+        let url = URL(string: "https://example.com/file.zip")!
+        XCTAssertEqual(ShareURLRewriter.rewrite(url), url)
+    }
+
+    // MARK: - SignedURLDetector
+
+    func testDetectsAWSStyleSignedURL() {
+        XCTAssertTrue(SignedURLDetector.isSigned(URL(
+            string: "https://cdn.example.com/f.zip?X-Amz-Algorithm=AWS4&X-Amz-Signature=abc&X-Amz-Expires=3600")!))
+    }
+
+    func testDetectsAzureStyleSignedURL() {
+        XCTAssertTrue(SignedURLDetector.isSigned(URL(
+            string: "https://blob.example.com/f.zip?se=2026-01-01&sig=abc123")!))
+    }
+
+    func testPlainURLIsNotSigned() {
+        XCTAssertFalse(SignedURLDetector.isSigned(URL(string: "https://example.com/file.zip?foo=bar")!))
+    }
+
+    func testNameParameterIsNotSigned() {
+        // Naive substring matching on "e=" would false-positive here.
+        XCTAssertFalse(SignedURLDetector.isSigned(URL(string: "https://example.com/file.zip?name=x")!))
+    }
+
+    // MARK: - growthSplitPoint
+
+    func testGrowthSplitsLargestUntouchedSegment() {
+        let mb: Int64 = 1_048_576
+        let segments = [
+            Segment(index: 0, startByte: 0, endByte: 100 * mb - 1, receivedBytes: 10 * mb), // started
+            Segment(index: 1, startByte: 100 * mb, endByte: 200 * mb - 1), // 100 MiB untouched
+            Segment(index: 2, startByte: 200 * mb, endByte: 250 * mb - 1), // 50 MiB untouched
+        ]
+        let split = DownloadItem.growthSplitPoint(segments: segments, maxConnections: 16, minSplitBytes: 8 * mb)
+        XCTAssertEqual(split?.index, 1)
+        XCTAssertEqual(split?.mid, 150 * mb)
+    }
+
+    func testGrowthSkipsSegmentsBelowMinSplit() {
+        let mb: Int64 = 1_048_576
+        let segments = [Segment(index: 0, startByte: 0, endByte: 4 * mb - 1)]
+        XCTAssertNil(DownloadItem.growthSplitPoint(segments: segments, maxConnections: 16, minSplitBytes: 8 * mb))
+    }
+
+    func testGrowthStopsAtMaxConnections() {
+        let mb: Int64 = 1_048_576
+        let segments = (0..<16).map { i in
+            Segment(index: i, startByte: Int64(i) * 100 * mb, endByte: Int64(i + 1) * 100 * mb - 1)
+        }
+        XCTAssertNil(DownloadItem.growthSplitPoint(segments: segments, maxConnections: 16, minSplitBytes: 8 * mb))
+    }
+
+    // MARK: - reconciledSegments
+
+    func testReconcileClampsToFileSize() {
+        let segments = [
+            Segment(index: 0, startByte: 0, endByte: 99, receivedBytes: 100),
+            Segment(index: 1, startByte: 100, endByte: 199, receivedBytes: 80),
+        ]
+        // Only 150 bytes actually on disk: segment 1 keeps 50.
+        let out = DownloadItem.reconciledSegments(segments, fileSize: 150)
+        XCTAssertEqual(out[0].receivedBytes, 100)
+        XCTAssertEqual(out[1].receivedBytes, 50)
+    }
+
+    // MARK: - totalFromContentRange
+
+    func testTotalFromContentRange() {
+        XCTAssertEqual(DownloadItem.totalFromContentRange("bytes 0-0/12345"), 12345)
+        XCTAssertEqual(DownloadItem.totalFromContentRange("bytes 100-199/12345"), 12345)
+        XCTAssertEqual(DownloadItem.totalFromContentRange("bytes */12345"), 12345)
+        XCTAssertNil(DownloadItem.totalFromContentRange("bytes 0-0/*"))
+        XCTAssertNil(DownloadItem.totalFromContentRange("garbage"))
+    }
+
+    // MARK: - filenameFromContentDisposition
+
+    func testFilenameQuoted() {
+        XCTAssertEqual(
+            DownloadItem.filenameFromContentDisposition("attachment; filename=\"report final.zip\""),
+            "report final.zip")
+    }
+
+    func testFilenameBare() {
+        XCTAssertEqual(
+            DownloadItem.filenameFromContentDisposition("attachment; filename=setup.exe"),
+            "setup.exe")
+    }
+
+    func testFilenameRFC5987() {
+        XCTAssertEqual(
+            DownloadItem.filenameFromContentDisposition("attachment; filename*=UTF-8''%E1%80%A1%E1%80%AC.zip"),
+            "အာ.zip")
+    }
+
+    func testFilenameMissing() {
+        XCTAssertNil(DownloadItem.filenameFromContentDisposition("attachment"))
+    }
+
+    // MARK: - validatorsChanged
+
+    func testValidatorsChangedOnETagMismatch() {
+        XCTAssertTrue(DownloadItem.validatorsChanged(
+            storedETag: "\"abc\"", storedLastModified: nil, headers: ["etag": "\"def\""]))
+    }
+
+    func testValidatorsUnchangedWhenMatching() {
+        XCTAssertFalse(DownloadItem.validatorsChanged(
+            storedETag: "\"abc\"", storedLastModified: "Mon, 01 Jan 2026 00:00:00 GMT",
+            headers: ["etag": "\"abc\"", "last-modified": "Mon, 01 Jan 2026 00:00:00 GMT"]))
+    }
+
+    func testValidatorsIgnoredWhenAbsent() {
+        // Server stopped sending validators: not a change, just missing data.
+        XCTAssertFalse(DownloadItem.validatorsChanged(
+            storedETag: "\"abc\"", storedLastModified: nil, headers: [:]))
+    }
 }

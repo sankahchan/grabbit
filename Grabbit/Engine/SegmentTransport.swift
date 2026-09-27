@@ -40,6 +40,10 @@ final class SegmentTransport {
     var onComplete: ((Int, Int64) -> Void)?
     /// (segmentIndex, error)
     var onError: ((Int, Error) -> Void)?
+    /// Fired once per transport with the first segment's response headers
+    /// (names already lowercased by HTTP1Client). The engine uses it to
+    /// validate ETag/Last-Modified on resume.
+    var onFirstResponseHeaders: (([String: String]) -> Void)?
 
     /// Progress callbacks are throttled to this interval per segment so the
     /// UI isn't re-rendered on every TCP packet.
@@ -47,6 +51,7 @@ final class SegmentTransport {
 
     private var jobs: [Int: Job] = [:]
     private let queue = DispatchQueue(label: "com.sankahchan.grabbit.transport")
+    private var didReportFirstHeaders = false
 
     func startSegment(
         index: Int,
@@ -93,7 +98,11 @@ final class SegmentTransport {
 
     private func handleEvent(index: Int, event: HTTP1Client.Event) {
         switch event {
-        case .response(let status, _):
+        case .response(let status, let headers):
+            if !didReportFirstHeaders {
+                didReportFirstHeaders = true
+                onFirstResponseHeaders?(headers)
+            }
             guard let job = jobs[index] else { return }
             if status == 200, !job.coversWholeFile {
                 // Server ignored Range: discard any partial data (none was

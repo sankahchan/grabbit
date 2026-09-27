@@ -47,6 +47,16 @@ public final class DownloadEngine {
     /// How many times a single stalled/failed segment is retried (with
     /// backoff) before the whole download fails.
     private static let maxSegmentRetries = 5
+    /// New downloads start here and grow toward `maxConnections` as segments
+    /// complete (QDM-style dynamic growth). Starting moderate is safer against
+    /// throttling servers than opening 16 connections up front.
+    private static let initialConnections = 8
+    /// A segment is only split for growth when it has at least this much
+    /// untouched data left — spawning a TCP+TLS connection for less is
+    /// pure overhead.
+    private static let growthMinSplitBytes: Int64 = 8 * 1_048_576 // 8 MiB
+    /// Process-wide sleep-prevention token while any download is active.
+    private var sleepActivity: NSObjectProtocol?
 
     public init(resumeStore: ResumeStore = ResumeStore()) {
         self.resumeStore = resumeStore
@@ -76,10 +86,85 @@ public final class DownloadEngine {
         resumeStore.stopAutosave()
     }
 
+    // MARK: - Server probe
+
+    private struct ProbeResult {
+        var totalBytes: Int64?
+        var eTag: String?
+        var lastModified: String?
+        var filename: String?
+    }
+
+    /// HEAD first; on failure (403/405/network) fall back to
+    /// `GET Range: bytes=0-0` — a 206 confirms resumability and
+    /// `Content-Range` carries the total (QDM probe strategy).
+    /// Also captures ETag / Last-Modified validators and a
+    /// Content-Disposition filename when the server provides them.
+    private static func probe(_ url: URL) async -> ProbeResult {
+        var result = ProbeResult()
+        if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
+           (200...299).contains(status)
+        {
+            applyProbeHeaders(&result, headers: headers)
+            if result.totalBytes != nil { return result }
+        }
+        if let (status, headers) = await fetchHeaders(
+            url, method: "GET", range: "bytes=0-0"),
+           status == 206
+        {
+            applyProbeHeaders(&result, headers: headers)
+            if result.totalBytes == nil,
+               let range = headers["content-range"],
+               let total = DownloadItem.totalFromContentRange(range)
+            {
+                result.totalBytes = total
+            }
+        }
+        return result
+    }
+
+    private static func fetchHeaders(
+        _ url: URL, method: String, range: String? = nil
+    ) async -> (status: Int, headers: [String: String])? {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        if let range {
+            request.setValue(range, forHTTPHeaderField: "Range")
+        }
+        guard let (_, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse
+        else { return nil }
+        var headers: [String: String] = [:]
+        for (key, value) in http.allHeaderFields {
+            guard let name = (key as? String)?.lowercased(),
+                  let val = value as? String
+            else { continue }
+            headers[name] = val
+        }
+        return (http.statusCode, headers)
+    }
+
+    private static func applyProbeHeaders(
+        _ result: inout ProbeResult, headers: [String: String]
+    ) {
+        if let length = headers["content-length"], let parsed = Int64(length) {
+            result.totalBytes = parsed
+        }
+        result.eTag = headers["etag"]
+        result.lastModified = headers["last-modified"]
+        if let disposition = headers["content-disposition"],
+           let name = DownloadItem.filenameFromContentDisposition(disposition),
+           !name.isEmpty
+        {
+            result.filename = name
+        }
+    }
+
     // MARK: - Public control
 
-    /// Adds a download: HEAD-probes the server for total size, builds
-    /// segments, creates the `.grabbit-part` file, persists state, and auto-starts.
+    /// Adds a download: rewrites share links, probes the server for total
+    /// size, builds segments, creates the `.grabbit-part` file, persists
+    /// state, and auto-starts.
     @MainActor
     public func add(
         url: URL,
@@ -87,31 +172,29 @@ public final class DownloadEngine {
         category: DownloadCategory = .other,
         sourceSite: SourceSite = .direct,
         connections: Int? = nil,
-        destination: URL? = nil
+        destination: URL? = nil,
+        sourcePageURL: URL? = nil
     ) async {
-        let candidate = filename ?? url.lastPathComponent
-        let decoded = candidate.removingPercentEncoding ?? candidate
-        let name = decoded.isEmpty ? "download" : decoded
+        // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
+        let url = ShareURLRewriter.rewrite(url)
 
         // Probe the server for total size. We deliberately do NOT gate
         // multi-connection on the HEAD's Accept-Ranges header: many
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
-        var totalBytes: Int64?
-        var head = URLRequest(url: url)
-        head.httpMethod = "HEAD"
-        if let (_, response) = try? await URLSession.shared.data(for: head),
-           let http = response as? HTTPURLResponse,
-           let length = http.value(forHTTPHeaderField: "Content-Length"),
-           let parsed = Int64(length) {
-            totalBytes = parsed
-        }
+        let probe = await Self.probe(url)
+        let totalBytes = probe.totalBytes
+
+        let candidate = filename ?? probe.filename ?? url.lastPathComponent
+        let decoded = candidate.removingPercentEncoding ?? candidate
+        let name = decoded.isEmpty ? "download" : decoded
 
         // aria2-style: never split into pieces smaller than minSplitSize —
         // 16 TCP+TLS handshakes for 16 tiny segments would be pure overhead.
         let minSplitSize: Int64 = 1_048_576 // 1 MiB
-        var connectionCount = max(1, connections ?? maxConnections)
+        var connectionCount = max(1, connections ?? min(Self.initialConnections, maxConnections))
+        connectionCount = min(connectionCount, maxConnections)
         if let totalBytes {
             connectionCount = min(connectionCount, max(1, Int(totalBytes / minSplitSize)))
         }
@@ -147,7 +230,10 @@ public final class DownloadEngine {
             state: .queued,
             category: category,
             sourceSite: sourceSite,
-            destinationURL: destinationURL
+            destinationURL: destinationURL,
+            sourcePageURL: sourcePageURL,
+            eTag: probe.eTag,
+            lastModified: probe.lastModified
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -188,16 +274,46 @@ public final class DownloadEngine {
                 items[itemIndex].segments[i].receivedBytes = 0
             }
             items[itemIndex].downloadedBytes = 0
+        } else if let attrs = try? FileManager.default.attributesOfItem(atPath: partialURL.path),
+                  let fileSize = (attrs[.size] as? NSNumber)?.int64Value
+        {
+            // Resume honesty: never trust bookkeeping over the filesystem —
+            // clamp received bytes to what is actually on disk. (If the stat
+            // itself fails, leave bookkeeping untouched.)
+            items[itemIndex].segments = DownloadItem.reconciledSegments(
+                items[itemIndex].segments, fileSize: fileSize)
+            items[itemIndex].downloadedBytes =
+                items[itemIndex].segments.reduce(0) { $0 + $1.receivedBytes }
         }
         items[itemIndex].state = .downloading
         items[itemIndex].errorMessage = nil
+        items[itemIndex].linkExpired = false // fresh attempt; re-set on 403/410 if still dead
         speedSamples[id] = []
         launchSegmentTasks(for: id)
+        updateSleepPrevention()
         persistItem(id: id)
     }
 
     @MainActor
     public func resume(_ id: UUID) {
+        start(id)
+    }
+
+    /// Swaps the download URL in place (XDM `SetDownloadInfo` idea) — used
+    /// when a signed link expires and the user pastes a fresh one. All
+    /// downloaded segments are kept; validators are cleared because a fresh
+    /// signed URL for the same file may report a different ETag.
+    @MainActor
+    public func replaceURL(_ id: UUID, with newURL: URL) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
+        cancelSegmentTasks(for: id)
+        items[itemIndex].url = ShareURLRewriter.rewrite(newURL)
+        items[itemIndex].linkExpired = false
+        items[itemIndex].errorMessage = nil
+        items[itemIndex].eTag = nil
+        items[itemIndex].lastModified = nil
+        items[itemIndex].state = .queued
+        persistItem(id: id)
         start(id)
     }
 
@@ -209,6 +325,7 @@ public final class DownloadEngine {
         items[itemIndex].state = .paused
         items[itemIndex].speedBytesPerSec = 0
         speedSamples[id] = nil
+        updateSleepPrevention()
         persistItem(id: id)
     }
 
@@ -228,6 +345,7 @@ public final class DownloadEngine {
         items[itemIndex].state = .queued
         items[itemIndex].errorMessage = nil
         speedSamples[id] = nil
+        updateSleepPrevention()
     }
 
     /// Drops the record entirely (stops workers, deletes partial file + state).
@@ -239,6 +357,7 @@ public final class DownloadEngine {
         try? FileManager.default.removeItem(at: resumeStore.partialFileURL(for: item))
         try? resumeStore.delete(item.id)
         speedSamples[id] = nil
+        updateSleepPrevention()
     }
 
     @MainActor
@@ -297,6 +416,9 @@ public final class DownloadEngine {
         transport.onError = { [weak self] segmentIndex, error in
             Task { await self?.handleSegmentError(id: id, segmentIndex: segmentIndex, error: error, generation: generation) }
         }
+        transport.onFirstResponseHeaders = { [weak self] headers in
+            Task { await self?.validateResumeHeaders(id: id, headers: headers, generation: generation) }
+        }
 
         let partialURL = resumeStore.partialFileURL(for: item)
         let wholeFile = item.segments.count == 1
@@ -336,17 +458,34 @@ public final class DownloadEngine {
         launchGeneration[id] == generation
     }
 
-    /// A segment got a non-2xx status. 429/503 with several segments means the
-    /// server is throttling connection count — collapse to a single stream and
-    /// retry (at most once: after the collapse only one segment remains, so a
+    /// A segment got a non-2xx status. 403/410 on a signed URL means the link
+    /// expired (marked distinctly so the UI can offer replace-URL instead of a
+    /// dead retry). 429/503 with several segments means the server is
+    /// throttling connection count — collapse to a single stream and retry
+    /// (at most once: after the collapse only one segment remains, so a
     /// repeat 429/503 fails cleanly). Anything else fails the download; the
     /// transport already cancelled the segment and fail() tears down the rest.
     @MainActor
     private func handleHTTPError(id: UUID, status: Int, generation: Int) {
-        guard isCurrentGeneration(id: id, generation: generation) else { return }
+        guard isCurrentGeneration(id: id, generation: generation),
+              let itemIndex = items.firstIndex(where: { $0.id == id })
+        else { return }
+        if (status == 403 || status == 410),
+           SignedURLDetector.isSigned(items[itemIndex].url)
+        {
+            items[itemIndex].linkExpired = true
+            let hint: String
+            if let page = items[itemIndex].sourcePageURL {
+                hint = "This download link has expired. Open \(page.absoluteString) for a fresh link, then use Replace URL to resume without losing progress."
+            } else {
+                hint = "This download link has expired. Use Replace URL with a fresh link to resume without losing progress."
+            }
+            fail(id: id, message: hint)
+            return
+        }
         if (status == 429 || status == 503),
-           let itemIndex = items.firstIndex(where: { $0.id == id }),
-           items[itemIndex].segments.count > 1 {
+           items[itemIndex].segments.count > 1
+        {
             collapseToSingleStream(id: id)
         } else {
             fail(id: id, message: "HTTP \(status)")
@@ -368,6 +507,69 @@ public final class DownloadEngine {
         pendingSegments[id] = remaining
         if remaining <= 0 {
             segmentsDidFinish(id: id, generation: generation)
+        } else {
+            // The server is keeping up: grow toward maxConnections by splitting
+            // the largest untouched segment (QDM try_split_segment). Pairs with
+            // shrink-on-throttle for fully adaptive parallelism.
+            tryGrowConnections(id: id, generation: generation)
+        }
+    }
+
+    @MainActor
+    private func tryGrowConnections(id: UUID, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation),
+              let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading,
+              let transport = transports[id],
+              let split = DownloadItem.growthSplitPoint(
+                segments: items[itemIndex].segments,
+                maxConnections: maxConnections,
+                minSplitBytes: Self.growthMinSplitBytes),
+              let segIndex = items[itemIndex].segments.firstIndex(where: { $0.index == split.index })
+        else { return }
+        let originalEnd = items[itemIndex].segments[segIndex].endByte
+        items[itemIndex].segments[segIndex].endByte = split.mid - 1
+        let newIndex = (items[itemIndex].segments.map(\.index).max() ?? -1) + 1
+        items[itemIndex].segments.append(
+            Segment(index: newIndex, startByte: split.mid, endByte: originalEnd))
+        pendingSegments[id, default: 0] += 1
+        let item = items[itemIndex]
+        transport.startSegment(
+            index: newIndex,
+            url: item.url,
+            start: split.mid,
+            end: originalEnd,
+            coversWholeFile: false,
+            partialURL: resumeStore.partialFileURL(for: item)
+        )
+        persistItem(id: id)
+    }
+
+    /// XDM resume discipline: on a resume (bytes already on disk), the server's
+    /// validators must still match what we captured at probe time — otherwise
+    /// the file changed and resuming would corrupt the download. Also catches
+    /// a changed Content-Range total.
+    @MainActor
+    private func validateResumeHeaders(id: UUID, headers: [String: String], generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation),
+              let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading,
+              items[itemIndex].downloadedBytes > 0
+        else { return }
+        let item = items[itemIndex]
+        let changed = DownloadItem.validatorsChanged(
+            storedETag: item.eTag,
+            storedLastModified: item.lastModified,
+            headers: headers)
+        let totalChanged: Bool = {
+            guard let total = item.totalBytes,
+                  let range = headers["content-range"],
+                  let rangeTotal = DownloadItem.totalFromContentRange(range)
+            else { return false }
+            return rangeTotal != total
+        }()
+        if changed || totalChanged {
+            fail(id: id, message: "The file changed on the server. Remove this download and add it again.")
         }
     }
 
@@ -395,9 +597,12 @@ public final class DownloadEngine {
             return
         }
         segmentRetries[id, default: [:]][segmentIndex] = attempts
-        // Exponential backoff: 2s, 4s, 8s, 16s, 30s. Gives a flaky server
-        // or a brief network drop time to recover before we reconnect.
-        let delay = min(30.0, pow(2.0, Double(attempts)))
+        // XDM retry asymmetry: a segment that never got a byte failed in the
+        // connect phase — back off exponentially (2s, 4s, 8s, 16s, 30s) so a
+        // flaky server gets time to recover. A segment that was actively
+        // receiving data just got cut off mid-download — reconnect quickly.
+        let received = items[itemIndex].segments.first(where: { $0.index == segmentIndex })?.receivedBytes ?? 0
+        let delay: Double = received > 0 ? 1.0 : min(30.0, pow(2.0, Double(attempts)))
         Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             await self?.retrySegment(id: id, segmentIndex: segmentIndex, generation: generation)
@@ -641,6 +846,7 @@ public final class DownloadEngine {
             items[itemIndex].downloadedBytes = total
         }
         speedSamples[item.id] = nil
+        updateSleepPrevention()
         persistItem(id: item.id)
         // No resume state needed for a finished download.
         try? resumeStore.delete(item.id)
@@ -655,6 +861,7 @@ public final class DownloadEngine {
         items[itemIndex].speedBytesPerSec = 0
         speedSamples[id] = nil
         segmentRetries[id] = nil
+        updateSleepPrevention()
         persistItem(id: id)
     }
 
@@ -662,5 +869,22 @@ public final class DownloadEngine {
     private func persistItem(id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         try? resumeStore.save(item)
+    }
+
+    /// Keeps the Mac awake while any download is active (Harbor
+    /// `DownloadSleepPreventionService` idea). Balanced when the last
+    /// download stops.
+    @MainActor
+    private func updateSleepPrevention() {
+        let active = items.contains { $0.state == .downloading }
+        if active, sleepActivity == nil {
+            sleepActivity = ProcessInfo.processInfo.beginActivity(
+                options: .idleSystemSleepDisabled,
+                reason: "Downloading files"
+            )
+        } else if !active, let activity = sleepActivity {
+            ProcessInfo.processInfo.endActivity(activity)
+            sleepActivity = nil
+        }
     }
 }

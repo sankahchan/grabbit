@@ -100,6 +100,17 @@ public struct DownloadItem: Identifiable, Codable {
     public var destinationURL: URL
     public var addedAt: Date
     public var errorMessage: String?
+    /// Page the user copied this link from (used by the expired-link flow to
+    /// point them back at the source). Never a secret.
+    public var sourcePageURL: URL?
+    /// Validators captured at probe time; a mismatch on resume means the file
+    /// changed on the server (XDM resume discipline).
+    public var eTag: String?
+    public var lastModified: String?
+    /// Set when a signed URL failed with 403/410: the link expired, the file
+    /// didn't. Distinct from a generic failure so the UI can offer a
+    /// "replace URL" flow instead of a dead retry button.
+    public var linkExpired: Bool
 
     public init(
         id: UUID = UUID(),
@@ -114,7 +125,11 @@ public struct DownloadItem: Identifiable, Codable {
         sourceSite: SourceSite = .direct,
         destinationURL: URL,
         addedAt: Date = Date(),
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        sourcePageURL: URL? = nil,
+        eTag: String? = nil,
+        lastModified: String? = nil,
+        linkExpired: Bool = false
     ) {
         self.id = id
         self.url = url
@@ -129,6 +144,10 @@ public struct DownloadItem: Identifiable, Codable {
         self.destinationURL = destinationURL
         self.addedAt = addedAt
         self.errorMessage = errorMessage
+        self.sourcePageURL = sourcePageURL
+        self.eTag = eTag
+        self.lastModified = lastModified
+        self.linkExpired = linkExpired
     }
 
     /// 0...1. Uses the server-advertised total when known, otherwise falls back
@@ -173,5 +192,90 @@ public struct DownloadItem: Identifiable, Codable {
             offset += size
         }
         return segments
+    }
+}
+
+// MARK: - Phase 1 engine helpers (pure, unit-tested)
+
+extension DownloadItem {
+    /// QDM-style dynamic growth: find the largest not-yet-started segment with
+    /// at least `minSplitBytes` remaining. Returns its index and the split
+    /// point; the caller halves it and spawns a connection for the second
+    /// half. Only untouched segments are split, so there is no byte-overlap
+    /// bookkeeping at all.
+    public static func growthSplitPoint(
+        segments: [Segment],
+        maxConnections: Int,
+        minSplitBytes: Int64
+    ) -> (index: Int, mid: Int64)? {
+        let incomplete = segments.filter { !$0.isComplete }
+        guard incomplete.count < maxConnections else { return nil }
+        guard let target = incomplete
+            .filter({ $0.receivedBytes == 0 && $0.byteCount >= minSplitBytes })
+            .max(by: { $0.byteCount < $1.byteCount })
+        else { return nil }
+        return (target.index, target.startByte + target.byteCount / 2)
+    }
+
+    /// Resume honesty (QDM): never trust bookkeeping over the filesystem.
+    /// Clamps each segment's `receivedBytes` to what is actually on disk.
+    public static func reconciledSegments(_ segments: [Segment], fileSize: Int64) -> [Segment] {
+        segments.map { seg in
+            var s = seg
+            s.receivedBytes = min(seg.receivedBytes, max(0, fileSize - seg.startByte))
+            return s
+        }
+    }
+
+    /// Parses the total out of a `Content-Range` value:
+    /// "bytes 0-0/12345" -> 12345. Nil when absent or malformed.
+    public static func totalFromContentRange(_ value: String) -> Int64? {
+        guard let slash = value.lastIndex(of: "/") else { return nil }
+        return Int64(value[value.index(after: slash)...].trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Extracts a filename from a `Content-Disposition` header value.
+    /// Handles `filename="a.zip"`, `filename=a.zip`, and RFC 5987
+    /// `filename*=UTF-8''a%20b.zip`.
+    public static func filenameFromContentDisposition(_ value: String) -> String? {
+        if let star = value.range(of: "filename*=", options: .caseInsensitive) {
+            let rest = value[star.upperBound...].trimmingCharacters(in: .whitespaces)
+            if let sep = rest.range(of: "''") {
+                let encoded = rest[sep.upperBound...].prefix { $0 != ";" }
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "\" "))
+                if !encoded.isEmpty {
+                    return encoded.removingPercentEncoding ?? String(encoded)
+                }
+            }
+        }
+        guard let range = value.range(of: "filename=", options: .caseInsensitive) else { return nil }
+        let rest = value[range.upperBound...].trimmingCharacters(in: .whitespaces)
+        if rest.hasPrefix("\"") {
+            let inner = rest.dropFirst()
+            if let end = inner.firstIndex(of: "\"") {
+                let name = String(inner[..<end])
+                return name.isEmpty ? nil : name
+            }
+            return nil
+        }
+        let token = rest.prefix { $0 != ";" }.trimmingCharacters(in: .whitespaces)
+        return token.isEmpty ? nil : String(token)
+    }
+
+    /// True when the server now reports a validator we stored at probe time
+    /// and it differs: the file changed on the server, so resuming would
+    /// corrupt the download. Only compares when both sides have the value.
+    public static func validatorsChanged(
+        storedETag: String?,
+        storedLastModified: String?,
+        headers: [String: String]
+    ) -> Bool {
+        if let stored = storedETag, let current = headers["etag"], stored != current {
+            return true
+        }
+        if let stored = storedLastModified, let current = headers["last-modified"], stored != current {
+            return true
+        }
+        return false
     }
 }
