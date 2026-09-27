@@ -10,13 +10,20 @@ import Observation
 @main
 struct GrabbitApp: App {
     @State private var downloadEngine = DownloadEngine()
-    @State private var torrentEngine = TorrentEngine()
+    @State private var torrentEngine: TorrentEngine
     @State private var mediaEngine = MediaEngine()
-    @State private var settings = SettingsStore()
+    @State private var settings: SettingsStore
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
 
+    // @MainActor: TorrentEngine is main-actor-isolated, so it must be built here.
+    @MainActor
     init() {
+        // One SettingsStore shared by the app and the torrent engine (the
+        // engine reads the VPN kill-switch and seeding defaults live).
+        let sharedSettings = SettingsStore()
+        _settings = State(initialValue: sharedSettings)
+        _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings))
         // Sparkle's updater can't start in an unsigned dev build (it needs a
         // signed app + real SUPublicEDKey), and the failure pops an error
         // dialog. Only create it when it's actually usable.

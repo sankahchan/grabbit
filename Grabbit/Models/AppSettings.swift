@@ -23,6 +23,14 @@ public struct AppSettings: Codable {
     public var notificationsEnabled = true
     public var defaultConnections = 16
     public var folders: [DownloadCategory: String]
+    // Torrents (Phase 4).
+    public var vpnKillSwitchEnabled = false
+    /// Interface torrents are bound to when the kill-switch is on (e.g. "utun3").
+    public var vpnInterfaceName = ""
+    /// 0 = seed forever.
+    public var defaultSeedRatio: Double = 0
+    /// Minutes; 0 = no time limit.
+    public var defaultSeedTimeMinutes: Int = 0
 
     public static var `default`: AppSettings {
         AppSettings(folders: [
@@ -31,6 +39,33 @@ public struct AppSettings: Codable {
             .document: "~/Downloads/Grabbit/Documents",
             .other: "~/Downloads/Grabbit/Other",
         ])
+    }
+
+    // Backward-compatible decoding: settings saved before these fields
+    // existed still decode, with the new fields defaulted.
+    private enum CodingKeys: String, CodingKey {
+        case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
+        case autoResumeOnLaunch, autoUpdateEnabled, notificationsEnabled
+        case defaultConnections, folders
+        case vpnKillSwitchEnabled, vpnInterfaceName
+        case defaultSeedRatio, defaultSeedTimeMinutes
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        language = try c.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .system
+        theme = try c.decodeIfPresent(ThemeMode.self, forKey: .theme) ?? .system
+        speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
+        clipboardMonitorEnabled = try c.decodeIfPresent(Bool.self, forKey: .clipboardMonitorEnabled) ?? true
+        autoResumeOnLaunch = try c.decodeIfPresent(Bool.self, forKey: .autoResumeOnLaunch) ?? false
+        autoUpdateEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateEnabled) ?? true
+        notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        defaultConnections = try c.decodeIfPresent(Int.self, forKey: .defaultConnections) ?? 16
+        folders = try c.decodeIfPresent([DownloadCategory: String].self, forKey: .folders) ?? [:]
+        vpnKillSwitchEnabled = try c.decodeIfPresent(Bool.self, forKey: .vpnKillSwitchEnabled) ?? false
+        vpnInterfaceName = try c.decodeIfPresent(String.self, forKey: .vpnInterfaceName) ?? ""
+        defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
+        defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
     }
 }
 
