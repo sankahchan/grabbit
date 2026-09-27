@@ -11,6 +11,7 @@ import Observation
 struct GrabbitApp: App {
     @State private var downloadEngine = DownloadEngine()
     @State private var torrentEngine = TorrentEngine()
+    @State private var mediaEngine = MediaEngine()
     @State private var settings = SettingsStore()
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
@@ -49,6 +50,7 @@ struct GrabbitApp: App {
             MainView()
                 .environment(downloadEngine)
                 .environment(torrentEngine)
+                .environment(mediaEngine)
                 .environment(settings)
                 .onOpenURL { url in
                     // grabbit://download?url=… — from the browser extension,

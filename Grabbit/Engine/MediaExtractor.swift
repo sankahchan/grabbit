@@ -42,18 +42,24 @@ public enum ExtractorError: Error, LocalizedError {
 public protocol MediaExtractorProtocol {
     func detectSite(url: URL) -> SourceSite
     func listFormats(url: URL) async throws -> [MediaFormat]
-    func download(url: URL, format: MediaFormat, to: URL, progress: (Double) -> Void) async throws
+    func download(url: URL, format: MediaFormat, to: URL, progress: @Sendable @escaping (Double) -> Void) async throws
 }
 
-/// yt-dlp backed extractor. DOCUMENTED STUB: `detectSite` is real (pure host
-/// matching); `listFormats`/`download` throw `.binaryMissing` until the bundled
-/// binary is wired in a later milestone.
+/// yt-dlp backed extractor, fully wired: `listFormats` runs `yt-dlp -J`
+/// through `MediaRuntimeResolver`, `download` streams progress from a
+/// supervised `ManagedProcess`.
 public final class YTDLPMediaExtractor: MediaExtractorProtocol {
     public init() {}
 
-    /// The bundled binary ships at `<App>.app/Contents/Resources/bin/yt-dlp`.
-    private var binaryURL: URL? {
-        Bundle.main.resourceURL?.appendingPathComponent("bin/yt-dlp")
+    private var ytDlpURL: URL? {
+        try? MediaRuntimeResolver.resolve(.ytDlp).get()
+    }
+
+    private func helperBinDirs() -> [String] {
+        [.ffmpeg, .deno].compactMap {
+            guard let url = try? MediaRuntimeResolver.resolve($0).get() else { return nil }
+            return url.deletingLastPathComponent().path
+        }
     }
 
     public func detectSite(url: URL) -> SourceSite {
@@ -67,26 +73,68 @@ public final class YTDLPMediaExtractor: MediaExtractorProtocol {
     }
 
     public func listFormats(url: URL) async throws -> [MediaFormat] {
-        // Intended wiring (not yet connected — the binary ships in a later milestone):
-        //   <bundle>/bin/yt-dlp --dump-json --no-playlist "<url>"
-        // Parse each stdout JSON line's "formats" array into [MediaFormat]:
-        //   id           <- "format_id"
-        //   qualityLabel <- "format_note" ?? "resolution" ?? "format_id"
-        //   ext          <- "ext"
-        //   filesize     <- "filesize" (may be absent for DASH/HLS)
-        //   isAudioOnly  <- "vcodec" == "none"
-        // Throw .unsupportedURL for hosts yt-dlp can't handle.
-        let expected = binaryURL?.path ?? "<bundle>/bin/yt-dlp"
-        throw ExtractorError.binaryMissing(expectedPath: expected)
+        guard let ytDlp = ytDlpURL else {
+            throw ExtractorError.binaryMissing(expectedPath: expectedBinaryPath)
+        }
+        let probed = try await MediaProbe.probe(url: url, ytDlp: ytDlp, helperBinDirs: helperBinDirs()).get()
+        return probed.presets.map { preset in
+            MediaFormat(
+                // id carries the yt-dlp -f spec so download() can use it directly.
+                id: preset.formatSpec,
+                qualityLabel: preset.label,
+                ext: preset.isAudioOnly ? "mp3" : "mp4",
+                filesize: preset.estimatedSize,
+                isAudioOnly: preset.isAudioOnly)
+        }
     }
 
-    public func download(url: URL, format: MediaFormat, to destination: URL, progress: (Double) -> Void) async throws {
-        // Intended wiring:
-        //   <bundle>/bin/yt-dlp -f <format.id> --no-playlist -o "<destination.path>" "<url>"
-        // Drive `progress` by parsing the "[download]  42.3%" lines on stderr.
-        // NOTE: for sites with segmented media, an alternative is to hand the
-        // resolved direct media URL to DownloadEngine for multi-connection fetch.
-        let expected = binaryURL?.path ?? "<bundle>/bin/yt-dlp"
-        throw ExtractorError.binaryMissing(expectedPath: expected)
+    public func download(
+        url: URL,
+        format: MediaFormat,
+        to destination: URL,
+        progress: @Sendable @escaping (Double) -> Void
+    ) async throws {
+        guard let ytDlp = ytDlpURL else {
+            throw ExtractorError.binaryMissing(expectedPath: expectedBinaryPath)
+        }
+        var args = [
+            "-f", format.id,
+            "--newline", "--no-playlist", "--no-warnings", "--continue",
+            "-o", destination.path,
+        ]
+        if format.isAudioOnly {
+            args += ["-x", "--audio-format", "mp3"]
+        } else {
+            args += ["--remux-video", "mp4/mkv"]
+        }
+        if let ffmpeg = try? MediaRuntimeResolver.resolve(.ffmpeg).get() {
+            args += ["--ffmpeg-location", ffmpeg.deletingLastPathComponent().path]
+        }
+        args.append(url.absoluteString)
+
+        let proc = ManagedProcess()
+        let progressRE = try? NSRegularExpression(pattern: #"\[download\]\s+(\d+(?:\.\d+)?)%"#)
+        proc.onStdoutLine = { line in
+            guard let m = progressRE?.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+                  let r = Range(m.range(at: 1), in: line),
+                  let pct = Double(line[r])
+            else { return }
+            progress(min(1, pct / 100))
+        }
+        let result = await proc.run(
+            executable: ytDlp,
+            arguments: args,
+            environment: MediaProbe.childEnvironment(extraBinDirs: helperBinDirs()))
+        guard result.exitCode == 0 else {
+            let detail = result.stderrTail.split(separator: "\n").last.map(String.init)
+                ?? "yt-dlp exited with code \(result.exitCode)"
+            throw ExtractorError.extractionFailed(detail)
+        }
+        progress(1)
+    }
+
+    private var expectedBinaryPath: String {
+        Bundle.main.resourceURL?.appendingPathComponent("bin/yt-dlp").path
+            ?? "<bundle>/bin/yt-dlp"
     }
 }

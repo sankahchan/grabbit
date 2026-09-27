@@ -42,6 +42,23 @@ targets:
     dependencies:
       - package: Sparkle
         product: Sparkle
+    # Copies the vendored media runtime (scripts/vendor-media-runtime.sh drops
+    # binaries into Grabbit/Resources/bin, dylibs into Grabbit/Resources/lib)
+    # into the built app. Runs at build time so it works whether the binaries
+    # were vendored before or after `xcodegen generate`.
+    postBuildScripts:
+      - name: Install media runtime into Resources
+        basedOnDependencyAnalysis: false
+        script: |
+          BIN_SRC="${SRCROOT}/Grabbit/Resources/bin"
+          LIB_SRC="${SRCROOT}/Grabbit/Resources/lib"
+          RES_DST="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Resources"
+          mkdir -p "$RES_DST/bin"
+          if [ -d "$BIN_SRC" ]; then cp -f "$BIN_SRC/"* "$RES_DST/bin/" 2>/dev/null || true; fi
+          if [ -d "$LIB_SRC" ] && [ -n "$(ls -A "$LIB_SRC" 2>/dev/null)" ]; then
+            mkdir -p "$RES_DST/lib"
+            cp -f "$LIB_SRC/"* "$RES_DST/lib/"
+          fi
   GrabbitTests:
     type: bundle.unit-test
     platform: macOS

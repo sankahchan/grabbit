@@ -53,6 +53,8 @@ struct MainView: View {
             DownloadsView()
         case .torrents:
             TorrentsView()
+        case .media:
+            MediaView()
         case .grabber:
             GrabberView()
         case .scheduler:

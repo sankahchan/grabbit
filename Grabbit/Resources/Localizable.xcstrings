@@ -1581,6 +1581,329 @@
           }
         }
       }
+    },
+    "nav.media": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ"
+          }
+        }
+      }
+    },
+    "media.title": {
+      "comment": "Media tab title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ"
+          }
+        }
+      }
+    },
+    "media.runtime.title": {
+      "comment": "Media runtime status heading",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Runtime"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ အစိတ်အပိုင်းများ"
+          }
+        }
+      }
+    },
+    "media.runtime.checkUpdate": {
+      "comment": "Button: check for yt-dlp update",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for yt-dlp update"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp အပ်ဒိတ် စစ်ဆေးရန်"
+          }
+        }
+      }
+    },
+    "media.runtime.updated": {
+      "comment": "yt-dlp was updated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp updated."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp အပ်ဒိတ် လုပ်ပြီးပါပြီ။"
+          }
+        }
+      }
+    },
+    "media.runtime.upToDate": {
+      "comment": "yt-dlp already latest",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp is up to date."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp နောက်ဆုံးဗားရှင်း ဖြစ်နေပါပြီ။"
+          }
+        }
+      }
+    },
+    "media.url.title": {
+      "comment": "Media URL section heading",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download from site"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဝက်ဘ်ဆိုက်မှ ဒေါင်းလုဒ်လုပ်ရန်"
+          }
+        }
+      }
+    },
+    "media.url.placeholder": {
+      "comment": "URL field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a video or page URL…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယို သို့မဟုတ် စာမျက်နှာ URL ထည့်ပါ…"
+          }
+        }
+      }
+    },
+    "media.url.probe": {
+      "comment": "Button: probe URL for formats",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probe"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စစ်ဆေးရန်"
+          }
+        }
+      }
+    },
+    "media.url.hint": {
+      "comment": "Supported sites hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YouTube, X, TikTok, Instagram and 1000+ other sites via yt-dlp."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp မှတစ်ဆင့် YouTube, X, TikTok, Instagram အပါအဝင် ဆိုက် ၁၀၀၀ ကျော်။"
+          }
+        }
+      }
+    },
+    "media.probing": {
+      "comment": "Probing in progress",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probing formats…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖော်မတ်များ စစ်ဆေးနေသည်…"
+          }
+        }
+      }
+    },
+    "media.quality": {
+      "comment": "Quality picker label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရည်အသွေး"
+          }
+        }
+      }
+    },
+    "media.download": {
+      "comment": "Button: start media download",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်"
+          }
+        }
+      }
+    },
+    "media.clear": {
+      "comment": "Button: clear probe result",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှင်းလင်းရန်"
+          }
+        }
+      }
+    },
+    "media.cancel": {
+      "comment": "Button: cancel media download",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပယ်ဖျက်ရန်"
+          }
+        }
+      }
+    },
+    "media.completed": {
+      "comment": "Media download completed",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download complete"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် ပြီးမြောက်ပါပြီ"
+          }
+        }
+      }
+    },
+    "media.new": {
+      "comment": "Button: start over",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် အသစ်"
+          }
+        }
+      }
+    },
+    "media.failed": {
+      "comment": "Media download failed heading",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် မအောင်မြင်ပါ"
+          }
+        }
+      }
+    },
+    "media.retry": {
+      "comment": "Button: retry",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်ကြိုးစားရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

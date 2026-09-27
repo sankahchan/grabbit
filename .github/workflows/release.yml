@@ -55,20 +55,10 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Vendor yt-dlp + ffmpeg binaries
-        run: |
-          mkdir -p Grabbit/Resources/bin
-          # yt-dlp universal2 macOS build
-          curl -L -o Grabbit/Resources/bin/yt-dlp \
-            "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
-          # ffmpeg static macOS build (universal2). These URLs follow redirects
-          # to the maintainer's current release assets.
-          curl -L -o Grabbit/Resources/bin/ffmpeg \
-            "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-darwin-x64"
-          chmod +x Grabbit/Resources/bin/yt-dlp Grabbit/Resources/bin/ffmpeg
-          ls -la Grabbit/Resources/bin/
-        # NOTE: pin these to fixed release tags (see DEPENDENCIES.md) before
-        # public release — `/latest/` can break builds without warning.
+      - name: Vendor media runtime (yt-dlp, ffmpeg, ffprobe, deno)
+        run: ./scripts/vendor-media-runtime.sh
+        # NOTE: versions are pinned inside scripts/vendor-media-runtime.sh
+        # (see DEPENDENCIES.md) so builds stay reproducible.
 
       - name: Build (Release, unsigned)
         run: >
