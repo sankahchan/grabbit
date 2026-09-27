@@ -33,6 +33,17 @@ public final class DownloadEngine {
     /// Retryable segment errors seen in the current generation. Many at once
     /// means the server is throttling our connection count.
     private var generationErrors: [UUID: Int] = [:]
+    /// When the current generation launched (for slowness downshift timing).
+    private var generationStartTime: [UUID: Date] = [:]
+    private var slowStreaks: [UUID: Int] = [:]
+    private var lastSlownessCheck: [UUID: Date] = [:]
+    /// Below this sustained total speed with >1 connection, the server is
+    /// likely throttling parallel connections: halve them (same machinery
+    /// as the stall path). Checked every 15s after a 60s warmup.
+    private static let slownessThreshold: Double = 32 * 1024
+    private static let slownessCheckInterval: TimeInterval = 15
+    private static let slownessWarmup: TimeInterval = 60
+    private static let slownessStreakNeeded = 2
     /// How many times a single stalled/failed segment is retried (with
     /// backoff) before the whole download fails.
     private static let maxSegmentRetries = 5
@@ -266,6 +277,9 @@ public final class DownloadEngine {
         pendingSegments[id] = pending.count
         segmentRetries[id] = [:]
         generationErrors[id] = 0
+        generationStartTime[id] = Date()
+        slowStreaks[id] = 0
+        lastSlownessCheck[id] = nil
 
         // All transport callbacks hop to @MainActor before touching the model.
         transport.onHTTPError = { [weak self] segmentIndex, status in
@@ -312,6 +326,9 @@ public final class DownloadEngine {
         pendingSegments[id] = nil
         segmentRetries[id] = nil
         generationErrors[id] = nil
+        generationStartTime[id] = nil
+        slowStreaks[id] = nil
+        lastSlownessCheck[id] = nil
     }
 
     @MainActor
@@ -515,6 +532,33 @@ public final class DownloadEngine {
                 items[itemIndex].speedBytesPerSec = Double(last.bytes - first.bytes) / dt
             }
         }
+        checkSlowness(id: id)
+    }
+
+    /// Some servers don't stall parallel connections outright — they trickle
+    /// them (a tarpit). If sustained total speed is abysmal with >1 connection,
+    /// halve the connections: fewer connections often get *more* total speed.
+    @MainActor
+    private func checkSlowness(id: UUID) {
+        let now = Date()
+        guard now.timeIntervalSince(lastSlownessCheck[id] ?? .distantPast) >= Self.slownessCheckInterval else { return }
+        lastSlownessCheck[id] = now
+        guard let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading,
+              let genStart = generationStartTime[id],
+              now.timeIntervalSince(genStart) >= Self.slownessWarmup,
+              items[itemIndex].segments.filter({ !$0.isComplete }).count > 1
+        else { return }
+        if items[itemIndex].speedBytesPerSec < Self.slownessThreshold {
+            let streak = (slowStreaks[id] ?? 0) + 1
+            slowStreaks[id] = streak
+            if streak >= Self.slownessStreakNeeded {
+                slowStreaks[id] = 0
+                reduceConnections(id: id)
+            }
+        } else {
+            slowStreaks[id] = 0
+        }
     }
 
     @MainActor
@@ -563,6 +607,9 @@ public final class DownloadEngine {
         pendingSegments[id] = nil
         segmentRetries[id] = nil
         generationErrors[id] = nil
+        generationStartTime[id] = nil
+        slowStreaks[id] = nil
+        lastSlownessCheck[id] = nil
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         guard items[itemIndex].state == .downloading else { return } // paused/cancelled/failed already
         if items[itemIndex].segments.allSatisfy(\.isComplete) {
