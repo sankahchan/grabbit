@@ -112,8 +112,11 @@ public enum MediaProbe {
         let audios = formats.filter { $0.acodec != "none" && $0.vcodec == "none" }
         let bestAudioSize = audios.compactMap(\.filesize).max()
 
-        func sizeFor(heightCap: Int) -> Int64? {
-            let v = videos.filter { ($0.height ?? Int.max) <= heightCap }.compactMap(\.filesize).max()
+        func sizeFor(bucket: (lower: Int, cap: Int)) -> Int64? {
+            let v = videos.filter {
+                let h = $0.height ?? Int.max
+                return h > bucket.lower && h <= bucket.cap
+            }.compactMap(\.filesize).max()
             guard let v else { return nil }
             return v + (bestAudioSize ?? 0)
         }
@@ -127,18 +130,19 @@ public enum MediaProbe {
                 estimatedSize: v + (bestAudioSize ?? 0)))
         }
         // Height-capped presets, highest first. A row is only added when the
-        // probe actually lists formats at or below that height, so 4K/1440p
-        // appear only when available and degrade gracefully otherwise.
-        let rows: [(id: String, label: String, cap: Int)] = [
-            ("2160p", String(localized: "media.preset.2160p"), 2160),
-            ("1440p", String(localized: "media.preset.1440p"), 1440),
-            ("1080p", String(localized: "media.preset.1080p"), 1080),
-            ("720p", String(localized: "media.preset.720p"), 720),
-            ("480p", String(localized: "media.preset.480p"), 480),
-            ("360p", String(localized: "media.preset.360p"), 360),
+        // probe actually lists a format in that height bucket (above the next
+        // lower cap), so 4K/1440p appear only when available and lower rows
+        // never duplicate a higher one.
+        let rows: [(id: String, label: String, lower: Int, cap: Int)] = [
+            ("2160p", String(localized: "media.preset.2160p"), 1440, 2160),
+            ("1440p", String(localized: "media.preset.1440p"), 1080, 1440),
+            ("1080p", String(localized: "media.preset.1080p"), 720, 1080),
+            ("720p", String(localized: "media.preset.720p"), 480, 720),
+            ("480p", String(localized: "media.preset.480p"), 360, 480),
+            ("360p", String(localized: "media.preset.360p"), 0, 360),
         ]
-        for (id, label, cap) in rows {
-            if let size = sizeFor(heightCap: cap) {
+        for (id, label, lower, cap) in rows {
+            if let size = sizeFor(bucket: (lower, cap)) {
                 presets.append(MediaPreset(
                     id: id, label: label,
                     formatSpec: "bv*[height<=\(cap)]+ba/b[height<=\(cap)]",
