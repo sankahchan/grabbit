@@ -152,6 +152,13 @@ public actor Aria2RPC {
         try await call(method: "aria2.remove", params: [.string(gid)])
     }
 
+    /// Purges a stopped (error/completed/removed) download from the daemon.
+    /// `aria2.remove` only works on active/waiting/paused downloads, so a
+    /// retry of a failed torrent needs this before re-adding.
+    public func removeDownloadResult(gid: String) async throws {
+        try await call(method: "aria2.removeDownloadResult", params: [.string(gid)])
+    }
+
     public func getFiles(gid: String) async throws -> [Aria2File] {
         let result = try await call(method: "aria2.getFiles", params: [.string(gid)])
         guard let array = result.arrayValue else {

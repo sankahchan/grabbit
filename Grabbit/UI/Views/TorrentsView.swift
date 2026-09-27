@@ -10,9 +10,8 @@ struct TorrentsView: View {
     @Environment(\.colorScheme) private var scheme
 
     @State private var showingAdd = false
-    @State private var filesItem: TorrentItem?
-    @State private var seedingItem: TorrentItem?
     @State private var removingItem: TorrentItem?
+    @State private var detailsSubject: TaskDetailsSheet.Subject?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -53,14 +52,11 @@ struct TorrentsView: View {
         .sheet(isPresented: $showingAdd) {
             TorrentAddSheet()
         }
-        .sheet(item: $filesItem) { item in
-            TorrentFilesSheet(item: item)
-        }
-        .sheet(item: $seedingItem) { item in
-            TorrentSeedingSheet(item: item)
-        }
         .sheet(item: $removingItem) { item in
             TorrentRemoveSheet(item: item)
+        }
+        .sheet(item: $detailsSubject) { subject in
+            TaskDetailsSheet(subject: subject)
         }
     }
 
@@ -138,14 +134,21 @@ struct TorrentsView: View {
 
     private func torrentCard(for item: TorrentItem) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 8) {
                 Text(item.name)
                     .font(.headline.weight(.bold))
                     .lineLimit(1)
-                Spacer()
                 let display = TorrentDisplayStatus.of(item)
                 Text(display.localizedName)
                     .neoBadge(bg: badgeColor(for: display))
+                Spacer()
+                TaskActionBar(
+                    actions: TaskAction.actions(
+                        forTorrentState: item.state,
+                        copyLinkAvailable: TaskAction.copyableLink(for: item) != nil)
+                ) { action in
+                    handleAction(action, for: item)
+                }
             }
 
             NeoLinearBar(progress: item.progress, fill: Neo.purple)
@@ -172,49 +175,31 @@ struct TorrentsView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-
-            HStack(spacing: 8) {
-                switch item.state {
-                case .downloading, .seeding:
-                    Button(String(localized: "downloads.pause")) {
-                        torrentEngine.pause(item.id)
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
-                case .paused:
-                    Button(String(localized: "downloads.resume")) {
-                        torrentEngine.resume(item.id)
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-                case .completed, .failed:
-                    EmptyView()
-                }
-                Button(String(localized: "torrents.files")) {
-                    filesItem = item
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
-                Button(String(localized: "torrents.seeding")) {
-                    seedingItem = item
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.purple, compact: true))
-                Spacer()
-                Button(String(localized: "common.delete")) {
-                    removingItem = item
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
-            }
         }
         .neoCard()
     }
 
-    private func badgeColor(for display: TorrentDisplayStatus) -> Color {
-        switch display {
-        case .downloading: Neo.blue
-        case .waitingForMetadata: Neo.yellow
-        case .connecting: Neo.blue
-        case .seeding: Neo.green
-        case .paused: Neo.yellow
-        case .completed: Neo.green
-        case .failed: Neo.red
+    private func handleAction(_ action: TaskAction, for item: TorrentItem) {
+        switch action {
+        case .pause:
+            torrentEngine.pause(item.id)
+        case .resume:
+            if item.state == .failed {
+                torrentEngine.retry(item.id)
+            } else {
+                torrentEngine.resume(item.id)
+            }
+        case .delete:
+            // Confirmation + "delete downloaded data" option.
+            removingItem = item
+        case .openFolder:
+            FinderReveal.reveal(directory: item.savePath, named: item.name)
+        case .copyLink:
+            if let link = TaskAction.copyableLink(for: item) {
+                Clipboard.copy(link)
+            }
+        case .details:
+            detailsSubject = .torrent(item)
         }
     }
 }

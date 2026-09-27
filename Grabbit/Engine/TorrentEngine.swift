@@ -261,6 +261,30 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
     }
 
+    /// Retries a failed torrent: purges the dead daemon entry and re-adds
+    /// from the original source (magnet / URL / .torrent bytes). Files
+    /// already on disk are hash-checked by aria2, so completed pieces are
+    /// kept. No-op unless the item is currently `.failed`.
+    public func retry(_ id: UUID) {
+        guard let index = torrents.firstIndex(where: { $0.id == id }),
+              torrents[index].state == .failed else { return }
+        torrents[index].state = .downloading
+        torrents[index].errorMessage = nil
+        save()
+        Task {
+            try? await self.ensureStarted()
+            guard let rpc = self.rpc,
+                  let item = self.torrents.first(where: { $0.id == id })
+            else { return }
+            // Drop the errored daemon download first: re-adding while it
+            // lingers would dedup back onto the dead entry.
+            if let gid = item.gid {
+                try? await rpc.removeDownloadResult(gid: gid)
+            }
+            await self.readd(item)
+        }
+    }
+
     public func remove(_ id: UUID, deleteData: Bool) {
         guard let item = torrents.first(where: { $0.id == id }) else { return }
         if let gid = item.gid, let rpc {

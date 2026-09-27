@@ -9,6 +9,8 @@ struct DownloadsView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
+    @State private var deletingItem: DownloadItem?
+    @State private var detailsSubject: TaskDetailsSheet.Subject?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -34,6 +36,23 @@ struct DownloadsView: View {
         .navigationTitle(String(localized: "downloads.title"))
         .sheet(isPresented: $showingAdd) {
             AddDownloadSheet()
+        }
+        .alert(item: $deletingItem) { item in
+            // engine.remove drops the record and deletes the partial
+            // (.grabbit-part) file; a finished file on disk is kept.
+            Alert(
+                title: Text(String(localized: "downloads.remove.title")),
+                message: Text(item.state == .completed
+                    ? String(localized: "downloads.remove.keepFile")
+                    : String(localized: "downloads.remove.deletePartial")),
+                primaryButton: .destructive(Text(String(localized: "common.delete"))) {
+                    engine.remove(item.id)
+                },
+                secondaryButton: .cancel(Text(String(localized: "common.cancel")))
+            )
+        }
+        .sheet(item: $detailsSubject) { subject in
+            TaskDetailsSheet(subject: subject)
         }
     }
 
@@ -83,12 +102,15 @@ struct DownloadsView: View {
 
     private func downloadCard(for item: DownloadItem) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 8) {
                 Text(item.filename)
                     .font(.headline.weight(.bold))
                     .lineLimit(1)
-                Spacer()
                 stateBadge(for: item.state)
+                Spacer()
+                TaskActionBar(actions: TaskAction.actions(forDownload: item.state)) { action in
+                    handleAction(action, for: item)
+                }
             }
 
             HStack(spacing: 6) {
@@ -127,60 +149,31 @@ struct DownloadsView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-
-            HStack(spacing: 8) {
-                actionButtons(for: item)
-            }
         }
         .neoCard()
+    }
+
+    private func handleAction(_ action: TaskAction, for item: DownloadItem) {
+        switch action {
+        case .pause:
+            engine.pause(item.id)
+        case .resume:
+            engine.resume(item.id)
+        case .delete:
+            deletingItem = item
+        case .openFolder:
+            FinderReveal.reveal(
+                directory: item.destinationURL.deletingLastPathComponent(),
+                named: item.destinationURL.lastPathComponent)
+        case .copyLink:
+            Clipboard.copy(item.url.absoluteString)
+        case .details:
+            detailsSubject = .download(item)
+        }
     }
 
     private func stateBadge(for state: DownloadState) -> some View {
         Text(state.localizedName)
             .neoBadge(bg: badgeColor(for: state))
-    }
-
-    private func badgeColor(for state: DownloadState) -> Color {
-        switch state {
-        case .queued: Neo.paperLight
-        case .downloading: Neo.blue
-        case .paused: Neo.yellow
-        case .completed: Neo.green
-        case .failed: Neo.red
-        case .interrupted: Neo.orange
-        }
-    }
-
-    @ViewBuilder
-    private func actionButtons(for item: DownloadItem) -> some View {
-        switch item.state {
-        case .downloading:
-            Button(String(localized: "downloads.pause")) {
-                engine.pause(item.id)
-            }
-            .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
-        case .paused, .interrupted, .queued:
-            Button(String(localized: "downloads.resume")) {
-                engine.resume(item.id)
-            }
-            .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-        case .failed:
-            Button(String(localized: "common.retry")) {
-                engine.resume(item.id)
-            }
-            .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-        case .completed:
-            EmptyView()
-        }
-        if item.state != .completed {
-            Button(String(localized: "downloads.cancel")) {
-                engine.cancel(item.id)
-            }
-            .buttonStyle(NeoButtonStyle(bg: Neo.orange, compact: true))
-        }
-        Button(String(localized: "downloads.remove")) {
-            engine.remove(item.id)
-        }
-        .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
     }
 }

@@ -2686,6 +2686,278 @@
           }
         }
       }
+    },
+    "task.action.pause": {
+      "comment": "Button: pause a task",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခေတ္တရပ်"
+          }
+        }
+      }
+    },
+    "task.action.resume": {
+      "comment": "Button: resume a paused/failed task",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်စ"
+          }
+        }
+      }
+    },
+    "task.action.openFolder": {
+      "comment": "Button: open the task's download folder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open download folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်ဖိုင်တွဲဖွင့်ရန်"
+          }
+        }
+      }
+    },
+    "task.action.copyLink": {
+      "comment": "Button: copy the task's source link",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy link"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်ကူးရန်"
+          }
+        }
+      }
+    },
+    "task.action.details": {
+      "comment": "Button: open the task details sheet",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task details"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသေးစိတ်ကြည့်ရန်"
+          }
+        }
+      }
+    },
+    "task.details.title": {
+      "comment": "Title of the task details sheet",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task Details"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလုပ်အသေးစိတ်"
+          }
+        }
+      }
+    },
+    "task.details.saveTo": {
+      "comment": "Section: where the task saves",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သိမ်းမည့်နေရာ"
+          }
+        }
+      }
+    },
+    "task.details.openFinder": {
+      "comment": "Button: reveal in Finder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Finder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder တွင်ဖွင့်ရန်"
+          }
+        }
+      }
+    },
+    "task.details.progress": {
+      "comment": "Section: download progress",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တိုးတက်မှု"
+          }
+        }
+      }
+    },
+    "task.details.source": {
+      "comment": "Section: download source",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရင်းမြစ်"
+          }
+        }
+      }
+    },
+    "task.details.infoHash": {
+      "comment": "Label: torrent info hash",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info hash"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info Hash"
+          }
+        }
+      }
+    },
+    "task.details.error": {
+      "comment": "Section: failure reason",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမှား"
+          }
+        }
+      }
+    },
+    "task.details.restart": {
+      "comment": "Button: restart a download from the beginning",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart from beginning"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အစကနေပြန်စရန်"
+          }
+        }
+      }
+    },
+    "downloads.remove.title": {
+      "comment": "Alert title: confirm download removal",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove download?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်ကို ဖယ်ရှားမလား?"
+          }
+        }
+      }
+    },
+    "downloads.remove.deletePartial": {
+      "comment": "Alert message: partial data will be deleted",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The partial download data will be deleted."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တစ်ပိုင်းဒေါင်းလုဒ်ထားသော ဒေတာများ ဖျက်ပစ်မည်။"
+          }
+        }
+      }
+    },
+    "downloads.remove.keepFile": {
+      "comment": "Alert message: finished file is kept",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file on disk will be kept."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်ရပြီးသားဖိုင် ဆက်လက်ရှိနေမည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
