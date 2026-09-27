@@ -641,3 +641,39 @@ final class TrackerUpdaterTests: XCTestCase {
         XCTAssertNil(TrackerUpdater.loadCache())
     }
 }
+
+// MARK: - Torrent rename (displayName)
+
+final class TorrentRenameTests: XCTestCase {
+    func testCustomNameWinsOverMagnetDn() {
+        let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=Original+Name"
+        XCTAssertEqual(
+            TorrentEngine.resolveDisplayName(magnetOrURL: magnet, displayName: "My Rename"),
+            "My Rename")
+    }
+
+    func testCustomNameTrimmedAndBlankFallsBack() {
+        let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=Original+Name"
+        XCTAssertEqual(
+            TorrentEngine.resolveDisplayName(magnetOrURL: magnet, displayName: "  "),
+            "Original Name")
+        XCTAssertEqual(
+            TorrentEngine.resolveDisplayName(magnetOrURL: magnet, displayName: nil),
+            "Original Name")
+    }
+
+    func testUrlFallsBackToLastPathComponent() {
+        XCTAssertEqual(
+            TorrentEngine.resolveDisplayName(
+                magnetOrURL: "https://example.com/files/ubuntu.torrent", displayName: nil),
+            "ubuntu.torrent")
+    }
+
+    func testCustomNameWinsOverUrl() {
+        XCTAssertEqual(
+            TorrentEngine.resolveDisplayName(
+                magnetOrURL: "https://example.com/files/ubuntu.torrent",
+                displayName: "Ubuntu 24.04"),
+            "Ubuntu 24.04")
+    }
+}

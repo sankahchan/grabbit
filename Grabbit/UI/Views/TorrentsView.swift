@@ -230,6 +230,8 @@ struct TorrentAddSheet: View {
     @State private var input = ""
     @State private var torrentData: Data?
     @State private var torrentName: String?
+    @State private var rename = ""
+    @State private var destinationOverride: URL?
     @State private var showingPicker = false
     @State private var errorMessage: String?
     @State private var adding = false
@@ -273,6 +275,36 @@ struct TorrentAddSheet: View {
                 Text(errorMessage)
                     .font(.caption)
                     .foregroundStyle(Neo.red)
+            }
+
+            // MARK: Rename (optional)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(String(localized: "torrents.add.rename"))
+                    .font(.headline)
+                TextField(
+                    String(localized: "torrents.add.rename"),
+                    text: $rename,
+                    prompt: Text(String(localized: "torrents.add.rename.placeholder"))
+                )
+                .textFieldStyle(.roundedBorder)
+            }
+
+            // MARK: Save folder (optional override)
+            HStack {
+                Text(String(localized: "add.destination"))
+                    .font(.headline)
+                Spacer()
+                Text(destinationURL.path)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Button(String(localized: "add.destination.choose")) {
+                    if let url = chooseDirectory(initial: destinationURL) {
+                        destinationOverride = url
+                    }
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
             }
 
             HStack {
@@ -324,16 +356,20 @@ struct TorrentAddSheet: View {
     private func addTorrent() {
         adding = true
         errorMessage = nil
-        let savePath = settings.folderURL(for: .other)
+        let savePath = destinationURL
+        let customName = rename.trimmingCharacters(in: .whitespacesAndNewlines)
         let engine = torrentEngine
         Task {
             do {
                 if mode == 0 {
                     try await engine.add(
                         magnetOrURL: input.trimmingCharacters(in: .whitespacesAndNewlines),
-                        savePath: savePath)
+                        savePath: savePath,
+                        displayName: customName.isEmpty ? nil : customName)
                 } else if let data = torrentData {
-                    try await engine.addTorrentFile(data, savePath: savePath, name: torrentName)
+                    try await engine.addTorrentFile(
+                        data, savePath: savePath,
+                        name: customName.isEmpty ? torrentName : customName)
                 }
                 dismiss()
             } catch {
@@ -341,6 +377,10 @@ struct TorrentAddSheet: View {
                 adding = false
             }
         }
+    }
+
+    private var destinationURL: URL {
+        destinationOverride ?? settings.folderURL(for: .other)
     }
 }
 

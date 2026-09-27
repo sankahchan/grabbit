@@ -3281,6 +3281,108 @@
           }
         }
       }
+    },
+    "add.filename.label": {
+      "comment": "Add download sheet: custom filename field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename (optional)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်အမည် (ရွေးချယ်ရန်)"
+          }
+        }
+      }
+    },
+    "add.filename.placeholder": {
+      "comment": "Add download sheet: filename placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty = use the server's name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချန်ထားလျှင် server ပေးသည့်အမည် သုံးမည်"
+          }
+        }
+      }
+    },
+    "add.headers.title": {
+      "comment": "Add download sheet: optional per-download headers",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request headers"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request header များ"
+          }
+        }
+      }
+    },
+    "add.headers.note": {
+      "comment": "Add download sheet: headers explanation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent with every connection — for downloads that need a login. The browser extension fills these in automatically."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection တိုင်းနှင့် အတူပို့မည် — login လိုသော download များအတွက်။ Browser extension က အလိုအလျောက် ဖြည့်ပေးသည်။"
+          }
+        }
+      }
+    },
+    "torrents.add.rename": {
+      "comment": "Add torrent sheet: custom display name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename (optional)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမည်ပြောင်းရန် (ရွေးချယ်ရန်)"
+          }
+        }
+      }
+    },
+    "torrents.add.rename.placeholder": {
+      "comment": "Add torrent sheet: rename placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty = use the torrent's name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချန်ထားလျှင် torrent ၏အမည် သုံးမည်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

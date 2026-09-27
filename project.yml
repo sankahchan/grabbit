@@ -39,6 +39,8 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: "Grabbit download URL"
             CFBundleURLSchemes: ["grabbit"]
+          - CFBundleURLName: "Magnet link"
+            CFBundleURLSchemes: ["magnet"]
     dependencies:
       - package: Sparkle
         product: Sparkle

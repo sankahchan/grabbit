@@ -14,11 +14,16 @@ struct AddDownloadSheet: View {
 
     @State private var urlString = ""
     @State private var detectedSite: SourceSite = .other
+    @State private var customFilename = ""
     @State private var quality = "best"
     @State private var format: MediaFormat = .video
     @State private var category: DownloadCategory = .other
     @State private var connections: Int = 8
     @State private var destinationOverride: URL?
+    @State private var referer = ""
+    @State private var cookie = ""
+    @State private var authorization = ""
+    @State private var userAgent = ""
     @State private var isAdding = false
 
     enum MediaFormat: String, CaseIterable {
@@ -47,6 +52,18 @@ struct AddDownloadSheet: View {
                         .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 }
                 siteBadge
+            }
+
+            // MARK: Filename (optional rename)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(String(localized: "add.filename.label"))
+                    .font(.headline)
+                TextField(
+                    String(localized: "add.filename.label"),
+                    text: $customFilename,
+                    prompt: Text(String(localized: "add.filename.placeholder"))
+                )
+                .textFieldStyle(.roundedBorder)
             }
 
             // MARK: Quality chips
@@ -111,6 +128,23 @@ struct AddDownloadSheet: View {
                 Spacer()
             }
 
+            // MARK: Request headers (optional)
+            // For downloads behind a login: the browser extension captures
+            // these automatically, but a manual add can supply them here.
+            DisclosureGroup(String(localized: "add.headers.title")) {
+                VStack(spacing: 8) {
+                    headerField(label: "Referer", text: $referer)
+                    headerField(label: "Cookie", text: $cookie)
+                    headerField(label: "Authorization", text: $authorization)
+                    headerField(label: "User-Agent", text: $userAgent)
+                    Text(String(localized: "add.headers.note"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.top, 4)
+            }
+
             Spacer()
 
             // MARK: Actions
@@ -166,6 +200,16 @@ struct AddDownloadSheet: View {
         q == "best" ? String(localized: "add.quality.best") : q
     }
 
+    private func headerField(label: String, text: Binding<String>) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 110, alignment: .leading)
+            TextField(label, text: text)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
     private var destinationURL: URL {
         destinationOverride ?? settings.folderURL(for: category)
     }
@@ -188,9 +232,20 @@ struct AddDownloadSheet: View {
         else { return }
         isAdding = true
         let lastComponent = url.lastPathComponent
-        let filename = (lastComponent.isEmpty || lastComponent == "/")
+        let serverName = (lastComponent.isEmpty || lastComponent == "/")
             ? String(localized: "common.unknown")
             : lastComponent
+        let custom = customFilename.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filename = custom.isEmpty ? serverName : custom
+        var headers: [String: String] = [:]
+        let referer = referer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cookie = cookie.trimmingCharacters(in: .whitespacesAndNewlines)
+        let authorization = authorization.trimmingCharacters(in: .whitespacesAndNewlines)
+        let userAgent = userAgent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !referer.isEmpty { headers["Referer"] = referer }
+        if !cookie.isEmpty { headers["Cookie"] = cookie }
+        if !authorization.isEmpty { headers["Authorization"] = authorization }
+        if !userAgent.isEmpty { headers["User-Agent"] = userAgent }
         let site: SourceSite = detectedSite == .other ? .direct : detectedSite
         let destination = destinationURL
         let engine = engine
@@ -201,7 +256,8 @@ struct AddDownloadSheet: View {
                 category: category,
                 sourceSite: site,
                 connections: connections,
-                destination: destination
+                destination: destination,
+                headers: headers.isEmpty ? nil : headers
             )
             dismiss()
         }

@@ -76,6 +76,17 @@ struct GrabbitApp: App {
                 .environment(historyStore)
                 .environment(settings)
                 .onOpenURL { url in
+                    // magnet:?xt=… — handed to the torrent engine (clicking a
+                    // magnet link anywhere opens Grabbit).
+                    if url.scheme?.lowercased() == "magnet" {
+                        let magnet = url.absoluteString
+                        let savePath = settings.folderURL(for: .other)
+                        Task { @MainActor in
+                            try? await torrentEngine.add(
+                                magnetOrURL: magnet, savePath: savePath)
+                        }
+                        return
+                    }
                     // grabbit://download?url=… — from the browser extension,
                     // Shortcuts, or anywhere else.
                     guard let request = GrabbitURLScheme.parse(url) else { return }

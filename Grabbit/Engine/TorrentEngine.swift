@@ -191,7 +191,26 @@ public final class TorrentEngine: TorrentEngineProtocol {
         return settings.folderURL(for: .other)
     }
 
-    public func add(magnetOrURL: String, savePath: URL) async throws {
+    /// Resolves the display name for a new torrent: the user's custom
+    /// rename wins; otherwise the magnet's `dn` param (HTML entities
+    /// decoded) or the URL's last path component. Pure — tested.
+    static func resolveDisplayName(magnetOrURL input: String, displayName: String?) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let custom = displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !custom.isEmpty
+        {
+            return custom
+        }
+        if MagnetParser.isMagnet(trimmed) {
+            return MagnetParser.displayName(for: trimmed) ?? trimmed
+        }
+        if let last = URL(string: trimmed)?.lastPathComponent, !last.isEmpty {
+            return last
+        }
+        return trimmed
+    }
+
+    public func add(magnetOrURL: String, savePath: URL, displayName: String? = nil) async throws {
         let input = magnetOrURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { throw TorrentError.invalidInput }
         let dir = resolvedSaveDir(savePath)
@@ -201,17 +220,16 @@ public final class TorrentEngine: TorrentEngineProtocol {
            url.scheme?.lowercased().hasPrefix("http") == true
         {
             let (data, _) = try await URLSession.shared.data(from: url)
-            try await addTorrentFile(data, savePath: dir, name: url.lastPathComponent)
+            try await addTorrentFile(
+                data, savePath: dir,
+                name: Self.resolveDisplayName(magnetOrURL: input, displayName: displayName))
             return
         }
         try await ensureStarted()
         guard let rpc else { throw TorrentError.daemonFailed("RPC not connected") }
 
         let isMagnet = MagnetParser.isMagnet(input)
-        let name = isMagnet
-            ? (MagnetParser.displayName(for: input) ?? input)
-            : (URL(string: input)?.lastPathComponent.isEmpty == false
-                ? URL(string: input)!.lastPathComponent : input)
+        let name = Self.resolveDisplayName(magnetOrURL: input, displayName: displayName)
         let item = TorrentItem(
             name: name,
             magnetURI: isMagnet ? input : "",
