@@ -28,6 +28,11 @@ public final class DownloadEngine {
     private var pendingSegments: [UUID: Int] = [:]
     private var launchGeneration: [UUID: Int] = [:]
     private var speedSamples: [UUID: [(date: Date, bytes: Int64)]] = [:]
+    /// Consecutive retry attempts per segment (reset on every launch).
+    private var segmentRetries: [UUID: [Int: Int]] = [:]
+    /// How many times a single stalled/failed segment is retried (with
+    /// backoff) before the whole download fails.
+    private static let maxSegmentRetries = 5
 
     public init(resumeStore: ResumeStore = ResumeStore()) {
         self.resumeStore = resumeStore
@@ -256,6 +261,7 @@ public final class DownloadEngine {
         let transport = SegmentTransport()
         transports[id] = transport
         pendingSegments[id] = pending.count
+        segmentRetries[id] = [:]
 
         // All transport callbacks hop to @MainActor before touching the model.
         transport.onHTTPError = { [weak self] segmentIndex, status in
@@ -271,7 +277,7 @@ public final class DownloadEngine {
             Task { await self?.handleSegmentComplete(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived, generation: generation) }
         }
         transport.onError = { [weak self] segmentIndex, error in
-            Task { await self?.handleSegmentError(id: id, error: error, generation: generation) }
+            Task { await self?.handleSegmentError(id: id, segmentIndex: segmentIndex, error: error, generation: generation) }
         }
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -300,6 +306,7 @@ public final class DownloadEngine {
         transports[id]?.cancelAll()
         transports[id] = nil
         pendingSegments[id] = nil
+        segmentRetries[id] = nil
     }
 
     @MainActor
@@ -343,13 +350,66 @@ public final class DownloadEngine {
     }
 
     @MainActor
-    private func handleSegmentError(id: UUID, error: Error, generation: Int) {
+    private func handleSegmentError(id: UUID, segmentIndex: Int, error: Error, generation: Int) {
         guard isCurrentGeneration(id: id, generation: generation) else { return }
-        if error is TransportError {
-            fail(id: id, message: "Download ended before all segments completed.")
-        } else {
+        guard isRetryable(error) else {
             fail(id: id, message: error.localizedDescription)
+            return
         }
+        let attempts = (segmentRetries[id]?[segmentIndex] ?? 0) + 1
+        guard attempts <= Self.maxSegmentRetries else {
+            fail(id: id, message: error.localizedDescription)
+            return
+        }
+        segmentRetries[id, default: [:]][segmentIndex] = attempts
+        // Exponential backoff: 2s, 4s, 8s, 16s, 30s. Gives a flaky server
+        // or a brief network drop time to recover before we reconnect.
+        let delay = min(30.0, pow(2.0, Double(attempts)))
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            await self?.retrySegment(id: id, segmentIndex: segmentIndex, generation: generation)
+        }
+    }
+
+    /// Transient segment failures are retried in place (aria2-style): the
+    /// segment reconnects and resumes from its last received byte instead of
+    /// failing the whole download.
+    @MainActor
+    private func retrySegment(id: UUID, segmentIndex: Int, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation),
+              let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading,
+              let seg = items[itemIndex].segments.first(where: { $0.index == segmentIndex }),
+              !seg.isComplete,
+              let transport = transports[id]
+        else { return }
+        let item = items[itemIndex]
+        let wholeFile = item.segments.count == 1
+        let coversWhole = wholeFile
+            && seg.startByte == 0
+            && seg.receivedBytes == 0
+            && (seg.endByte == Int64.max
+                || item.totalBytes.map { seg.endByte == $0 - 1 } ?? false)
+        transport.startSegment(
+            index: seg.index,
+            url: item.url,
+            start: seg.startByte + seg.receivedBytes,
+            end: seg.endByte,
+            coversWholeFile: coversWhole,
+            partialURL: resumeStore.partialFileURL(for: item)
+        )
+    }
+
+    private func isRetryable(_ error: Error) -> Bool {
+        if let clientError = error as? HTTP1Client.ClientError {
+            return clientError.isRetryable
+        }
+        // Truncated stream: the server closed early; resuming continues it.
+        if error is TransportError {
+            return true
+        }
+        // Anything else (e.g. file write errors) fails fast.
+        return false
     }
 
     @MainActor
@@ -422,6 +482,7 @@ public final class DownloadEngine {
         guard launchGeneration[id] == generation else { return } // superseded relaunch
         transports[id] = nil
         pendingSegments[id] = nil
+        segmentRetries[id] = nil
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         guard items[itemIndex].state == .downloading else { return } // paused/cancelled/failed already
         if items[itemIndex].segments.allSatisfy(\.isComplete) {
@@ -466,6 +527,7 @@ public final class DownloadEngine {
         items[itemIndex].errorMessage = message
         items[itemIndex].speedBytesPerSec = 0
         speedSamples[id] = nil
+        segmentRetries[id] = nil
         persistItem(id: id)
     }
 

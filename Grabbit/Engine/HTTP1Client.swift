@@ -47,6 +47,17 @@ final class HTTP1Client {
             case .malformedResponse: "The server sent a malformed response."
             }
         }
+
+        /// Transient network failures are worth retrying; configuration
+        /// errors (bad URL, redirect loops) will just fail again.
+        var isRetryable: Bool {
+            switch self {
+            case .connectTimeout, .idleTimeout, .connectionFailed, .malformedResponse:
+                true
+            case .unsupportedScheme, .badURL, .tooManyRedirects, .redirectWithoutLocation:
+                false
+            }
+        }
     }
 
     var onEvent: ((Event) -> Void)?
