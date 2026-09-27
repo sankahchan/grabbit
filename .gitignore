@@ -1,0 +1,37 @@
+# Xcode / macOS / Swift
+*.xcodeproj/
+*.xcworkspace/
+!*.xcworkspace/xcshareddata/
+xcuserdata/
+DerivedData/
+build/
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Release artifacts
+*.dmg
+dist/
+
+# Vendored binaries (downloaded by release.yml, not committed)
+Grabbit/Resources/bin/
+
+# Secrets — never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision
+*secret*
+*credentials*

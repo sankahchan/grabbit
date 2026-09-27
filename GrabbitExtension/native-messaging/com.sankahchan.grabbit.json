@@ -1,0 +1,1 @@
+{"allowed_origins":["chrome-extension://REPLACE_WITH_EXTENSION_ID/"],"description":"Grabbit native messaging host","name":"com.sankahchan.grabbit","path":"/Applications/Grabbit.app/Contents/MacOS/Grabbit","type":"stdio"}

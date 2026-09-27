@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Grabbit</title>
+    <link>https://github.com/sankahchan/grabbit/releases</link>
+    <description>Grabbit for macOS — release feed</description>
+    <language>en</language>
+    <item>
+      <title>v0.1.0</title>
+      <pubDate>Sat, 27 Sep 2026 00:00:00 +0000</pubDate>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v0.1.0/Grabbit-0.1.0.dmg" sparkle:version="0.1.0" sparkle:shortVersionString="0.1.0" type="application/octet-stream"/>
+    </item>
+  </channel>
+</rss>

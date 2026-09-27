@@ -1,0 +1,177 @@
+import SwiftUI
+
+/// Settings tab: neo-styled cards for appearance, language, downloads,
+/// updates, and general. Everything binds to `SettingsStore` and persists
+/// via `save()` on change.
+struct SettingsView: View {
+    @Environment(SettingsStore.self) private var store: SettingsStore
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        @Bindable var store = store
+        let settings = $store.settings
+
+        ScrollView {
+            VStack(spacing: 16) {
+                appearanceCard(settings: settings)
+                languageCard(settings: settings)
+                downloadsCard(settings: settings)
+                updatesCard(settings: settings)
+                generalCard(settings: settings)
+            }
+            .padding(16)
+        }
+        .navigationTitle(String(localized: "settings.title"))
+        .onChange(of: store.settings.theme) { _, _ in store.save() }
+        .onChange(of: store.settings.language, handleLanguageChange)
+        .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
+        .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
+        .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
+        .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
+        .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
+        .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
+    }
+
+    // MARK: - Language
+
+    /// Applies the language via the AppleLanguages default; it only takes
+    /// effect on next launch (see `settings.language.note`).
+    private func handleLanguageChange(_ old: AppLanguage, _ new: AppLanguage) {
+        switch new {
+        case .system:
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        case .en:
+            UserDefaults.standard.set(["en"], forKey: "AppleLanguages")
+        case .my:
+            UserDefaults.standard.set(["my"], forKey: "AppleLanguages")
+        }
+        store.save()
+    }
+
+    // MARK: - Sections
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.headline.weight(.heavy))
+            .textCase(.uppercase)
+    }
+
+    private func appearanceCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.appearance"))
+            Picker(String(localized: "settings.theme"), selection: settings.theme) {
+                Text(String(localized: "settings.theme.system")).tag(ThemeMode.system)
+                Text(String(localized: "settings.theme.light")).tag(ThemeMode.light)
+                Text(String(localized: "settings.theme.dark")).tag(ThemeMode.dark)
+            }
+            .pickerStyle(.segmented)
+        }
+        .neoCard()
+    }
+
+    private func languageCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.language"))
+            // Autonyms are shown in their own language by convention.
+            Picker(String(localized: "settings.section.language"), selection: settings.language) {
+                Text(String(localized: "settings.theme.system")).tag(AppLanguage.system)
+                Text("English").tag(AppLanguage.en)
+                Text("မြန်မာ").tag(AppLanguage.my)
+            }
+            .pickerStyle(.segmented)
+            Text(String(localized: "settings.language.note"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .neoCard()
+    }
+
+    private func downloadsCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.downloads"))
+            ForEach(DownloadCategory.allCases, id: \.self) { category in
+                folderRow(for: category, settings: settings)
+            }
+            Divider()
+            speedLimitRow(settings: settings)
+            Toggle(String(localized: "settings.clipboard"), isOn: settings.clipboardMonitorEnabled)
+            Toggle(String(localized: "settings.autoResume"), isOn: settings.autoResumeOnLaunch)
+        }
+        .neoCard()
+    }
+
+    private func updatesCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.updates"))
+            Toggle(String(localized: "settings.autoUpdate"), isOn: settings.autoUpdateEnabled)
+            Button(String(localized: "settings.checkNow")) {
+                checkForUpdates()
+            }
+            .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
+        }
+        .neoCard()
+    }
+
+    private func generalCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(String(localized: "settings.section.general"))
+            Toggle(String(localized: "settings.notifications"), isOn: settings.notificationsEnabled)
+        }
+        .neoCard()
+    }
+
+    // MARK: - Rows
+
+    private func folderRow(for category: DownloadCategory, settings: Binding<AppSettings>) -> some View {
+        HStack {
+            Text(String(localized: "settings.folders.\(category.rawValue)"))
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Text(currentFolderPath(for: category, settings: settings))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Button(String(localized: "add.destination.choose")) {
+                if let url = chooseDirectory(initial: URL(fileURLWithPath: currentFolderPath(for: category, settings: settings))) {
+                    settings.wrappedValue.folders[category] = url.path
+                    store.save()
+                }
+            }
+            .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+        }
+    }
+
+    private func currentFolderPath(for category: DownloadCategory, settings: Binding<AppSettings>) -> String {
+        settings.wrappedValue.folders[category] ?? store.folderURL(for: category).path
+    }
+
+    private func speedLimitRow(settings: Binding<AppSettings>) -> some View {
+        let mb = Binding<Int>(
+            get: { Int(settings.wrappedValue.speedLimitBytesPerSec / 1_048_576) },
+            set: {
+                settings.wrappedValue.speedLimitBytesPerSec = Int64($0) * 1_048_576
+                store.save()
+            }
+        )
+        return HStack {
+            Text(String(localized: "settings.speedLimit"))
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Stepper(value: mb, in: 0...2000) {
+                Text(mb.wrappedValue == 0
+                     ? String(localized: "settings.speedLimit.unlimited")
+                     : "\(mb.wrappedValue) MB/s")
+                    .font(.subheadline)
+            }
+        }
+    }
+
+    // MARK: - Updates
+
+    /// Sparkle hookup point: call
+    /// `SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil).checkForUpdates(nil)`
+    /// here once the Sparkle package is integrated.
+    private func checkForUpdates() {
+    }
+}

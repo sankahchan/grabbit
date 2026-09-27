@@ -1,0 +1,138 @@
+name: Release
+
+# Tag a release with `git tag vX.Y.Z && git push origin vX.Y.Z`.
+# This workflow builds the Release DMG, publishes it as a GitHub Release
+# asset, and updates appcast.xml on main so Sparkle picks up the update.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  SCHEME: Grabbit
+
+jobs:
+  release:
+    name: Build DMG + publish release
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache SwiftPM packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/SourcePackages
+            .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Vendor yt-dlp + ffmpeg binaries
+        run: |
+          mkdir -p Grabbit/Resources/bin
+          # yt-dlp universal2 macOS build
+          curl -L -o Grabbit/Resources/bin/yt-dlp \
+            "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
+          # ffmpeg static macOS build (universal2). These URLs follow redirects
+          # to the maintainer's current release assets.
+          curl -L -o Grabbit/Resources/bin/ffmpeg \
+            "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-darwin-x64"
+          chmod +x Grabbit/Resources/bin/yt-dlp Grabbit/Resources/bin/ffmpeg
+          ls -la Grabbit/Resources/bin/
+        # NOTE: pin these to fixed release tags (see DEPENDENCIES.md) before
+        # public release — `/latest/` can break builds without warning.
+
+      - name: Build (Release, unsigned)
+        run: >
+          xcodebuild -scheme Grabbit
+          -configuration Release
+          -destination 'platform=macOS'
+          build
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGNING_ALLOWED=NO
+        # TODO: sign with Developer ID + notarize + enable Hardened Runtime
+        # before public distribution. Grabbit is not sandboxed (arbitrary file
+        # writes, subprocesses, native-messaging stdio), so users will get a
+        # Gatekeeper warning on unsigned builds.
+
+      - name: Locate built app
+        id: app
+        run: |
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData \
+            -name "Grabbit.app" -maxdepth 4 -type d | head -n 1)
+          echo "path=$APP_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist
+          TAG="${GITHUB_REF_NAME}"
+          hdiutil create -volname "Grabbit" \
+            -srcfolder "${{ steps.app.outputs.path }}" \
+            -ov -format UDZO "dist/Grabbit-${TAG}.dmg"
+          ls -la dist/
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "$TAG" "dist/Grabbit-${TAG}.dmg" \
+            --title "$TAG" \
+            --notes "Grabbit $TAG — macOS 14+ (Apple Silicon).
+
+          Download the DMG below, drag Grabbit.app to Applications, and launch.
+          Auto-updates are delivered via Sparkle once this version is installed.
+          Unsigned build: Developer ID signing + notarization are on the TODO list before public distribution."
+
+      - name: Update appcast.xml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          DMG_URL="https://github.com/sankahchan/grabbit/releases/download/${TAG}/Grabbit-${TAG}.dmg"
+          PUBDATE=$(date -u +"%a, %d %b %Y %H:%M:%S %z")
+          cat > /tmp/update_appcast.py <<'PYEOF'
+          import re, sys
+          tag, version, dmg_url, pubdate = sys.argv[1:5]
+          path = "appcast.xml"
+          src = open(path).read()
+          item = (
+              "    <item>\n"
+              f"      <title>{tag}</title>\n"
+              f"      <pubDate>{pubdate}</pubDate>\n"
+              f'      <enclosure url="{dmg_url}" sparkle:version="{version}" '
+              f'sparkle:shortVersionString="{version}" type="application/octet-stream"/>\n'
+              "    </item>\n"
+              "  </channel>"
+          )
+          new = re.sub(r"  </channel>", item, src, count=1)
+          open(path, "w").write(new)
+          print(f"appcast.xml updated for {tag}")
+          PYEOF
+          python3 /tmp/update_appcast.py "$TAG" "$VERSION" "$DMG_URL" "$PUBDATE"
+          # Honest note: proper Sparkle 2 delta/signature support needs
+          # SUPublicEDKey configured in the app and sparkle:edSignature on the
+          # enclosure, generated with the generate_appcast tool and the private
+          # Ed25519 key. That is a TODO until Developer ID signing is set up;
+          # the enclosure above is enough for Sparkle to notify + download.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml
+          git commit -m "Release $TAG: update appcast.xml"
+          git push origin HEAD:main

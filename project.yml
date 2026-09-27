@@ -1,0 +1,57 @@
+name: Grabbit
+options:
+  deploymentTarget:
+    macOS: "14.0"
+configs:
+  Debug: debug
+  Release: release
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.5.0"
+targets:
+  Grabbit:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Grabbit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sankahchan.grabbit
+        PRODUCT_NAME: Grabbit
+        ARCHS: arm64
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+    info:
+      properties:
+        CFBundleShortVersionString: 0.1.0
+        CFBundleVersion: "1"
+        NSHumanReadableCopyright: Copyright © 2026 sankahchan
+        LSMinimumSystemVersion: "14.0"
+        SUFeedURL: https://github.com/sankahchan/grabbit/releases/latest/download/appcast.xml
+        SUPublicEDKey: "TODO: run Sparkle's generate_keys tool and paste the public key here before public distribution"
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
+  GrabbitTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: GrabbitTests
+    dependencies:
+      - target: Grabbit
+schemes:
+  Grabbit:
+    build:
+      targets:
+        Grabbit: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - GrabbitTests

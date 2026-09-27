@@ -1,0 +1,1570 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "nav.downloads": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ"
+          }
+        }
+      }
+    },
+    "nav.torrents": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်များ"
+          }
+        }
+      }
+    },
+    "nav.grabber": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabber"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဂရပ်ဘာ"
+          }
+        }
+      }
+    },
+    "nav.scheduler": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduler"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိန်ဇယား"
+          }
+        }
+      }
+    },
+    "nav.settings": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆက်တင်များ"
+          }
+        }
+      }
+    },
+    "downloads.title": {
+      "comment": "Downloads list title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ"
+          }
+        }
+      }
+    },
+    "downloads.empty.title": {
+      "comment": "Empty state title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No downloads yet"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ မရှိသေးပါ"
+          }
+        }
+      }
+    },
+    "downloads.empty.hint": {
+      "comment": "Empty state hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a link or grab media from your browser to get started."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်တစ်ခုကူးထည့်ပါ သို့မဟုတ် ဘရောက်ဇာမှ မီဒီယာယူပြီး စတင်ပါ။"
+          }
+        }
+      }
+    },
+    "downloads.resumeAll": {
+      "comment": "Toolbar button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံးပြန်စ"
+          }
+        }
+      }
+    },
+    "downloads.recovered.title": {
+      "comment": "Recovery banner title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrupted downloads found"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြတ်တောက်ခဲ့သော ဒေါင်းလုဒ်များ တွေ့ရှိသည်"
+          }
+        }
+      }
+    },
+    "downloads.pause": {
+      "comment": "Row action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခေတ္တရပ်"
+          }
+        }
+      }
+    },
+    "downloads.resume": {
+      "comment": "Row action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်စ"
+          }
+        }
+      }
+    },
+    "downloads.cancel": {
+      "comment": "Row action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပယ်ဖျက်"
+          }
+        }
+      }
+    },
+    "downloads.remove": {
+      "comment": "Row action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖယ်ရှား"
+          }
+        }
+      }
+    },
+    "downloads.eta": {
+      "comment": "Column header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ETA"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကျန်အချိန်"
+          }
+        }
+      }
+    },
+    "downloads.speed": {
+      "comment": "Column header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြန်နှုန်း"
+          }
+        }
+      }
+    },
+    "downloads.add": {
+      "comment": "Toolbar button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်ထည့်"
+          }
+        }
+      }
+    },
+    "downloads.segments": {
+      "comment": "Setting label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segments"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပိုင်းများ"
+          }
+        }
+      }
+    },
+    "add.title": {
+      "comment": "Add sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်အသစ်"
+          }
+        }
+      }
+    },
+    "add.url.label": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်"
+          }
+        }
+      }
+    },
+    "add.url.placeholder": {
+      "comment": "Field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://example.com/video.mp4"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://example.com/video.mp4"
+          }
+        }
+      }
+    },
+    "add.site.detected": {
+      "comment": "Detected site, %@ = site name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected: %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ တွေ့ရှိသည်"
+          }
+        }
+      }
+    },
+    "add.site.unknown": {
+      "comment": "Detected site fallback",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown site"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မသိသောဆိုက်"
+          }
+        }
+      }
+    },
+    "add.quality": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရည်အသွေး"
+          }
+        }
+      }
+    },
+    "add.quality.best": {
+      "comment": "Quality option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကောင်းဆုံး"
+          }
+        }
+      }
+    },
+    "add.format": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖော်မတ်"
+          }
+        }
+      }
+    },
+    "add.format.video": {
+      "comment": "Format option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယို"
+          }
+        }
+      }
+    },
+    "add.format.audio": {
+      "comment": "Format option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံ"
+          }
+        }
+      }
+    },
+    "add.category": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမျိုးအစား"
+          }
+        }
+      }
+    },
+    "add.destination": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သိမ်းမည့်နေရာ"
+          }
+        }
+      }
+    },
+    "add.destination.choose": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွေးချယ်…"
+          }
+        }
+      }
+    },
+    "add.start": {
+      "comment": "Primary button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်စတင်"
+          }
+        }
+      }
+    },
+    "add.cancel": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပယ်ဖျက်"
+          }
+        }
+      }
+    },
+    "torrents.title": {
+      "comment": "Torrents list title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်များ"
+          }
+        }
+      }
+    },
+    "torrents.add": {
+      "comment": "Toolbar button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Torrent"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်ထည့်"
+          }
+        }
+      }
+    },
+    "torrents.add.placeholder": {
+      "comment": "Field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet link or .torrent file URL"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet လင့်ခ် သို့မဟုတ် .torrent ဖိုင်လင့်ခ်"
+          }
+        }
+      }
+    },
+    "torrents.seeds": {
+      "comment": "Column header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeds"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီးဒ်များ"
+          }
+        }
+      }
+    },
+    "torrents.peers": {
+      "comment": "Column header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peers"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပီယာများ"
+          }
+        }
+      }
+    },
+    "torrents.ratio": {
+      "comment": "Column header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ratio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိုး"
+          }
+        }
+      }
+    },
+    "torrents.empty": {
+      "comment": "Empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No torrents yet"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တောရန့်များ မရှိသေးပါ"
+          }
+        }
+      }
+    },
+    "grabber.title": {
+      "comment": "Grabber tab title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Grabber"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဝက်ဘ်ဂရပ်ဘာ"
+          }
+        }
+      }
+    },
+    "grabber.status.connected": {
+      "comment": "Extension status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension connected"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension ချိတ်ဆက်ထားသည်"
+          }
+        }
+      }
+    },
+    "grabber.status.disconnected": {
+      "comment": "Extension status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension not detected"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension မတွေ့ရှိပါ"
+          }
+        }
+      }
+    },
+    "grabber.detected.title": {
+      "comment": "Section title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တွေ့ရှိသော မီဒီယာများ"
+          }
+        }
+      }
+    },
+    "grabber.detected.empty": {
+      "comment": "Empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No media detected on the current tab"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လက်ရှိတက်ဘ်တွင် မီဒီယာ မတွေ့ရှိပါ"
+          }
+        }
+      }
+    },
+    "grabber.grab": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grab"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယူ"
+          }
+        }
+      }
+    },
+    "grabber.hint": {
+      "comment": "Setup hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install the Grabbit browser extension to grab videos from any page, including Telegram Web."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စာမျက်နှာတိုင်းမှ ဗီဒီယိုများယူရန် Grabbit browser extension ကို ထည့်သွင်းပါ (Telegram Web အပါအဝင်)။"
+          }
+        }
+      }
+    },
+    "scheduler.title": {
+      "comment": "Scheduler title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduler"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိန်ဇယား"
+          }
+        }
+      }
+    },
+    "scheduler.empty": {
+      "comment": "Empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scheduled tasks"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စီစဉ်ထားသော လုပ်ဆောင်ချက်များ မရှိပါ"
+          }
+        }
+      }
+    },
+    "scheduler.add": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Schedule"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိန်ဇယားထည့်"
+          }
+        }
+      }
+    },
+    "scheduler.time": {
+      "comment": "Field label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိန်"
+          }
+        }
+      }
+    },
+    "scheduler.action.download": {
+      "comment": "Schedule action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ စတင်"
+          }
+        }
+      }
+    },
+    "scheduler.action.stop": {
+      "comment": "Schedule action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ ရပ်"
+          }
+        }
+      }
+    },
+    "settings.title": {
+      "comment": "Settings title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆက်တင်များ"
+          }
+        }
+      }
+    },
+    "settings.section.appearance": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသွင်အပြင်"
+          }
+        }
+      }
+    },
+    "settings.theme": {
+      "comment": "Setting label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပြင်အဆင်"
+          }
+        }
+      }
+    },
+    "settings.theme.light": {
+      "comment": "Theme option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလင်း"
+          }
+        }
+      }
+    },
+    "settings.theme.dark": {
+      "comment": "Theme option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမှောင်"
+          }
+        }
+      }
+    },
+    "settings.theme.system": {
+      "comment": "Theme option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စနစ်"
+          }
+        }
+      }
+    },
+    "settings.section.language": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဘာသာစကား"
+          }
+        }
+      }
+    },
+    "settings.language.note": {
+      "comment": "Footnote",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect after restarting the app."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အက်ပ်ပြန်ဖွင့်ပြီးမှ အကျိုးသက်ရောက်မည်။"
+          }
+        }
+      }
+    },
+    "settings.section.downloads": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ"
+          }
+        }
+      }
+    },
+    "settings.folders.video": {
+      "comment": "Folder setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယိုဖိုလ်ဒါ"
+          }
+        }
+      }
+    },
+    "settings.folders.audio": {
+      "comment": "Folder setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံဖိုလ်ဒါ"
+          }
+        }
+      }
+    },
+    "settings.folders.document": {
+      "comment": "Folder setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စာရွက်စာတမ်းဖိုလ်ဒါ"
+          }
+        }
+      }
+    },
+    "settings.folders.other": {
+      "comment": "Folder setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other files folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အခြားဖိုင်များဖိုလ်ဒါ"
+          }
+        }
+      }
+    },
+    "settings.speedLimit": {
+      "comment": "Setting label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed limit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြန်နှုန်းကန့်သတ်"
+          }
+        }
+      }
+    },
+    "settings.speedLimit.unlimited": {
+      "comment": "Speed limit option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကန့်အသတ်မရှိ"
+          }
+        }
+      }
+    },
+    "settings.clipboard": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitor clipboard for links"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်များအတွက် ကလစ်ဘုတ်စောင့်ကြည့်"
+          }
+        }
+      }
+    },
+    "settings.autoResume": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-resume interrupted downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြတ်တောက်သော ဒေါင်းလုဒ်များ အလိုအလျောက်ပြန်စ"
+          }
+        }
+      }
+    },
+    "settings.section.updates": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပ်ဒိတ်များ"
+          }
+        }
+      }
+    },
+    "settings.autoUpdate": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically check for updates"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပ်ဒိတ်များ အလိုအလျောက်စစ်ဆေး"
+          }
+        }
+      }
+    },
+    "settings.checkNow": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check Now"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယခုစစ်ဆေး"
+          }
+        }
+      }
+    },
+    "settings.section.general": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အထွေထွေ"
+          }
+        }
+      }
+    },
+    "settings.notifications": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသိပေးချက်များ"
+          }
+        }
+      }
+    },
+    "common.cancel": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပယ်ဖျက်"
+          }
+        }
+      }
+    },
+    "common.close": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်"
+          }
+        }
+      }
+    },
+    "common.delete": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖျက်"
+          }
+        }
+      }
+    },
+    "common.save": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သိမ်းဆည်း"
+          }
+        }
+      }
+    },
+    "common.unknown": {
+      "comment": "Fallback text",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မသိ"
+          }
+        }
+      }
+    },
+    "common.retry": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်ကြိုးစား"
+          }
+        }
+      }
+    },
+    "category.video": {
+      "comment": "Category name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယို"
+          }
+        }
+      }
+    },
+    "category.audio": {
+      "comment": "Category name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံ"
+          }
+        }
+      }
+    },
+    "category.document": {
+      "comment": "Category name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စာရွက်စာတမ်း"
+          }
+        }
+      }
+    },
+    "category.other": {
+      "comment": "Category name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အခြား"
+          }
+        }
+      }
+    },
+    "state.queued": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီနေသည်"
+          }
+        }
+      }
+    },
+    "state.downloading": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်လုပ်နေသည်"
+          }
+        }
+      }
+    },
+    "state.paused": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခေတ္တရပ်ထားသည်"
+          }
+        }
+      }
+    },
+    "state.completed": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးမြောက်သည်"
+          }
+        }
+      }
+    },
+    "state.failed": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မအောင်မြင်ပါ"
+          }
+        }
+      }
+    },
+    "state.interrupted": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrupted"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြတ်တောက်သည်"
+          }
+        }
+      }
+    },
+    "state.seeding": {
+      "comment": "Download state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeding"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီးဒ်လုပ်နေသည်"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
