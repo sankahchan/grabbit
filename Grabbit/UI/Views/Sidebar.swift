@@ -28,8 +28,8 @@ enum SidebarSelection: String, Hashable, CaseIterable {
     }
 }
 
-/// Chunky neo-brutalist sidebar: icon + label rows, count badges for
-/// downloads/torrents, and a live total-speed footer.
+/// Chunky neo-brutalist sidebar: icon + label rows with count badges for
+/// downloads/torrents.
 struct Sidebar: View {
     @Binding var selection: SidebarSelection
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
@@ -42,7 +42,6 @@ struct Sidebar: View {
                 sidebarRow(for: item)
             }
             Spacer()
-            speedFooter
         }
         .padding(12)
     }
@@ -93,26 +92,4 @@ struct Sidebar: View {
         }
     }
 
-    // MARK: - Footer
-
-    private var speedFooter: some View {
-        let total = engine.items
-            .filter { $0.state == .downloading }
-            .reduce(0.0) { $0 + $1.speedBytesPerSec }
-        return HStack(spacing: 6) {
-            Image(systemName: "arrow.down")
-                .font(.caption.weight(.bold))
-            Text("\(String(localized: "downloads.speed")): \(formatSpeed(total))")
-                .font(.caption.weight(.bold))
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .foregroundStyle(Neo.ink(scheme))
-        .background(Neo.paper(scheme))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Neo.ink(scheme), lineWidth: 2)
-        )
-    }
 }

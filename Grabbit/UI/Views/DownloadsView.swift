@@ -22,6 +22,13 @@ struct DownloadsView: View {
                 emptyState
                 Spacer()
             } else {
+                HStack {
+                    Spacer()
+                    Button(String(localized: "downloads.add")) {
+                        showingAdd = true
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
+                }
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         ForEach(engine.items) { item in
