@@ -40,6 +40,10 @@ open Grabbit.xcodeproj
 
 Build with `⌘B`, run tests with `⌘U`. CI does the same on every push to `main`.
 
+> After `git pull`, re-run `xcodegen generate` — the `.xcodeproj` only knows
+> the files that existed when it was generated, so new `.swift` files won't
+> compile until you regenerate.
+
 ## Project layout
 
 | Path | Contents |
