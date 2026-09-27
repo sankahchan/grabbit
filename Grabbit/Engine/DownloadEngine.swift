@@ -30,6 +30,9 @@ public final class DownloadEngine {
     private var speedSamples: [UUID: [(date: Date, bytes: Int64)]] = [:]
     /// Consecutive retry attempts per segment (reset on every launch).
     private var segmentRetries: [UUID: [Int: Int]] = [:]
+    /// Retryable segment errors seen in the current generation. Many at once
+    /// means the server is throttling our connection count.
+    private var generationErrors: [UUID: Int] = [:]
     /// How many times a single stalled/failed segment is retried (with
     /// backoff) before the whole download fails.
     private static let maxSegmentRetries = 5
@@ -262,6 +265,7 @@ public final class DownloadEngine {
         transports[id] = transport
         pendingSegments[id] = pending.count
         segmentRetries[id] = [:]
+        generationErrors[id] = 0
 
         // All transport callbacks hop to @MainActor before touching the model.
         transport.onHTTPError = { [weak self] segmentIndex, status in
@@ -307,6 +311,7 @@ public final class DownloadEngine {
         transports[id] = nil
         pendingSegments[id] = nil
         segmentRetries[id] = nil
+        generationErrors[id] = nil
     }
 
     @MainActor
@@ -356,6 +361,17 @@ public final class DownloadEngine {
             fail(id: id, message: error.localizedDescription)
             return
         }
+        guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
+        // Many segments stalling at once means the server is throttling our
+        // connection count: halve the connections and relaunch instead of
+        // retrying every segment in isolation (which would throttle harder).
+        let errors = (generationErrors[id] ?? 0) + 1
+        generationErrors[id] = errors
+        let incompleteCount = items[itemIndex].segments.filter { !$0.isComplete }.count
+        if incompleteCount > 1 && errors >= max(2, incompleteCount / 2) {
+            reduceConnections(id: id)
+            return
+        }
         let attempts = (segmentRetries[id]?[segmentIndex] ?? 0) + 1
         guard attempts <= Self.maxSegmentRetries else {
             fail(id: id, message: error.localizedDescription)
@@ -398,6 +414,69 @@ public final class DownloadEngine {
             coversWholeFile: coversWhole,
             partialURL: resumeStore.partialFileURL(for: item)
         )
+    }
+
+    /// The server is throttling our connection count (many segments stalling
+    /// at once): halve the connections, re-split the remaining bytes across
+    /// fewer segments, and relaunch. Already-downloaded bytes are kept.
+    @MainActor
+    private func reduceConnections(id: UUID) {
+        guard let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading else { return }
+        // Remaining byte ranges of incomplete segments (sorted, non-overlapping).
+        var ranges: [(Int64, Int64)] = []
+        for seg in items[itemIndex].segments where !seg.isComplete {
+            guard seg.endByte != Int64.max else { return } // open-ended: can't re-split
+            let s = seg.startByte + seg.receivedBytes
+            if s <= seg.endByte { ranges.append((s, seg.endByte)) }
+        }
+        ranges.sort { $0.0 < $1.0 }
+        let totalRemaining = ranges.reduce(0) { $0 + ($1.1 - $1.0 + 1) }
+        guard totalRemaining > 0 else { return }
+        var newCount = max(1, ranges.count / 2)
+        newCount = min(newCount, Int(totalRemaining))
+        guard newCount < ranges.count else { return } // nothing to gain
+
+        cancelSegmentTasks(for: id)
+        let completed = items[itemIndex].segments.filter { $0.isComplete }
+        // Carve the remaining bytes into newCount roughly-equal contiguous
+        // chunks by walking the remaining ranges.
+        var carved: [Segment] = []
+        carved.reserveCapacity(newCount)
+        let base = totalRemaining / Int64(newCount)
+        var extra = totalRemaining % Int64(newCount)
+        var ri = 0
+        var pos = ranges[0].0
+        for _ in 0..<newCount {
+            var want = base + (extra > 0 ? 1 : 0)
+            if extra > 0 { extra -= 1 }
+            let segStart = pos
+            var segEnd = pos - 1
+            while want > 0, ri < ranges.count {
+                let take = min(want, ranges[ri].1 - pos + 1)
+                segEnd = pos + take - 1
+                pos += take
+                want -= take
+                if pos > ranges[ri].1 {
+                    ri += 1
+                    if ri < ranges.count { pos = ranges[ri].0 }
+                }
+            }
+            carved.append(Segment(index: 0, startByte: segStart, endByte: segEnd))
+        }
+        // Merge: completed segments keep their bytes; carved get fresh indices.
+        var merged = completed
+        let offset = (completed.map(\.index).max() ?? -1) + 1
+        for (j, seg) in carved.enumerated() {
+            var s = seg
+            s.index = offset + j
+            merged.append(s)
+        }
+        items[itemIndex].segments = merged
+        items[itemIndex].downloadedBytes = merged.reduce(0) { $0 + $1.receivedBytes }
+        speedSamples[id] = nil
+        persistItem(id: id)
+        launchSegmentTasks(for: id)
     }
 
     private func isRetryable(_ error: Error) -> Bool {
@@ -483,6 +562,7 @@ public final class DownloadEngine {
         transports[id] = nil
         pendingSegments[id] = nil
         segmentRetries[id] = nil
+        generationErrors[id] = nil
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         guard items[itemIndex].state == .downloading else { return } // paused/cancelled/failed already
         if items[itemIndex].segments.allSatisfy(\.isComplete) {
