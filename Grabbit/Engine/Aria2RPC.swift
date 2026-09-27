@@ -491,13 +491,14 @@ public enum MagnetParser {
         string.lowercased().hasPrefix("magnet:?")
     }
 
-    /// Display name: the magnet's `dn` param, else the info hash.
+    /// Display name: the magnet's `dn` param (HTML-entities decoded —
+    /// sites often emit `&ndash;` etc. raw), else the info hash.
     public static func displayName(for magnetURI: String) -> String? {
         guard let components = URLComponents(string: magnetURI) else { return nil }
         if let dn = components.queryItems?.first(where: { $0.name == "dn" })?.value,
            !dn.isEmpty
         {
-            return dn
+            return dn.decodingHTMLEntities
         }
         return infoHash(from: magnetURI)
     }

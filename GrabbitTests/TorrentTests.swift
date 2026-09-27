@@ -535,4 +535,28 @@ final class TorrentTests: XCTestCase {
             errorStatus(code: "24", message: nil).errorDisplay,
             "Unknown error (code 24)")
     }
+
+    // MARK: - HTML entity decoding in magnet names
+
+    func testDecodingHTMLEntitiesNamed() {
+        XCTAssertEqual("DDG &ndash; HIT-A-THON".decodingHTMLEntities, "DDG – HIT-A-THON")
+        XCTAssertEqual("Fish &amp; Chips".decodingHTMLEntities, "Fish & Chips")
+        XCTAssertEqual("&lt;tag&gt;".decodingHTMLEntities, "<tag>")
+    }
+
+    func testDecodingHTMLEntitiesNumeric() {
+        XCTAssertEqual("A&#8211;B".decodingHTMLEntities, "A–B")
+        XCTAssertEqual("A&#x2013;B".decodingHTMLEntities, "A–B")
+    }
+
+    func testDecodingHTMLEntitiesLeavesUnknownAlone() {
+        XCTAssertEqual("a &bogus; b".decodingHTMLEntities, "a &bogus; b")
+        XCTAssertEqual("rock & roll".decodingHTMLEntities, "rock & roll")
+        XCTAssertEqual("plain".decodingHTMLEntities, "plain")
+    }
+
+    func testMagnetDisplayNameDecodesEntities() {
+        let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=DDG%20%26ndash%3B%20HIT-A-THON"
+        XCTAssertEqual(MagnetParser.displayName(for: magnet), "DDG – HIT-A-THON")
+    }
 }
