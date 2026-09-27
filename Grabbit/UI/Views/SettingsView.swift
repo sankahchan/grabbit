@@ -16,7 +16,13 @@ struct SettingsView: View {
                 appearanceCard(settings: settings)
                 languageCard(settings: settings)
                 downloadsCard(settings: settings)
-                updatesCard(settings: settings)
+                // The updates card only exists when Sparkle can actually run
+                // (signed Release build + real SUPublicEDKey). In dev builds
+                // the updater is disabled, so hide the card instead of
+                // showing controls that pop an error dialog.
+                if GrabbitApp.isUpdaterConfigured {
+                    updatesCard(settings: settings)
+                }
                 generalCard(settings: settings)
             }
             .padding(16)
