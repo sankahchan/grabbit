@@ -15,6 +15,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Latest xcodegen writes project format 77, which needs Xcode 16+.
+      # macos-14 runners default to Xcode 15.4, so select Xcode 16 explicitly.
+      - name: Select Xcode 16
+        run: |
+          XCODE=""
+          for v in 16.4 16.3 16.2 16.1 16.0; do
+            if [ -d "/Applications/Xcode_${v}.app" ]; then XCODE="/Applications/Xcode_${v}.app"; break; fi
+          done
+          if [ -z "$XCODE" ]; then echo "No Xcode 16 found:"; ls -d /Applications/Xcode*.app 2>/dev/null; exit 1; fi
+          echo "Selecting $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
       - name: Cache SwiftPM packages
         uses: actions/cache@v4
         with:
