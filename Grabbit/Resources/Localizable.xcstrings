@@ -3247,6 +3247,40 @@
           }
         }
       }
+    },
+    "settings.trackers.autoUpdate": {
+      "comment": "Torrent settings: daily tracker refresh toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-update tracker list"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracker စာရင်းကို အလိုအလျောက် update လုပ်ရန်"
+          }
+        }
+      }
+    },
+    "settings.trackers.autoUpdate.note": {
+      "comment": "Torrent settings: tracker auto-update explanation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetches the latest public trackers once a day, keeping torrent speeds healthy as trackers come and go."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ဆုံး public tracker များကို တစ်နေ့တစ်ကြိမ် ရယူပေးမည် — tracker များ ပြောင်းလဲသွားလည်း torrent အမြန်နှုန်း ကောင်းနေစေရန်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

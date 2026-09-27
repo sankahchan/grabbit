@@ -146,6 +146,18 @@ public final class TorrentEngine: TorrentEngineProtocol {
             daemonState = .running
             pollFailures = 0
             startPollLoop()
+            // Motrix-style daily tracker refresh: fetch the latest public
+            // tracker list in the background and push it into this daemon.
+            // Fire-and-forget — a failed refresh keeps the current list.
+            Task { [weak self] in
+                await TrackerUpdater.refreshIfNeeded(
+                    autoUpdate: self?.settings.settings.autoUpdateTrackers ?? true
+                ) { [weak self] trackers in
+                    try? await self?.rpc?.changeGlobalOption([
+                        "bt-tracker": trackers.joined(separator: ","),
+                    ])
+                }
+            }
             // startVPNMonitor() already runs (started above, before the
             // kill-switch check, so it also watches while blocked).
         } catch {

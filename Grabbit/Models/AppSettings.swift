@@ -30,6 +30,9 @@ public struct AppSettings: Codable {
     public var vpnKillSwitchEnabled = false
     /// Interface torrents are bound to when the kill-switch is on (e.g. "utun3").
     public var vpnInterfaceName = ""
+    /// Refresh the public tracker list from ngosang/trackerslist at most
+    /// once a day (Motrix-style). A failed/never refresh keeps the old list.
+    public var autoUpdateTrackers = true
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -54,6 +57,7 @@ extension AppSettings {
         case autoResumeOnLaunch, autoClearFinished, autoUpdateEnabled, notificationsEnabled
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
+        case autoUpdateTrackers
         case defaultSeedRatio, defaultSeedTimeMinutes
     }
 
@@ -71,6 +75,7 @@ extension AppSettings {
         folders = try c.decodeIfPresent([DownloadCategory: String].self, forKey: .folders) ?? [:]
         vpnKillSwitchEnabled = try c.decodeIfPresent(Bool.self, forKey: .vpnKillSwitchEnabled) ?? false
         vpnInterfaceName = try c.decodeIfPresent(String.self, forKey: .vpnInterfaceName) ?? ""
+        autoUpdateTrackers = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateTrackers) ?? true
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
     }

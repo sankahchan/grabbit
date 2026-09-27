@@ -224,8 +224,10 @@ public final class Aria2Daemon {
     ]
 
     /// Comma-joined tracker list for `--bt-tracker` / RPC options.
+    /// Prefers the auto-updated cache (`TrackerUpdater`), falling back to
+    /// the compiled-in defaults when nothing was ever cached.
     public static var btTrackerList: String {
-        defaultTrackers.joined(separator: ",")
+        TrackerUpdater.currentTrackerList
     }
 
     /// `--bt-tracker=` flag for the daemon command line. Pure — tested.

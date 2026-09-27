@@ -560,3 +560,84 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(MagnetParser.displayName(for: magnet), "DDG – HIT-A-THON")
     }
 }
+
+// MARK: - Tracker auto-update
+
+final class TrackerUpdaterTests: XCTestCase {
+    private func clearCache() {
+        try? FileManager.default.removeItem(at: TrackerUpdater.cacheFileURL)
+        try? FileManager.default.removeItem(at: TrackerUpdater.cacheDateURL)
+    }
+
+    override func tearDown() {
+        clearCache()
+        super.tearDown()
+    }
+
+    func testParseStripsBlanksAndComments() {
+        let raw = """
+        # trackers_best.txt
+
+        udp://tracker.opentrackr.org:1337/announce
+          http://tracker.dler.org:6969/announce  \n
+        """
+        XCTAssertEqual(TrackerUpdater.parse(raw), [
+            "udp://tracker.opentrackr.org:1337/announce",
+            "http://tracker.dler.org:6969/announce",
+        ])
+    }
+
+    func testParseEmptyYieldsEmpty() {
+        XCTAssertTrue(TrackerUpdater.parse("").isEmpty)
+        XCTAssertTrue(TrackerUpdater.parse("# only a comment\n\n").isEmpty)
+    }
+
+    func testNeedsRefreshWithNoCache() {
+        clearCache()
+        XCTAssertTrue(TrackerUpdater.needsRefresh())
+    }
+
+    func testCacheRoundTrip() {
+        clearCache()
+        let trackers = ["udp://a.example:1337/announce", "http://b.example:6969/announce"]
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        TrackerUpdater.saveCache(trackers, at: stamp)
+        XCTAssertEqual(TrackerUpdater.loadCache(), trackers)
+        XCTAssertEqual(TrackerUpdater.cacheUpdatedAt()?.timeIntervalSince1970, 1_700_000_000)
+        // Fresh cache: no refresh due. Stale cache: refresh due.
+        XCTAssertFalse(TrackerUpdater.needsRefresh(now: stamp.addingTimeInterval(3600)))
+        XCTAssertTrue(TrackerUpdater.needsRefresh(
+            now: stamp.addingTimeInterval(TrackerUpdater.refreshInterval + 1)))
+    }
+
+    func testCurrentTrackersFallsBackToDefaults() {
+        clearCache()
+        XCTAssertEqual(TrackerUpdater.currentTrackers(), Aria2Daemon.defaultTrackers)
+    }
+
+    func testCurrentTrackersPrefersCache() {
+        clearCache()
+        let trackers = ["udp://cached.example:1337/announce"]
+        TrackerUpdater.saveCache(trackers)
+        XCTAssertEqual(TrackerUpdater.currentTrackers(), trackers)
+    }
+
+    func testBtTrackerListUsesUpdater() {
+        // Daemon flags and the updater must agree: one source of truth.
+        XCTAssertEqual(Aria2Daemon.btTrackerList, TrackerUpdater.currentTrackerList)
+        XCTAssertFalse(Aria2Daemon.btTrackerList.isEmpty)
+    }
+
+    func testAutoUpdateTrackersDefaultsOn() {
+        XCTAssertTrue(AppSettings.default.autoUpdateTrackers)
+    }
+
+    func testRefreshSkippedWhenDisabled() async {
+        // Disabled: no network, no cache write, apply never runs.
+        clearCache()
+        var applied = false
+        await TrackerUpdater.refreshIfNeeded(autoUpdate: false) { _ in applied = true }
+        XCTAssertFalse(applied)
+        XCTAssertNil(TrackerUpdater.loadCache())
+    }
+}

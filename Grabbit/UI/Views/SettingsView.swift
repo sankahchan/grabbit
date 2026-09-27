@@ -49,6 +49,8 @@ struct SettingsView: View {
         .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
         .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
         .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
+        .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
+        .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
         .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
         .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
         .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
@@ -147,6 +149,14 @@ struct SettingsView: View {
             Divider()
             seedRatioRow(settings: settings)
             seedTimeRow(settings: settings)
+            Divider()
+            Toggle(
+                String(localized: "settings.trackers.autoUpdate"),
+                isOn: settings.autoUpdateTrackers
+            )
+            Text(String(localized: "settings.trackers.autoUpdate.note"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .neoCard()
     }
