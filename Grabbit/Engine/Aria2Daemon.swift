@@ -51,7 +51,7 @@ public final class Aria2Daemon {
         case startFresh
     }
 
-    public enum DaemonError: Error, LocalizedError {
+    public enum DaemonError: Error, LocalizedError, Equatable {
         case spawnFailed(String)
         case notReady(String)
 
