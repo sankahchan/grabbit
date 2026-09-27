@@ -21,7 +21,7 @@ public struct AppSettings: Codable {
     public var autoResumeOnLaunch = false
     public var autoUpdateEnabled = true
     public var notificationsEnabled = true
-    public var defaultConnections = 8
+    public var defaultConnections = 16
     public var folders: [DownloadCategory: String]
 
     public static var `default`: AppSettings {

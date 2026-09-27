@@ -4,10 +4,14 @@ import Observation
 /// Segmented, resumable HTTP download engine.
 ///
 /// Each download is split into byte-range segments (`DownloadItem.makeSegments`);
-/// every incomplete segment gets its own child `Task` issuing a `Range` request
-/// and writing chunks to the `.grabbit-part` file at absolute offsets.
-/// All model mutations happen on `@MainActor`; segment workers run detached and
-/// hop back for state updates.
+/// every incomplete segment gets its own `URLSessionDataTask` inside a
+/// `SegmentTransport`, which streams `Data` chunks straight to the
+/// `.grabbit-part` file at absolute offsets. (The delegate API is used instead
+/// of `URLSession.bytes(for:)` because the latter yields individual UInt8 —
+/// millions of async suspensions per second — which capped throughput at
+/// ~100 KB/s.)
+/// All model mutations happen on `@MainActor`; transport callbacks hop back
+/// for state updates.
 ///
 /// Resume model: segment offsets are persisted to `ResumeStore` (and autosaved
 /// every 5s), so killing the app mid-download loses at most a few seconds of
@@ -17,27 +21,13 @@ import Observation
 public final class DownloadEngine {
     public private(set) var items: [DownloadItem] = []
     public private(set) var recoveredCount = 0
-    public var maxConnections = 8
+    public var maxConnections = 16
 
     private let resumeStore: ResumeStore
-    private var segmentTasks: [UUID: [Task<Void, Never>]] = [:]
+    private var transports: [UUID: SegmentTransport] = [:]
+    private var pendingSegments: [UUID: Int] = [:]
     private var launchGeneration: [UUID: Int] = [:]
     private var speedSamples: [UUID: [(date: Date, bytes: Int64)]] = [:]
-
-    /// AsyncBytes yields single bytes — buffer them and flush to disk in chunks.
-    private static let writeBufferSize = 64 * 1024
-
-    /// Immutable snapshot handed to a detached segment worker.
-    private struct SegmentSnapshot {
-        let url: URL
-        let partialURL: URL
-        let start: Int64
-        let end: Int64
-        let openEnded: Bool
-        let segmentIndex: Int
-        let generation: Int
-        let coversWholeFile: Bool
-    }
 
     public init(resumeStore: ResumeStore = ResumeStore()) {
         self.resumeStore = resumeStore
@@ -258,28 +248,53 @@ public final class DownloadEngine {
             return
         }
 
-        var workerTasks: [Task<Void, Never>] = []
-        workerTasks.reserveCapacity(pending.count)
+        let transport = SegmentTransport()
+        transports[id] = transport
+        pendingSegments[id] = pending.count
+
+        // All transport callbacks hop to @MainActor before touching the model.
+        transport.onHTTPError = { [weak self] segmentIndex, status in
+            Task { await self?.handleHTTPError(id: id, status: status, generation: generation) }
+        }
+        transport.onRangeIgnored = { [weak self] in
+            Task { await self?.handleRangeIgnored(id: id, generation: generation) }
+        }
+        transport.onProgress = { [weak self] segmentIndex, absoluteReceived in
+            Task { await self?.reportProgress(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived) }
+        }
+        transport.onComplete = { [weak self] segmentIndex, absoluteReceived in
+            Task { await self?.handleSegmentComplete(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived, generation: generation) }
+        }
+        transport.onError = { [weak self] segmentIndex, error in
+            Task { await self?.handleSegmentError(id: id, error: error, generation: generation) }
+        }
+
+        let partialURL = resumeStore.partialFileURL(for: item)
+        let wholeFile = item.segments.count == 1
         for segment in pending {
-            let segmentIndex = segment.index
-            workerTasks.append(Task.detached { [weak self] in
-                await self?.runSegment(id: id, segmentIndex: segmentIndex)
-            })
+            let start = segment.startByte + segment.receivedBytes
+            let coversWhole = wholeFile
+                && segment.startByte == 0
+                && segment.receivedBytes == 0
+                && (segment.endByte == Int64.max
+                    || item.totalBytes.map { segment.endByte == $0 - 1 } ?? false)
+            transport.startSegment(
+                index: segment.index,
+                url: item.url,
+                start: start,
+                end: segment.endByte,
+                coversWholeFile: coversWhole,
+                partialURL: partialURL
+            )
         }
-        let workers = workerTasks
-        let supervisor = Task.detached { [weak self] in
-            for task in workers { await task.value }
-            await self?.segmentsDidFinish(id: id, generation: generation)
-        }
-        workerTasks.append(supervisor)
-        segmentTasks[id] = workerTasks
     }
 
     @MainActor
     private func cancelSegmentTasks(for id: UUID) {
         launchGeneration[id] = (launchGeneration[id] ?? 0) + 1
-        segmentTasks[id]?.forEach { $0.cancel() }
-        segmentTasks[id] = nil
+        transports[id]?.cancelAll()
+        transports[id] = nil
+        pendingSegments[id] = nil
     }
 
     @MainActor
@@ -287,90 +302,40 @@ public final class DownloadEngine {
         launchGeneration[id] == generation
     }
 
-    /// Downloads one byte-range segment. Runs detached (off the main actor);
-    /// every model update hops back through the @MainActor helpers below.
-    private func runSegment(id: UUID, segmentIndex: Int) async {
-        guard let snap = await snapshot(id: id, segmentIndex: segmentIndex) else { return }
-        do {
-            var request = URLRequest(url: snap.url)
-            if snap.openEnded {
-                request.setValue("bytes=\(snap.start)-", forHTTPHeaderField: "Range")
-            } else {
-                request.setValue("bytes=\(snap.start)-\(snap.end)", forHTTPHeaderField: "Range")
-            }
+    /// A segment got a non-2xx status. The transport already cancelled it;
+    /// fail the whole download (the other segments are torn down by fail()).
+    @MainActor
+    private func handleHTTPError(id: UUID, status: Int, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation) else { return }
+        fail(id: id, message: "HTTP \(status)")
+    }
 
-            let (bytes, response) = try await URLSession.shared.bytes(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+    /// Server answered 200 to a ranged request: collapse to a single stream.
+    @MainActor
+    private func handleRangeIgnored(id: UUID, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation) else { return }
+        fallbackToSingleStream(id: id)
+    }
 
-            if status == 200 && !snap.coversWholeFile {
-                // Server ignored our Range header and sent the whole file —
-                // collapse to a single stream rather than writing garbage offsets.
-                if await isCurrentGeneration(id: id, generation: snap.generation) {
-                    await fallbackToSingleStream(id: id)
-                }
-                return
-            }
-            guard status == 0 || (200...206).contains(status) else {
-                if await isCurrentGeneration(id: id, generation: snap.generation) {
-                    await fail(id: id, message: "HTTP \(status)")
-                }
-                return
-            }
-
-            let handle = try FileHandle(forWritingTo: snap.partialURL)
-            defer { try? handle.close() }
-            try handle.seek(toOffset: UInt64(snap.start))
-
-            var absoluteReceived = snap.start
-            var buffer = Data()
-            buffer.reserveCapacity(Self.writeBufferSize)
-            for try await byte in bytes {
-                buffer.append(byte)
-                guard buffer.count >= Self.writeBufferSize else { continue }
-                try Task.checkCancellation()
-                try handle.write(contentsOf: buffer)
-                absoluteReceived += Int64(buffer.count)
-                await reportProgress(id: id, segmentIndex: snap.segmentIndex, absoluteReceived: absoluteReceived)
-                buffer.removeAll(keepingCapacity: true)
-            }
-            if !buffer.isEmpty {
-                try Task.checkCancellation()
-                try handle.write(contentsOf: buffer)
-                absoluteReceived += Int64(buffer.count)
-                await reportProgress(id: id, segmentIndex: snap.segmentIndex, absoluteReceived: absoluteReceived)
-            }
-            try handle.synchronize()
-            await finishSegment(id: id, segmentIndex: snap.segmentIndex, absoluteReceived: absoluteReceived)
-        } catch is CancellationError {
-            // pause()/cancel() path — progress was already reported incrementally.
-            await persistItem(id: id)
-        } catch {
-            if await isCurrentGeneration(id: id, generation: snap.generation) {
-                await fail(id: id, message: error.localizedDescription)
-            }
+    @MainActor
+    private func handleSegmentComplete(id: UUID, segmentIndex: Int, absoluteReceived: Int64, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation) else { return }
+        finishSegment(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived)
+        let remaining = (pendingSegments[id] ?? 1) - 1
+        pendingSegments[id] = remaining
+        if remaining <= 0 {
+            segmentsDidFinish(id: id, generation: generation)
         }
     }
 
     @MainActor
-    private func snapshot(id: UUID, segmentIndex: Int) -> SegmentSnapshot? {
-        guard let item = items.first(where: { $0.id == id }),
-              let segment = item.segments.first(where: { $0.index == segmentIndex }),
-              !segment.isComplete else { return nil }
-        let openEnded = segment.endByte == Int64.max
-        let coversWholeFile = item.segments.count == 1
-            && segment.startByte == 0
-            && segment.receivedBytes == 0
-            && (openEnded || item.totalBytes.map { segment.endByte == $0 - 1 } ?? false)
-        return SegmentSnapshot(
-            url: item.url,
-            partialURL: resumeStore.partialFileURL(for: item),
-            start: segment.startByte + segment.receivedBytes,
-            end: segment.endByte,
-            openEnded: openEnded,
-            segmentIndex: segment.index,
-            generation: launchGeneration[id] ?? 0,
-            coversWholeFile: coversWholeFile
-        )
+    private func handleSegmentError(id: UUID, error: Error, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation) else { return }
+        if error is TransportError {
+            fail(id: id, message: "Download ended before all segments completed.")
+        } else {
+            fail(id: id, message: error.localizedDescription)
+        }
     }
 
     @MainActor
@@ -378,6 +343,9 @@ public final class DownloadEngine {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }),
               let segIndex = items[itemIndex].segments.firstIndex(where: { $0.index == segmentIndex })
         else { return }
+        // Drop callbacks from a superseded transport (pause/cancel/fallback
+        // landed while a data chunk was still in flight).
+        guard items[itemIndex].state == .downloading else { return }
         items[itemIndex].segments[segIndex].receivedBytes =
             max(0, absoluteReceived - items[itemIndex].segments[segIndex].startByte)
         items[itemIndex].downloadedBytes = items[itemIndex].segments.reduce(0) { $0 + $1.receivedBytes }
@@ -437,7 +405,8 @@ public final class DownloadEngine {
     @MainActor
     private func segmentsDidFinish(id: UUID, generation: Int) {
         guard launchGeneration[id] == generation else { return } // superseded relaunch
-        segmentTasks[id] = nil
+        transports[id] = nil
+        pendingSegments[id] = nil
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         guard items[itemIndex].state == .downloading else { return } // paused/cancelled/failed already
         if items[itemIndex].segments.allSatisfy(\.isComplete) {
