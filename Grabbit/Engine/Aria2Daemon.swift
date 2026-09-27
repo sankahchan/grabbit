@@ -178,6 +178,20 @@ public final class Aria2Daemon {
 
     // MARK: - Spawning
 
+    /// Public DHT bootstrap nodes. aria2 ships with no default entry
+    /// points: on a fresh install (empty dht.dat) a node with no entry
+    /// points can never join the DHT network, so magnet metadata never
+    /// resolves and the torrent sits at 0 peers forever.
+    public static let dhtEntryPoints = [
+        "dht.transmissionbt.com:6881",
+        "router.bittorrent.com:6881",
+    ]
+
+    /// `--dht-entry-point=` flags for the daemon command line. Pure — tested.
+    public static func dhtArgs() -> [String] {
+        dhtEntryPoints.map { "--dht-entry-point=\($0)" }
+    }
+
     private func spawnFresh(
         binary: URL,
         downloadDir: URL,
@@ -208,6 +222,7 @@ public final class Aria2Daemon {
             "--dht-file-path6=\(state)/dht6.dat",
             "--enable-dht=true",
             "--bt-enable-lpd=true",
+        ] + Self.dhtArgs() + [
             "--file-allocation=none",
             "--allow-overwrite=true",
             "--log-level=warn",

@@ -19,6 +19,51 @@ public enum TorrentState: String, Codable, CaseIterable {
     }
 }
 
+/// Display-level torrent status. Pure — unit-tested.
+///
+/// Distinguishes "waiting for metadata" (a magnet whose info hasn't
+/// resolved yet) and "connecting" (no peers/seeders yet) from plain
+/// downloading, so a stuck-looking torrent explains itself instead of
+/// looking merely paused.
+public enum TorrentDisplayStatus: Equatable {
+    case downloading
+    case waitingForMetadata
+    case connecting
+    case seeding
+    case paused
+    case completed
+    case failed
+
+    public static func of(_ item: TorrentItem) -> TorrentDisplayStatus {
+        switch item.state {
+        case .downloading:
+            if !item.magnetURI.isEmpty, item.totalBytes == 0 {
+                return .waitingForMetadata
+            }
+            if item.numSeeders == 0, item.peers == 0 {
+                return .connecting
+            }
+            return .downloading
+        case .seeding: return .seeding
+        case .paused: return .paused
+        case .completed: return .completed
+        case .failed: return .failed
+        }
+    }
+
+    public var localizedName: String {
+        switch self {
+        case .downloading: String(localized: "state.downloading")
+        case .waitingForMetadata: String(localized: "torrents.status.waitingMetadata")
+        case .connecting: String(localized: "torrents.status.connecting")
+        case .seeding: String(localized: "state.seeding")
+        case .paused: String(localized: "state.paused")
+        case .completed: String(localized: "state.completed")
+        case .failed: String(localized: "state.failed")
+        }
+    }
+}
+
 public struct TorrentItem: Identifiable, Codable {
     public var id: UUID
     public var name: String

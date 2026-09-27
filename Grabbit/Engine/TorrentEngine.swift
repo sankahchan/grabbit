@@ -102,6 +102,11 @@ public final class TorrentEngine: TorrentEngineProtocol {
     /// missing, or the daemon won't come up.
     public func ensureStarted() async throws {
         if rpc != nil { return }
+        // The interface monitor must run even when the kill-switch blocks
+        // startup: otherwise a relaunch-while-suspended leaves the engine in
+        // .suspendedVPN with no watcher, and torrents stay paused forever
+        // even after the user turns the kill-switch off.
+        startVPNMonitor()
         if vpnBlockedNow() {
             daemonState = .suspendedVPN
             throw TorrentError.vpnBlocked(interface: settings.settings.vpnInterfaceName)
@@ -131,7 +136,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
             daemonState = .running
             pollFailures = 0
             startPollLoop()
-            startVPNMonitor()
+            // startVPNMonitor() already runs (started above, before the
+            // kill-switch check, so it also watches while blocked).
         } catch {
             daemonState = .failed(error.localizedDescription)
             rpc = nil

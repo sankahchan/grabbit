@@ -302,4 +302,78 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(item.downloadSpeed, 0)
         XCTAssertNil(item.errorMessage)
     }
+
+    // MARK: - DHT bootstrap (Bug D)
+
+    func testDhtArgsContainPublicBootstrapNodes() {
+        let args = Aria2Daemon.dhtArgs()
+        XCTAssertEqual(args, [
+            "--dht-entry-point=dht.transmissionbt.com:6881",
+            "--dht-entry-point=router.bittorrent.com:6881",
+        ])
+    }
+
+    func testKillSwitchDefaultsOff() {
+        // The kill-switch must be opt-in: a default-ON switch with a
+        // missing interface would pause every torrent forever.
+        XCTAssertFalse(AppSettings.default.vpnKillSwitchEnabled)
+        XCTAssertEqual(AppSettings.default.vpnInterfaceName, "")
+    }
+
+    // MARK: - TorrentDisplayStatus (Bug D)
+
+    private func displayItem(
+        magnetURI: String = "",
+        totalBytes: Int64 = 0,
+        seeders: Int = 0,
+        peers: Int = 0,
+        state: TorrentState = .downloading
+    ) -> TorrentItem {
+        TorrentItem(
+            name: "t",
+            magnetURI: magnetURI,
+            sourceURI: magnetURI,
+            totalBytes: totalBytes,
+            seeds: seeders,
+            peers: peers,
+            numSeeders: seeders,
+            connections: peers,
+            state: state,
+            savePath: URL(fileURLWithPath: "/tmp"))
+    }
+
+    func testDisplayStatusMagnetWithoutMetadata() {
+        let item = displayItem(
+            magnetURI: "magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12",
+            totalBytes: 0)
+        XCTAssertEqual(TorrentDisplayStatus.of(item), .waitingForMetadata)
+    }
+
+    func testDisplayStatusMagnetWithMetadataNoPeers() {
+        let item = displayItem(
+            magnetURI: "magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12",
+            totalBytes: 1_000_000)
+        XCTAssertEqual(TorrentDisplayStatus.of(item), .connecting)
+    }
+
+    func testDisplayStatusConnectingForPeerlessTorrentFile() {
+        let item = displayItem(totalBytes: 1_000_000)
+        XCTAssertEqual(TorrentDisplayStatus.of(item), .connecting)
+    }
+
+    func testDisplayStatusDownloadingWithPeers() {
+        let item = displayItem(totalBytes: 1_000_000, seeders: 3, peers: 5)
+        XCTAssertEqual(TorrentDisplayStatus.of(item), .downloading)
+    }
+
+    func testDisplayStatusPassesThroughTerminalStates() {
+        XCTAssertEqual(
+            TorrentDisplayStatus.of(displayItem(state: .paused)), .paused)
+        XCTAssertEqual(
+            TorrentDisplayStatus.of(displayItem(state: .seeding)), .seeding)
+        XCTAssertEqual(
+            TorrentDisplayStatus.of(displayItem(state: .completed)), .completed)
+        XCTAssertEqual(
+            TorrentDisplayStatus.of(displayItem(state: .failed)), .failed)
+    }
 }

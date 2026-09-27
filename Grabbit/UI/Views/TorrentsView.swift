@@ -142,8 +142,9 @@ struct TorrentsView: View {
                     .font(.headline.weight(.bold))
                     .lineLimit(1)
                 Spacer()
-                Text(item.state.localizedName)
-                    .neoBadge(bg: badgeColor(for: item.state))
+                let display = TorrentDisplayStatus.of(item)
+                Text(display.localizedName)
+                    .neoBadge(bg: badgeColor(for: display))
             }
 
             NeoLinearBar(progress: item.progress, fill: Neo.purple)
@@ -204,9 +205,11 @@ struct TorrentsView: View {
         .neoCard()
     }
 
-    private func badgeColor(for state: TorrentState) -> Color {
-        switch state {
+    private func badgeColor(for display: TorrentDisplayStatus) -> Color {
+        switch display {
         case .downloading: Neo.blue
+        case .waitingForMetadata: Neo.yellow
+        case .connecting: Neo.blue
         case .seeding: Neo.green
         case .paused: Neo.yellow
         case .completed: Neo.green
