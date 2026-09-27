@@ -34,8 +34,21 @@ public enum BundleLocalization {
 
 /// Serves localized strings from the selected language's `.lproj`.
 /// Everything else falls through to the normal bundle behavior.
+///
+/// NOTE: the main bundle's instance was allocated as `Bundle`, so a Swift
+/// stored property here would write past its allocation (heap corruption).
+/// The language code lives in an associated object instead.
+private var localizedBundleLanguageKey: UInt8 = 0
+
 private final class LocalizedBundle: Bundle {
-    var languageCode: String?
+    var languageCode: String? {
+        get { objc_getAssociatedObject(self, &localizedBundleLanguageKey) as? String }
+        set {
+            objc_setAssociatedObject(
+                self, &localizedBundleLanguageKey, newValue,
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
 
     override func localizedString(
         forKey key: String, value: String?, table tableName: String?
