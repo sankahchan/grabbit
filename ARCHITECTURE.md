@@ -12,11 +12,11 @@ Grabbit/
 │   ├── DownloadEngine   URLSession segmented downloader (direct HTTP(S))
 │   ├── SiteEngine       shells out to bundled yt-dlp, parses progress JSON
 │   ├── MediaEngine      shells out to bundled ffmpeg for MP3 extraction
-│   ├── LibTorrent/      LTSessionBridge.h/.mm — ObjC++ bridge (stub behind TorrentEngineProtocol for now)
+│   ├── TorrentEngine     managed aria2-next daemon over JSON-RPC (Aria2Daemon, Aria2RPC actor)
 │   └── Scheduler        time-windowed queue execution
 ├── NativeMessaging/     stdio host: reads 4-byte LE length-prefixed JSON from the browser extension
 ├── UI/                  SwiftUI views, neo-brutalist design system
-└── Resources/           Assets, Localizable.xcstrings, bin/ (vendored yt-dlp + ffmpeg)
+└── Resources/           Assets, Localizable.xcstrings, bin/ (vendored yt-dlp + ffmpeg + aria2-next)
 extension/               Chrome MV3 + Safari Web Extension (shared JS, no build step)
 ```
 
@@ -47,7 +47,7 @@ This is the core promise: **kill the app mid-download and lose nothing.**
 - **Atomic writes.** State is written to a temp file then moved over the real one with `FileManager.replaceItemAt` — a crash mid-write can never leave a corrupt state file.
 - **`.grabbit-part` files.** In-progress downloads live as `<name>.grabbit-part`; the suffix is stripped only after the final byte is verified complete.
 - **Launch recovery.** On startup the app scans `States/`, marks anything left in `downloading` as `interrupted`, and offers **Resume All**. No user action is required to pick up where things left off.
-- **Torrents.** libtorrent fast-resume data is saved every 60s **and** on pause/shutdown, atomically, to `<id>.fastresume` next to the JSON states. Same kill-and-resume guarantee. (Currently a documented stub behind `TorrentEngineProtocol` — the integration path is `Grabbit/Engine/LibTorrent/`.)
+- **Torrents.** A managed aria2-next daemon persists its own session (`--save-session` every 30s + on shutdown, `--bt-save-metadata`/`--bt-load-saved-metadata` for magnets) in `~/Library/Application Support/Grabbit/aria2/`; Grabbit additionally persists per-torrent records (`torrents.json`) on every mutation and reconciles by info-hash on startup, re-adding anything the daemon lost. A versioned ownership manifest (`aria2-daemon.plist`) lets a new app instance reclaim a live owned daemon instead of spawning a duplicate. Same kill-and-resume guarantee as direct downloads.
 
 ## Threading model
 

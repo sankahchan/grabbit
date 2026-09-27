@@ -10,7 +10,7 @@
 
 - **Segmented multi-connection downloads** — splits files into parallel HTTP Range segments for maximum speed.
 - **Crash-safe resume** — download state is autosaved every ~5s atomically; killing the app mid-download resumes cleanly on next launch. Applies to direct downloads **and** torrents.
-- **Torrent & magnet support** — libtorrent-backed, with fast-resume data saved periodically and on shutdown.
+- **Torrent & magnet support** — via a managed [aria2-next](https://github.com/AnInsomniacy/aria2-next) daemon (JSON-RPC), with per-torrent file selection, share-ratio / seed-time limits, session persistence across restarts, and an optional VPN-interface kill-switch.
 - **yt-dlp site downloads** — YouTube, X, TikTok, Instagram, and more via a bundled `yt-dlp` binary.
 - **Telegram Web grab** — a Chrome / Safari browser extension (Native Messaging) captures blob videos from `web.telegram.org`.
 - **MP3 extraction** — bundled `ffmpeg` converts videos to audio with one click.
@@ -50,10 +50,10 @@ Build with `⌘B`, run tests with `⌘U`. CI does the same on every push to `mai
 |---|---|
 | `Grabbit/App` | SwiftUI entry point, app state |
 | `Grabbit/Models` | Download models, state schema |
-| `Grabbit/Engine` | URLSession segmented engine, torrent engine (`Engine/LibTorrent` ObjC++ bridge) |
+| `Grabbit/Engine` | URLSession segmented engine, torrent engine (managed aria2-next daemon over JSON-RPC) |
 | `Grabbit/NativeMessaging` | Native-messaging host for the browser extension |
 | `Grabbit/UI` | Views (neo-brutalist design) |
-| `Grabbit/Resources` | Assets, `Localizable.xcstrings`, vendored `bin/` (yt-dlp, ffmpeg — downloaded at release build time) |
+| `Grabbit/Resources` | Assets, `Localizable.xcstrings`, vendored `bin/` (yt-dlp, ffmpeg, aria2-next — downloaded at release build time) |
 | `extension/` | Chrome MV3 + Safari Web Extension (shared JS) |
 | `.github/workflows` | `ci.yml` (build + test), `release.yml` (DMG + appcast) |
 | `ARCHITECTURE.md` | Design deep-dive |

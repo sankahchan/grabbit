@@ -34,13 +34,16 @@ Everything Grabbit depends on that isn't Apple's SDK, and why it's there.
 - **How it's vendored:** `scripts/vendor-media-runtime.sh` downloads the pinned `deno-aarch64-apple-darwin.zip` into `Grabbit/Resources/bin/` (or copies Homebrew's deno with dylib relocation). Its directory is injected into `PATH` for yt-dlp child processes; also resolvable via `DENO_PATH`.
 - **License:** MIT. Compatible.
 
-## libtorrent (planned)
+## aria2-next (bundled binary — torrent engine)
 
-- **What:** the mature C++ BitTorrent library behind qBittorrent and many others.
-- **Why:** robust DHT, magnet, and fast-resume support that a hand-rolled torrent client can't match.
-- **Plan:** add as a git submodule at `extern/libtorrent`, build a static library with CMake, and bridge it to Swift through the Objective-C++ layer at `Grabbit/Engine/LibTorrent/LTSessionBridge.h/.mm`. Until then the torrent engine is a documented stub behind `TorrentEngineProtocol`.
-- **Fast resume:** libtorrent fast-resume data is saved every 60s and on pause/shutdown, atomically, to `<id>.fastresume` next to the download states — so torrents survive kills just like direct downloads.
-- **License:** BSD-3-Clause — compatible with MIT. Keep the BSD notice with the vendored source.
+- **What:** an actively maintained aria2 fork (`AnInsomniacy/aria2-next`) — a battle-tested C++ download engine with BitTorrent (DHT, magnets, seeding), driven by Grabbit over JSON-RPC from the `Aria2RPC` Swift actor.
+- **Why:** delegating to a maintained engine beats hand-rolling libtorrent (the earlier plan) — fastest path to a shippable, correct torrent implementation, and the same engine Motrix uses.
+- **Decision:** `AnInsomniacy/aria2-next` was verified (2026-09-28) as the maintained fork — recent releases (v2.8.2 latest at pinning time), prebuilt **macOS arm64** binaries, per-release SHA-256 checksums. The older `motrixapp/aria2` fork is Motrix-specific and less active.
+- **How it's vendored:** `scripts/vendor-torrent-runtime.sh` (run by `release.yml`) downloads the pinned `aria2-next-<version>-macos-arm64` asset into `Grabbit/Resources/bin/aria2-next`; the post-build script installs it into the app. The script verifies the checksums file against the pinned SHA-256 and refuses to vendor on mismatch. Not committed to git.
+- **Version pinning:** pinned to a fixed tag + SHA-256 inside the vendor script; bump on a cadence.
+- **Runtime management:** `Aria2Daemon` spawns/manages the child process with a versioned ownership manifest (`~/Library/Application Support/Grabbit/aria2-daemon.plist`: pid, binary path, RPC port, secret, start signature) — reclaims live owned daemons, kills stale/foreign ones. Session persistence via `--save-session` + `--bt-save-metadata`/`--bt-load-saved-metadata`; Grabbit additionally persists GIDs in `torrents.json` and reconciles by info-hash on start.
+- **Resolution order** (`TorrentRuntimeResolver`): bundled Resources → `~/Library/Application Support/Grabbit/bin` → `ARIA2_NEXT_PATH` env override → Homebrew (`aria2-next`, then upstream `aria2c` fallback) → `PATH`.
+- **License:** GPL-2.0-or-later. The binary is a separate program communicated with over JSON-RPC; Grabbit's own source stays MIT. The vendoring script lives next to this manifest so the attribution/source-offer obligation stays visible. Mention in release notes.
 
 ## Browser extension (no dependencies)
 
@@ -56,5 +59,5 @@ Everything Grabbit depends on that isn't Apple's SDK, and why it's there.
 | yt-dlp | The Unlicense | ✅ yes |
 | ffmpeg / ffprobe (static binary) | GPL or LGPL (verify at pinning) | ⚠️ verify build flags before public release |
 | Deno | MIT | ✅ yes |
-| libtorrent | BSD-3-Clause | ✅ yes (keep notice) |
+| aria2-next (binary) | GPL-2.0-or-later | ⚠️ separate program over JSON-RPC; attribute + source offer in release notes |
 | Extension | none (own code) | ✅ yes |
