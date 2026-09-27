@@ -107,6 +107,10 @@ struct SettingsView: View {
             speedLimitRow(settings: settings)
             Toggle(String(localized: "settings.clipboard"), isOn: settings.clipboardMonitorEnabled)
             Toggle(String(localized: "settings.autoResume"), isOn: settings.autoResumeOnLaunch)
+            Toggle(String(localized: "settings.autoClear"), isOn: settings.autoClearFinished)
+            Text(String(localized: "settings.autoClear.note"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .neoCard()
     }

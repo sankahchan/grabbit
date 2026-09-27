@@ -380,6 +380,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
             var changed = false
             var toDrop: [UUID] = []
+            var toPurge: [(id: UUID, gid: String)] = []
             for index in torrents.indices {
                 var item = torrents[index]
                 var status = item.gid.flatMap { byGid[$0] }
@@ -458,6 +459,9 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     // of an already-finished torrent must not re-record it.
                     if newState == .completed {
                         history.record(.from(torrent: item, status: .completed))
+                        if settings.settings.autoClearFinished {
+                            toPurge.append((item.id, st.gid))
+                        }
                     } else if newState == .failed {
                         // The error text is parsed below; capture it here so
                         // the history entry carries the failure reason.
@@ -485,6 +489,14 @@ public final class TorrentEngine: TorrentEngineProtocol {
             for id in toDrop {
                 lineage.forgetItem(id)
                 torrents.removeAll { $0.id == id }
+            }
+            for (id, gid) in toPurge {
+                // The History tab keeps the permanent record — purge the
+                // daemon's stopped entry and drop the row.
+                try? await client.removeDownloadResult(gid: gid)
+                lineage.forgetItem(id)
+                torrents.removeAll { $0.id == id }
+                changed = true
             }
             if changed { save() }
         } catch {

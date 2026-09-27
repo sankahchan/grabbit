@@ -6,7 +6,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
     var icon: String {
         switch self {
         case .downloads: "tray.and.arrow.down"
-        case .torrents: "magnet"
+        case .torrents: "arrow.triangle.2.circlepath" // "magnet" is not a real SF Symbol — renders blank
         case .media: "play.rectangle"
         case .grabber: "globe"
         case .history: "clock.arrow.circlepath"

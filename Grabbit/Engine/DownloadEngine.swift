@@ -25,6 +25,7 @@ public final class DownloadEngine {
 
     private let resumeStore: ResumeStore
     private let history: HistoryStore
+    private let settings: SettingsStore
     private var transports: [UUID: SegmentTransport] = [:]
     private var pendingSegments: [UUID: Int] = [:]
     private var launchGeneration: [UUID: Int] = [:]
@@ -59,9 +60,10 @@ public final class DownloadEngine {
     /// Process-wide sleep-prevention token while any download is active.
     private var sleepActivity: NSObjectProtocol?
 
-    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore()) {
+    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore()) {
         self.resumeStore = resumeStore
         self.history = history
+        self.settings = settings
         let loaded = resumeStore.loadAll()
         var migrated: [DownloadItem] = []
         migrated.reserveCapacity(loaded.count)
@@ -855,9 +857,14 @@ public final class DownloadEngine {
         history.record(.from(download: items[itemIndex], status: .completed))
         speedSamples[item.id] = nil
         updateSleepPrevention()
-        persistItem(id: item.id)
         // No resume state needed for a finished download.
         try? resumeStore.delete(item.id)
+        if settings.settings.autoClearFinished {
+            // The History tab keeps the permanent record — drop the row.
+            remove(item.id)
+        } else {
+            persistItem(id: item.id)
+        }
     }
 
     @MainActor

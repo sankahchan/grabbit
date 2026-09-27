@@ -19,6 +19,9 @@ public struct AppSettings: Codable {
     public var speedLimitBytesPerSec: Int64 = 0 // 0 = unlimited
     public var clipboardMonitorEnabled = true
     public var autoResumeOnLaunch = false
+    /// Completed downloads/torrents leave their lists automatically
+    /// (the History tab keeps the permanent record).
+    public var autoClearFinished = true
     public var autoUpdateEnabled = true
     public var notificationsEnabled = true
     public var defaultConnections = 16
@@ -48,7 +51,7 @@ public struct AppSettings: Codable {
 extension AppSettings {
     private enum CodingKeys: String, CodingKey {
         case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
-        case autoResumeOnLaunch, autoUpdateEnabled, notificationsEnabled
+        case autoResumeOnLaunch, autoClearFinished, autoUpdateEnabled, notificationsEnabled
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
         case defaultSeedRatio, defaultSeedTimeMinutes
@@ -61,6 +64,7 @@ extension AppSettings {
         speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
         clipboardMonitorEnabled = try c.decodeIfPresent(Bool.self, forKey: .clipboardMonitorEnabled) ?? true
         autoResumeOnLaunch = try c.decodeIfPresent(Bool.self, forKey: .autoResumeOnLaunch) ?? false
+        autoClearFinished = try c.decodeIfPresent(Bool.self, forKey: .autoClearFinished) ?? true
         autoUpdateEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateEnabled) ?? true
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
         defaultConnections = try c.decodeIfPresent(Int.self, forKey: .defaultConnections) ?? 16

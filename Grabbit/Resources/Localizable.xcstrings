@@ -1191,6 +1191,40 @@
         }
       }
     },
+    "settings.autoClear": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-clear finished tasks"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးဆုံးပြီးသား ဒေါင်းလုဒ်နှင့် တောရန့်များ အလိုအလျောက်ရှင်းလင်းရန်"
+          }
+        }
+      }
+    },
+    "settings.autoClear.note": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed downloads and torrents leave their lists automatically; they stay in History."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးဆုံးသွားသော ဒေါင်းလုဒ်နှင့် တောရန့်များ စာရင်းမှ အလိုအလျောက်ထွက်မည်။ History တွင် ဆက်ရှိနေမည်။"
+          }
+        }
+      }
+    },
     "settings.section.updates": {
       "comment": "Section header",
       "localizations": {

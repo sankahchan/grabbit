@@ -28,7 +28,7 @@ struct GrabbitApp: App {
         let sharedHistory = HistoryStore()
         _settings = State(initialValue: sharedSettings)
         _historyStore = State(initialValue: sharedHistory)
-        _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory))
+        _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
         // One-time import of already-finished tasks so existing users don't
