@@ -441,7 +441,7 @@ struct ChunkedDecoder {
                     buffer.removeSubrange(..<afterLine)
                     inTrailers = true
                 }
-                break
+                continue // process trailers immediately; don't wait for the next feed
             }
             guard buffer.count >= afterLine + size + 2 else { break } // incomplete chunk
             out.append(buffer[afterLine ..< afterLine + size])
