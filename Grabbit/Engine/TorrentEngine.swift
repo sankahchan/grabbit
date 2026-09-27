@@ -194,7 +194,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
     /// Resolves the display name for a new torrent: the user's custom
     /// rename wins; otherwise the magnet's `dn` param (HTML entities
     /// decoded) or the URL's last path component. Pure — tested.
-    static func resolveDisplayName(magnetOrURL input: String, displayName: String?) -> String {
+    nonisolated static func resolveDisplayName(magnetOrURL input: String, displayName: String?) -> String {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if let custom = displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
            !custom.isEmpty
