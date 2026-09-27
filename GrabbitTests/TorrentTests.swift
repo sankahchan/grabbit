@@ -653,7 +653,7 @@ final class TorrentRenameTests: XCTestCase {
     }
 
     func testCustomNameTrimmedAndBlankFallsBack() {
-        let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=Original+Name"
+        let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=Original%20Name"
         XCTAssertEqual(
             TorrentEngine.resolveDisplayName(magnetOrURL: magnet, displayName: "  "),
             "Original Name")
