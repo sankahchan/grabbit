@@ -131,8 +131,9 @@ final class HTTP1Client {
             // Advertise ONLY http/1.1 via ALPN. Without this the server may
             // negotiate h2 and then our raw HTTP/1.1 bytes would be garbage
             // to it (this is also what defeats URLSession's h2 multiplexing).
-            sec_protocol_options_clear_tls_application_protocols(tlsOptions.securityProtocolOptions)
-            sec_protocol_options_add_tls_application_protocol(tlsOptions.securityProtocolOptions, "http/1.1")
+            // Implemented in ALPNPin.m: the sec_protocol_options ALPN
+            // functions are not visible to Swift, so a tiny ObjC shim does it.
+            GrabbitPinALPNToHTTP11(tlsOptions.securityProtocolOptions)
             parameters = NWParameters(tls: tlsOptions)
         } else {
             parameters = NWParameters.tcp

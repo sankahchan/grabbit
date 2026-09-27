@@ -22,6 +22,7 @@ targets:
         PRODUCT_NAME: Grabbit
         ARCHS: arm64
         SWIFT_VERSION: "5.9"
+        SWIFT_OBJC_BRIDGING_HEADER: Grabbit/Engine/ALPNPin.h
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
