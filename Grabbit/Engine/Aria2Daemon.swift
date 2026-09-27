@@ -192,6 +192,47 @@ public final class Aria2Daemon {
         dhtEntryPoints.map { "--dht-entry-point=\($0)" }
     }
 
+    /// Default public BitTorrent trackers, announced to every torrent.
+    /// aria2 has no built-in tracker list: a magnet whose own `tr` params
+    /// are missing or dead only finds peers via DHT/LPD, so tracker-side
+    /// seeds stay invisible (0 seeds while the site reports dozens).
+    /// `--bt-tracker` adds these *in addition to* the torrent's own
+    /// trackers. Sourced from ngosang/trackerslist `trackers_best`
+    /// (20 trackers, refreshed 2026-09-26); a stale entry is harmless —
+    /// aria2 just skips unreachable trackers.
+    public static let defaultTrackers = [
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.stealth.si:80/announce",
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://open.demonii.com:1337/announce",
+        "udp://tracker.skynetcloud.site:6969/announce",
+        "udp://tracker.qu.ax:6969/announce",
+        "udp://tracker.nyaa.vc:6969/announce",
+        "udp://tracker.theoks.net:6969/announce",
+        "udp://tracker.corpscorp.online:80/announce",
+        "udp://tracker.bittor.pw:1337/announce",
+        "udp://explodie.org:6969/announce",
+        "udp://retracker01-msk-virt.corbina.net:80/announce",
+        "udp://tracker-udp.gbitt.info:80/announce",
+        "udp://tracker.ducks.party:1984/announce",
+        "http://tracker.dler.com:6969/announce",
+        "http://tracker2.dler.org:80/announce",
+        "http://tracker.dler.org:6969/announce",
+        "http://tracker.renfei.net:8080/announce",
+        "udp://tracker.farted.net:6969/announce",
+        "udp://tracker.peerfect.org:6969/announce",
+    ]
+
+    /// Comma-joined tracker list for `--bt-tracker` / RPC options.
+    public static var btTrackerList: String {
+        defaultTrackers.joined(separator: ",")
+    }
+
+    /// `--bt-tracker=` flag for the daemon command line. Pure — tested.
+    public static func btTrackerArgs() -> [String] {
+        ["--bt-tracker=\(btTrackerList)"]
+    }
+
     private func spawnFresh(
         binary: URL,
         downloadDir: URL,
@@ -222,7 +263,7 @@ public final class Aria2Daemon {
             "--dht-file-path6=\(state)/dht6.dat",
             "--enable-dht=true",
             "--bt-enable-lpd=true",
-        ] + Self.dhtArgs() + [
+        ] + Self.dhtArgs() + Self.btTrackerArgs() + [
             "--file-allocation=none",
             "--allow-overwrite=true",
             "--log-level=warn",

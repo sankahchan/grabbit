@@ -313,6 +313,40 @@ final class TorrentTests: XCTestCase {
         ])
     }
 
+    // MARK: - Default tracker list
+
+    func testBtTrackerArgsFormSingleCommaJoinedFlag() {
+        let args = Aria2Daemon.btTrackerArgs()
+        XCTAssertEqual(args.count, 1)
+        XCTAssertTrue(args[0].hasPrefix("--bt-tracker="))
+        let list = String(args[0].dropFirst("--bt-tracker=".count))
+        XCTAssertEqual(list, Aria2Daemon.btTrackerList)
+        XCTAssertFalse(list.isEmpty)
+    }
+
+    func testDefaultTrackersAreValidAnnounceURLs() {
+        // Every entry must be a usable announce URL: scheme + /announce path.
+        // A malformed entry would make aria2 reject the whole flag.
+        XCTAssertGreaterThanOrEqual(Aria2Daemon.defaultTrackers.count, 10)
+        for tracker in Aria2Daemon.defaultTrackers {
+            let url = URL(string: tracker)
+            XCTAssertNotNil(url, "not a URL: \(tracker)")
+            XCTAssertTrue(
+                ["udp", "http", "https"].contains(url?.scheme),
+                "bad scheme: \(tracker)")
+            XCTAssertTrue(
+                tracker.hasSuffix("/announce"),
+                "not an announce URL: \(tracker)")
+            XCTAssertFalse(tracker.contains(" "), "whitespace: \(tracker)")
+            XCTAssertFalse(tracker.contains(","), "comma breaks joining: \(tracker)")
+        }
+    }
+
+    func testDefaultTrackersHaveNoDuplicates() {
+        let trackers = Aria2Daemon.defaultTrackers
+        XCTAssertEqual(Set(trackers).count, trackers.count)
+    }
+
     func testKillSwitchDefaultsOff() {
         // The kill-switch must be opt-in: a default-ON switch with a
         // missing interface would pause every torrent forever.

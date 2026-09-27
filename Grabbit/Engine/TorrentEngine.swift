@@ -71,6 +71,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
     private var suspendedGids: [String] = []
     /// Items re-added this run after the daemon lost them (prevents loops).
     private var readdedThisRun = Set<UUID>()
+    /// GIDs that already received the per-torrent tracker push this run.
+    /// Heals torrents on a *reclaimed* daemon (spawned before --bt-tracker
+    /// existed): without this they'd only discover peers via DHT/LPD.
+    private var trackersPushedThisRun = Set<UUID>()
 
     private static var storeURL: URL {
         Aria2Daemon.supportDir.appendingPathComponent("torrents.json")
@@ -131,6 +135,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
             try? await client.changeGlobalOption([
                 "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
                 "seed-time": "\(settings.settings.defaultSeedTimeMinutes)",
+                // Reclaimed daemons were spawned before the tracker list
+                // existed; push it at runtime too (fresh spawns get it via
+                // --bt-tracker). try? — a rejection must never break startup.
+                "bt-tracker": Aria2Daemon.btTrackerList,
             ])
             await reconcileAfterStart()
             daemonState = .running
@@ -409,6 +417,18 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     toDrop.append(item.id)
                     changed = true
                     continue
+                }
+                // Push the default tracker list to this download once per
+                // run. try? — a rejection (older daemon semantics) must
+                // never disturb the poll loop; the spawn-arg and global
+                // option already cover fresh daemons and future adds.
+                if item.state == .downloading || item.state == .seeding,
+                   !trackersPushedThisRun.contains(item.id)
+                {
+                    trackersPushedThisRun.insert(item.id)
+                    try? await client.changeOption(
+                        gid: st.gid,
+                        options: ["bt-tracker": Aria2Daemon.btTrackerList])
                 }
                 if let name = st.name, !name.isEmpty, item.name != name {
                     item.name = name
