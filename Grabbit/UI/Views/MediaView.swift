@@ -171,6 +171,7 @@ struct MediaView: View {
                 .neoButton(bg: Neo.paper(scheme))
             }
         }
+        .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
         .neoCard(bg: Neo.yellow)
     }
 
@@ -222,9 +223,13 @@ struct MediaView: View {
 
     private var completedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(String(localized: "media.completed"), systemImage: "checkmark.circle.fill")
-                .font(.headline.weight(.heavy))
-                .foregroundStyle(Neo.green)
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                Text(String(localized: "media.completed"))
+                    .lineLimit(1)
+            }
+            .font(.headline.weight(.heavy))
+            .foregroundStyle(Neo.green)
             Button(String(localized: "media.new")) {
                 urlText = ""
                 Task { await media.reset() }
