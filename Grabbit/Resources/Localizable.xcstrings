@@ -2958,6 +2958,244 @@
           }
         }
       }
+    },
+    "nav.history": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မှတ်တမ်း"
+          }
+        }
+      }
+    },
+    "history.title": {
+      "comment": "History tab title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မှတ်တမ်း"
+          }
+        }
+      }
+    },
+    "history.filter.all": {
+      "comment": "History category filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး"
+          }
+        }
+      }
+    },
+    "history.filter.downloads": {
+      "comment": "History category filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ"
+          }
+        }
+      }
+    },
+    "history.filter.torrents": {
+      "comment": "History category filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents"
+          }
+        }
+      }
+    },
+    "history.filter.media": {
+      "comment": "History category filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ"
+          }
+        }
+      }
+    },
+    "history.empty.title": {
+      "comment": "History empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No history yet"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မှတ်တမ်းမရှိသေးပါ"
+          }
+        }
+      }
+    },
+    "history.empty.hint": {
+      "comment": "History empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished downloads will appear here."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးဆုံးသွားသော ဒေါင်းလုဒ်များ ဤနေရာတွင် ပေါ်လာမည်။"
+          }
+        }
+      }
+    },
+    "history.clear": {
+      "comment": "Clear history button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှင်းရန်"
+          }
+        }
+      }
+    },
+    "history.clear.confirm.title": {
+      "comment": "Clear history confirmation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all history?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မှတ်တမ်းအားလုံး ရှင်းပစ်မလား?"
+          }
+        }
+      }
+    },
+    "history.clear.confirm.message": {
+      "comment": "Clear history confirmation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This cannot be undone."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ။"
+          }
+        }
+      }
+    },
+    "history.clear.confirm.delete": {
+      "comment": "Clear history confirmation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှင်းပစ်မည်"
+          }
+        }
+      }
+    },
+    "history.redownload": {
+      "comment": "History row action tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်ဒေါင်းရန်"
+          }
+        }
+      }
+    },
+    "history.source.magnet": {
+      "comment": "History source label for magnet links",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "magnet"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "magnet"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

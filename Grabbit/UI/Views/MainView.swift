@@ -57,6 +57,8 @@ struct MainView: View {
             MediaView()
         case .grabber:
             GrabberView()
+        case .history:
+            HistoryView(selection: $selection)
         case .scheduler:
             SchedulerView()
         case .settings:

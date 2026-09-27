@@ -24,6 +24,7 @@ public final class DownloadEngine {
     public var maxConnections = 16
 
     private let resumeStore: ResumeStore
+    private let history: HistoryStore
     private var transports: [UUID: SegmentTransport] = [:]
     private var pendingSegments: [UUID: Int] = [:]
     private var launchGeneration: [UUID: Int] = [:]
@@ -58,8 +59,9 @@ public final class DownloadEngine {
     /// Process-wide sleep-prevention token while any download is active.
     private var sleepActivity: NSObjectProtocol?
 
-    public init(resumeStore: ResumeStore = ResumeStore()) {
+    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore()) {
         self.resumeStore = resumeStore
+        self.history = history
         let loaded = resumeStore.loadAll()
         var migrated: [DownloadItem] = []
         migrated.reserveCapacity(loaded.count)
@@ -850,6 +852,7 @@ public final class DownloadEngine {
         if let total = items[itemIndex].totalBytes {
             items[itemIndex].downloadedBytes = total
         }
+        history.record(.from(download: items[itemIndex], status: .completed))
         speedSamples[item.id] = nil
         updateSleepPrevention()
         persistItem(id: item.id)
@@ -861,9 +864,16 @@ public final class DownloadEngine {
     private func fail(id: UUID, message: String) {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         cancelSegmentTasks(for: id)
+        // Record only on transition — fail() can fire repeatedly for the
+        // same stalled item (per-segment retries), and each must not append
+        // another history entry.
+        let wasAlreadyFailed = items[itemIndex].state == .failed
         items[itemIndex].state = .failed
         items[itemIndex].errorMessage = message
         items[itemIndex].speedBytesPerSec = 0
+        if !wasAlreadyFailed {
+            history.record(.from(download: items[itemIndex], status: .failed))
+        }
         speedSamples[id] = nil
         segmentRetries[id] = nil
         updateSleepPrevention()

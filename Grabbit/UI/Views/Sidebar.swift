@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, grabber, scheduler, settings
+    case downloads, torrents, media, grabber, history, scheduler, settings
 
     var icon: String {
         switch self {
@@ -9,6 +9,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .torrents: "magnet"
         case .media: "play.rectangle"
         case .grabber: "globe"
+        case .history: "clock.arrow.circlepath"
         case .scheduler: "clock"
         case .settings: "gearshape"
         }
@@ -20,6 +21,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .torrents: String(localized: "nav.torrents")
         case .media: String(localized: "nav.media")
         case .grabber: String(localized: "nav.grabber")
+        case .history: String(localized: "nav.history")
         case .scheduler: String(localized: "nav.scheduler")
         case .settings: String(localized: "nav.settings")
         }
@@ -87,7 +89,7 @@ struct Sidebar: View {
         switch item {
         case .downloads: engine.items.count
         case .torrents: torrentEngine.torrents.count
-        case .grabber, .media, .scheduler, .settings: nil
+        case .grabber, .media, .history, .scheduler, .settings: nil
         }
     }
 

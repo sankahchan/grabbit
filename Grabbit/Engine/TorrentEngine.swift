@@ -61,6 +61,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
     public var vpnHolding: Bool { daemonState == .suspendedVPN }
 
     private let settings: SettingsStore
+    private let history: HistoryStore
     private let daemon = Aria2Daemon()
     private var rpc: Aria2RPC?
     private var lineage = GidLineage()
@@ -80,8 +81,9 @@ public final class TorrentEngine: TorrentEngineProtocol {
         Aria2Daemon.supportDir.appendingPathComponent("torrents.json")
     }
 
-    public init(settings: SettingsStore) {
+    public init(settings: SettingsStore, history: HistoryStore = HistoryStore()) {
         self.settings = settings
+        self.history = history
         load()
         for item in torrents {
             if let gid = item.gid {
@@ -452,6 +454,19 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 }
                 let newState = Aria2StatusMapper.map(st)
                 if item.state != newState {
+                    // Record terminal transitions once: app-restart recovery
+                    // of an already-finished torrent must not re-record it.
+                    if newState == .completed {
+                        history.record(.from(torrent: item, status: .completed))
+                    } else if newState == .failed {
+                        // The error text is parsed below; capture it here so
+                        // the history entry carries the failure reason.
+                        var failedItem = item
+                        if st.status == "error" {
+                            failedItem.errorMessage = st.errorDisplay
+                        }
+                        history.record(.from(torrent: failedItem, status: .failed))
+                    }
                     item.state = newState
                     changed = true
                 }
@@ -637,8 +652,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
     private func markFailed(_ id: UUID, message: String) {
         if let index = torrents.firstIndex(where: { $0.id == id }) {
+            guard torrents[index].state != .failed else { return }
             torrents[index].state = .failed
             torrents[index].errorMessage = message
+            history.record(.from(torrent: torrents[index], status: .failed))
             save()
         }
     }

@@ -9,9 +9,10 @@ import Observation
 
 @main
 struct GrabbitApp: App {
-    @State private var downloadEngine = DownloadEngine()
+    @State private var downloadEngine: DownloadEngine
     @State private var torrentEngine: TorrentEngine
-    @State private var mediaEngine = MediaEngine()
+    @State private var mediaEngine: MediaEngine
+    @State private var historyStore: HistoryStore
     @State private var settings: SettingsStore
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
@@ -22,8 +23,19 @@ struct GrabbitApp: App {
         // One SettingsStore shared by the app and the torrent engine (the
         // engine reads the VPN kill-switch and seeding defaults live).
         let sharedSettings = SettingsStore()
+        // One HistoryStore shared by all three engines; completions and
+        // failures across downloads/torrents/media land in a single log.
+        let sharedHistory = HistoryStore()
         _settings = State(initialValue: sharedSettings)
-        _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings))
+        _historyStore = State(initialValue: sharedHistory)
+        _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory))
+        _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
+        _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
+        // One-time import of already-finished tasks so existing users don't
+        // start with an empty history. Runs only when the store is empty.
+        sharedHistory.backfillIfNeeded(
+            downloads: _downloadEngine.wrappedValue.items,
+            torrents: _torrentEngine.wrappedValue.torrents)
         // Sparkle's updater can't start in an unsigned dev build (it needs a
         // signed app + real SUPublicEDKey), and the failure pops an error
         // dialog. Only create it when it's actually usable.
@@ -58,6 +70,7 @@ struct GrabbitApp: App {
                 .environment(downloadEngine)
                 .environment(torrentEngine)
                 .environment(mediaEngine)
+                .environment(historyStore)
                 .environment(settings)
                 .onOpenURL { url in
                     // grabbit://download?url=… — from the browser extension,

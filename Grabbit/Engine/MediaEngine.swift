@@ -27,8 +27,11 @@ public final class MediaEngine {
     private var process: ManagedProcess?
     /// Serializes probe/download calls.
     private var busy = false
+    private let history: HistoryStore
 
-    public init() {}
+    public init(history: HistoryStore = HistoryStore()) {
+        self.history = history
+    }
 
     // MARK: - Probe
 
@@ -81,6 +84,12 @@ public final class MediaEngine {
         switch MediaRuntimeResolver.resolve(.ytDlp) {
         case .success(let u): ytDlp = u
         case .failure(let e):
+            history.record(.media(
+                name: media.title,
+                sourceURL: source.absoluteString,
+                saveDirectory: directory,
+                status: .failed,
+                errorMessage: e.localizedDescription))
             fail(e.localizedDescription)
             return
         }
@@ -138,9 +147,20 @@ public final class MediaEngine {
             state = .completed
             progress = 1
             statusLine = ""
+            history.record(.media(
+                name: media.title,
+                sourceURL: source.absoluteString,
+                saveDirectory: directory,
+                status: .completed))
         } else {
             let detail = result.stderrTail.split(separator: "\n").last.map(String.init)
                 ?? "yt-dlp exited with code \(result.exitCode)"
+            history.record(.media(
+                name: media.title,
+                sourceURL: source.absoluteString,
+                saveDirectory: directory,
+                status: .failed,
+                errorMessage: detail))
             fail(detail)
         }
     }
