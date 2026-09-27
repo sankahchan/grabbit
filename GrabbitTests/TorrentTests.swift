@@ -441,6 +441,7 @@ final class TorrentTests: XCTestCase {
 
     // MARK: - TorrentEngine.resolvedSaveDir
 
+    @MainActor
     func testResolvedSaveDirRepairsFilePath() throws {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
@@ -457,6 +458,7 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(resolved, fallback)
     }
 
+    @MainActor
     func testResolvedSaveDirPassesThroughRealDirectory() throws {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
