@@ -183,6 +183,14 @@ public enum MediaProbe {
                 isAudioOnly: true,
                 estimatedSize: bestAudioSize,
                 audioConvertFormat: "mp3"))
+            // Backlog #10: M4A extraction (AAC, Apple-friendly, no MP3
+            // recompression artifacts beyond the one transcode).
+            presets.append(MediaPreset(
+                id: "audioM4A", label: NSLocalizedString("media.preset.audioM4A", comment: ""),
+                formatSpec: "bestaudio",
+                isAudioOnly: true,
+                estimatedSize: bestAudioSize,
+                audioConvertFormat: "m4a"))
             // Backlog #10: audio-only keeping the original container
             // (e.g. m4a/opus/webm) instead of forcing MP3.
             presets.append(MediaPreset(

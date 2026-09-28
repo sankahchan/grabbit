@@ -30,7 +30,7 @@ final class MediaTests: XCTestCase {
         XCTAssertEqual(media.title, "Test Video")
         XCTAssertEqual(media.duration, 123.0)
         let ids = media.presets.map(\.id)
-        XCTAssertEqual(ids, ["best", "1080p", "720p", "480p", "videoOnly", "audio", "audioOriginal"])
+        XCTAssertEqual(ids, ["best", "1080p", "720p", "480p", "videoOnly", "audio", "audioM4A", "audioOriginal"])
         // 360p has no matching format — correctly omitted.
         XCTAssertFalse(ids.contains("360p"))
         let best = media.presets.first { $0.id == "best" }!
@@ -43,6 +43,9 @@ final class MediaTests: XCTestCase {
         XCTAssertTrue(audio.isAudioOnly)
         XCTAssertEqual(audio.formatSpec, "bestaudio")
         XCTAssertEqual(audio.audioConvertFormat, "mp3")
+        let audioM4A = media.presets.first { $0.id == "audioM4A" }!
+        XCTAssertTrue(audioM4A.isAudioOnly)
+        XCTAssertEqual(audioM4A.audioConvertFormat, "m4a")
         // Backlog #10: video-only + original-audio rows.
         let videoOnly = media.presets.first { $0.id == "videoOnly" }!
         XCTAssertTrue(videoOnly.videoOnly)
@@ -159,7 +162,7 @@ final class MediaTests: XCTestCase {
     func testProbeParseBuilds4KAnd1440pPresets() throws {
         let media = try MediaProbe.parse(uhdJSON())
         let ids = media.presets.map(\.id)
-        XCTAssertEqual(ids, ["best", "2160p", "1440p", "1080p", "videoOnly", "audio", "audioOriginal"])
+        XCTAssertEqual(ids, ["best", "2160p", "1440p", "1080p", "videoOnly", "audio", "audioM4A", "audioOriginal"])
         let p4k = media.presets.first { $0.id == "2160p" }!
         XCTAssertEqual(p4k.formatSpec, "bv*[height<=2160]+ba/b[height<=2160]")
         XCTAssertEqual(p4k.estimatedSize, 405_000_000) // 4K video + audio

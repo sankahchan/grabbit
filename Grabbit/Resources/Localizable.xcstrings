@@ -5691,6 +5691,23 @@
           }
         }
       }
+    },
+    "media.preset.audioM4A": {
+      "comment": "",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio (M4A)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံသီးသန့် (M4A)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
