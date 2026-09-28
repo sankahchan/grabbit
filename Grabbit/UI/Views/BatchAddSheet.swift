@@ -5,35 +5,43 @@ import UniformTypeIdentifiers
 /// Pure multi-link parser: one URL per line, http(s) only, de-duplicated.
 /// Kept free of UI so it's unit-testable.
 enum BatchLinkParser {
-    static func parse(_ text: String) -> [URL] {
-        var seen = Set<String>()
-        var out: [URL] = []
-        for rawLine in text.components(separatedBy: .newlines) {
-            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !line.isEmpty,
-                  let url = URL(string: line),
-                  let scheme = url.scheme?.lowercased(),
-                  scheme == "http" || scheme == "https",
-                  url.host != nil,
-                  // De-duplicate on the canonical URL: distinct raw lines
-                  // (e.g. host case differences, default ports, fragments)
-                  // can share one resource, and per-link customizations are
-                  // keyed by canonical URL — raw-line dedup would create
-                  // two rows sharing one entry.
-                  seen.insert(url.dedupKey).inserted
-            else { continue }
-            out.append(url)
-        }
-        return out
+    /// Detailed parse result: valid de-duplicated URLs plus separate
+    /// counts, so the sheet can label duplicates vs truly-invalid lines.
+    struct Result {
+        let urls: [URL]
+        let duplicateCount: Int
+        let invalidCount: Int
     }
 
-    /// Non-empty lines that didn't parse as URLs (for the "skipped" note).
-    static func invalidCount(in text: String, parsed: [URL]) -> Int {
-        let nonEmpty = text.components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .count
-        return max(0, nonEmpty - parsed.count)
+    static func parseDetailed(_ text: String) -> Result {
+        var seen = Set<String>()
+        var urls: [URL] = []
+        var duplicates = 0
+        var invalid = 0
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { continue }
+            guard let url = URL(string: line),
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https",
+                  url.host != nil
+            else { invalid += 1; continue }
+            // De-duplicate on the canonical URL: distinct raw lines
+            // (e.g. host case differences, default ports, fragments)
+            // can share one resource, and per-link customizations are
+            // keyed by canonical URL — raw-line dedup would create
+            // two rows sharing one entry.
+            if seen.insert(url.dedupKey).inserted {
+                urls.append(url)
+            } else {
+                duplicates += 1
+            }
+        }
+        return Result(urls: urls, duplicateCount: duplicates, invalidCount: invalid)
+    }
+
+    static func parse(_ text: String) -> [URL] {
+        parseDetailed(text).urls
     }
 }
 
@@ -75,8 +83,8 @@ struct BatchAddSheet: View {
     /// real downloads; the rest are never added.
     @State private var addTask: Task<Void, Never>?
 
-    private var links: [URL] { BatchLinkParser.parse(text) }
-    private var skipped: Int { BatchLinkParser.invalidCount(in: text, parsed: links) }
+    private var parsed: BatchLinkParser.Result { BatchLinkParser.parseDetailed(text) }
+    private var links: [URL] { parsed.urls }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -110,10 +118,17 @@ struct BatchAddSheet: View {
                         links.count))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    if skipped > 0 {
+                    if parsed.duplicateCount > 0 {
+                        Text(String(
+                            format: NSLocalizedString("batch.duplicates", comment: ""),
+                            parsed.duplicateCount))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    if parsed.invalidCount > 0 {
                         Text(String(
                             format: NSLocalizedString("batch.skipped", comment: ""),
-                            skipped))
+                            parsed.invalidCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }

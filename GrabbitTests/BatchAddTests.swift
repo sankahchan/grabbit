@@ -26,7 +26,9 @@ final class BatchAddTests: XCTestCase {
         let urls = BatchLinkParser.parse(text)
         XCTAssertEqual(urls.map(\.absoluteString),
                        ["https://example.com/a.zip", "https://example.com/d.zip"])
-        XCTAssertEqual(BatchLinkParser.invalidCount(in: text, parsed: urls), 3)
+        let detailed = BatchLinkParser.parseDetailed(text)
+        XCTAssertEqual(detailed.invalidCount, 3)
+        XCTAssertEqual(detailed.duplicateCount, 0)
     }
 
     func testDeduplicates() {
@@ -97,5 +99,18 @@ final class BatchAddTests: XCTestCase {
         """
         let urls = BatchLinkParser.parse(text)
         XCTAssertEqual(urls.count, 2)
+    }
+
+    func testParseDetailedSplitsDuplicatesAndInvalid() {
+        let text = """
+        https://example.com/a.zip
+        HTTPS://EXAMPLE.COM/a.zip
+        not a url
+        https://example.com/b.zip
+        """
+        let r = BatchLinkParser.parseDetailed(text)
+        XCTAssertEqual(r.urls.count, 2)
+        XCTAssertEqual(r.duplicateCount, 1)
+        XCTAssertEqual(r.invalidCount, 1)
     }
 }
