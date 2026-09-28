@@ -62,9 +62,9 @@ struct SettingsView: View {
     // MARK: - Language
 
     /// Applies the language instantly (no restart): the main bundle is
-    /// re-pointed at the chosen language's `.lproj`, and this view
-    /// re-renders on the setting change; other tabs pick it up when
-    /// navigated to.
+    /// re-pointed at the chosen language's `.lproj`, and MainView's
+    /// `.id(language)` rebuilds the whole hierarchy so every tab
+    /// re-renders in the new language immediately.
     private func handleLanguageChange(_ old: AppLanguage, _ new: AppLanguage) {
         BundleLocalization.apply(new)
         store.save()

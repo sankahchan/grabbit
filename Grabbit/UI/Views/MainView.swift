@@ -20,6 +20,10 @@ struct MainView: View {
         // The Appearance setting actually drives the UI: without this the
         // picker only saved the value and everything followed the system.
         .preferredColorScheme(colorSchemeOverride)
+        // Language applies to the whole app instantly: re-keying the
+        // hierarchy rebuilds every view, so all NSLocalizedString calls
+        // re-evaluate in the new language (no tab tap needed).
+        .id(store.settings.language)
     }
 
     /// Maps the saved theme to a SwiftUI override; nil means "follow system".
