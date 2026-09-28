@@ -61,19 +61,28 @@ final class WatchFolderTests: XCTestCase {
         let old = Date(timeIntervalSinceNow: -60)
         let fresh = Date()
 
-        let settled = try touch(dir, name: "links.txt", mtime: old)
+        try touch(dir, name: "links.txt", mtime: old)
         try touch(dir, name: "fresh.txt", mtime: fresh) // still settling: skipped
         try touch(dir, name: "notes.md", mtime: old) // not .txt: skipped
         try touch(dir, name: "UPPER.TXT", mtime: old) // case-insensitive: kept
 
+        // contentsOfDirectory may return symlink-resolved paths
+        // (/private/var/… vs /var/… from temporaryDirectory), so compare
+        // canonical paths when crossing the two APIs.
+        func canon(_ url: URL) -> String { url.resolvingSymlinksInPath().path }
+
         let pending = WatchFolderScan.pendingFiles(in: dir, processed: [])
         XCTAssertEqual(Set(pending.map(\.lastPathComponent)),
                        Set(["links.txt", "UPPER.TXT"]))
-        XCTAssertTrue(pending.map(\.path).contains(settled.path))
+        let pendingPaths = Set(pending.map(canon))
+        XCTAssertTrue(pendingPaths.contains(canon(dir.appendingPathComponent("links.txt"))))
 
-        // Already-processed paths are excluded.
-        let again = WatchFolderScan.pendingFiles(in: dir, processed: [settled.path])
-        XCTAssertFalse(again.map(\.path).contains(settled.path))
+        // Already-processed paths are excluded. Uses the enumerated path
+        // form, exactly as WatchFolderMonitor does in production.
+        let linksPath = try XCTUnwrap(
+            pending.first(where: { $0.lastPathComponent == "links.txt" })?.path)
+        let again = WatchFolderScan.pendingFiles(in: dir, processed: [linksPath])
+        XCTAssertFalse(again.map(\.path).contains(linksPath))
     }
 
     func testPendingFilesMissingDir() {
