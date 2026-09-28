@@ -38,10 +38,6 @@ private struct WindowFrameSaver: NSViewRepresentable {
 struct MainView: View {
     @State private var selection: SidebarSelection = .downloads
     @Environment(SettingsStore.self) private var store: SettingsStore
-    // The real system theme, read from ABOVE our own override: a view's
-    // environment comes from its parent, so this is unaffected by the
-    // preferredColorScheme we apply below.
-    @Environment(\.colorScheme) private var systemScheme
 
     var body: some View {
         NavigationSplitView {
@@ -51,28 +47,32 @@ struct MainView: View {
             detailView
         }
         .navigationTitle("Grabbit")
-        // The Appearance setting actually drives the UI: without this the
-        // picker only saved the value and everything followed the system.
-        .preferredColorScheme(resolvedTheme)
+        // The Appearance setting drives the UI at the AppKit level.
+        // preferredColorScheme did NOT reliably clear a concrete override
+        // when going back to System (Dark -> System left the UI dark), so
+        // we set NSApp.appearance directly instead — nil follows the
+        // system, and the SwiftUI colorScheme environment follows the
+        // effective appearance automatically.
+        .onAppear { applyAppearance() }
+        .onChange(of: store.settings.theme) { _, _ in applyAppearance() }
         // Persists the window's size/position across launches when enabled
         // in Settings > Basic > Startup.
         .background(WindowFrameSaver(enabled: store.settings.keepWindowFrame))
-        // Re-key on language AND theme: rebuilding the hierarchy makes
-        // every NSLocalizedString re-evaluate (instant language switch)
-        // and works around preferredColorScheme not reliably applying
-        // when going from a concrete theme back to System (which left a
-        // mixed light-sidebar / dark-content state).
-        .id(store.settings.language.rawValue + "/" + store.settings.theme.rawValue)
+        // Re-key on language: rebuilding the hierarchy makes every
+        // NSLocalizedString re-evaluate (instant language switch). Theme
+        // needs no rebuild — NSApp.appearance applies immediately.
+        .id(store.settings.language.rawValue)
     }
 
-    /// Maps the saved theme to an explicit override — never nil. Resolving
-    /// System to the real system theme avoids the stuck-override bug where
-    /// going Dark -> System (nil) left the content dark.
-    private var resolvedTheme: ColorScheme {
+    /// Maps the saved theme onto the app-wide AppKit appearance.
+    private func applyAppearance() {
         switch store.settings.theme {
-        case .system: systemScheme
-        case .light: .light
-        case .dark: .dark
+        case .system:
+            NSApp.appearance = nil
+        case .light:
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark:
+            NSApp.appearance = NSAppearance(named: .darkAqua)
         }
     }
 

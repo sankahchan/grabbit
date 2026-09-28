@@ -44,9 +44,9 @@ struct Sidebar: View {
             Spacer()
         }
         .padding(12)
-        // Explicit column background: the default sidebar material follows
-        // the SYSTEM theme and ignores preferredColorScheme, which left the
-        // sidebar light while the content went dark.
+        // Explicit column background: the default sidebar material would not
+        // follow our theme override, which left the sidebar light while the
+        // content went dark.
         .background(Neo.paper(scheme))
     }
 
