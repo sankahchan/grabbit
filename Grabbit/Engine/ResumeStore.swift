@@ -17,8 +17,13 @@ public final class ResumeStore {
     public init() {
         let base = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Grabbit/States", isDirectory: true)
-        self.directory = base
-        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        self.init(directory: base)
+    }
+
+    /// Test seam: point the store at a scratch directory.
+    public init(directory: URL) {
+        self.directory = directory
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
     deinit {

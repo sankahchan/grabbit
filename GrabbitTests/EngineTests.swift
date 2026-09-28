@@ -389,4 +389,38 @@ final class EngineTests: XCTestCase {
         XCTAssertNil(msg.pageUrl)
         XCTAssertEqual(msg.headers?["Cookie"], "a=b")
     }
+
+    // MARK: - Launch recovery
+
+    private func recoveryStore(with state: DownloadState) throws -> ResumeStore {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let store = ResumeStore(directory: dir)
+        let item = DownloadItem(
+            url: URL(string: "https://example.com/a.zip")!,
+            filename: "a.zip",
+            state: state,
+            destinationURL: URL(fileURLWithPath: "/tmp/a.zip"))
+        try store.save(item)
+        return store
+    }
+
+    func testInitMarksDownloadingAsInterrupted() throws {
+        let store = try recoveryStore(with: .downloading)
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let engine = DownloadEngine(resumeStore: store)
+        XCTAssertEqual(engine.items.count, 1)
+        XCTAssertEqual(engine.items[0].state, .interrupted)
+        XCTAssertEqual(engine.recoveredCount, 1)
+    }
+
+    func testInitLeavesPausedAlone() throws {
+        let store = try recoveryStore(with: .paused)
+        defer { try? FileManager.default.removeItem(at: store.directory) }
+        let engine = DownloadEngine(resumeStore: store)
+        XCTAssertEqual(engine.items.count, 1)
+        // User-paused items are not the app's to restart.
+        XCTAssertEqual(engine.items[0].state, .paused)
+        XCTAssertEqual(engine.recoveredCount, 0)
+    }
 }

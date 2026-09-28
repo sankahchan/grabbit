@@ -128,6 +128,12 @@ struct GrabbitApp: App {
                 }
                 .onAppear {
                     applyRunMode(initial: true)
+                    // Startup > "Auto-resume unfinished tasks": interrupted
+                    // downloads restart on launch instead of waiting behind
+                    // the recovery banner in the Downloads tab.
+                    if settings.settings.autoResumeOnLaunch {
+                        downloadEngine.resumeAllInterrupted()
+                    }
                     // Ask once for notification authorization (completion /
                     // failure toasts); a no-op once decided.
                     Notifier.requestAuthorizationIfNeeded()
