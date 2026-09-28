@@ -124,4 +124,27 @@ final class TaskProxyTests: XCTestCase {
         let decoded = try JSONDecoder().decode(TorrentItem.self, from: legacy)
         XCTAssertNil(decoded.proxy)
     }
+
+    /// The size probe builds its URLSession proxy dictionary from the
+    /// resolved config: a Direct override must yield no proxy dictionary
+    /// even when a global proxy is configured (otherwise the probe — and
+    /// any other pre-segment fetch — goes through the proxy anyway).
+    func testNoneOverrideYieldsNoURLSessionProxyDictionary() {
+        let resolved = TaskProxy.resolve(
+            override: TaskProxy(scope: .none), settings: settingsWithProxy())
+        XCTAssertNil(resolved.urlSessionProxyDictionary())
+    }
+
+    func testCustomOverrideYieldsItsOwnProxyDictionary() {
+        let custom = TaskProxy(
+            scope: .custom, mode: .http, host: "task.example", port: 8888,
+            username: "", password: "")
+        let resolved = TaskProxy.resolve(
+            override: custom, settings: settingsWithProxy())
+        let dict = resolved.urlSessionProxyDictionary()
+        XCTAssertEqual(
+            dict?[kCFNetworkProxiesHTTPProxy as String] as? String, "task.example")
+        XCTAssertEqual(
+            dict?[kCFNetworkProxiesHTTPPort as String] as? Int, 8888)
+    }
 }

@@ -132,16 +132,16 @@ public final class DownloadEngine {
     /// `Content-Range` carries the total (QDM probe strategy).
     /// Also captures ETag / Last-Modified validators and a
     /// Content-Disposition filename when the server provides them.
-    private func probe(_ url: URL) async -> ProbeResult {
+    private func probe(_ url: URL, proxy: TaskProxy? = nil) async -> ProbeResult {
         var result = ProbeResult()
-        if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
+        if let (status, headers) = await fetchHeaders(url, method: "HEAD", proxy: proxy),
            (200...299).contains(status)
         {
             Self.applyProbeHeaders(&result, headers: headers)
             if result.totalBytes != nil { return result }
         }
         if let (status, headers) = await fetchHeaders(
-            url, method: "GET", range: "bytes=0-0"),
+            url, method: "GET", range: "bytes=0-0", proxy: proxy),
            status == 206
         {
             Self.applyProbeHeaders(&result, headers: headers)
@@ -173,13 +173,15 @@ public final class DownloadEngine {
     /// HEAD, then GET Range bytes=0-0 on failure — the same discovery the
     /// add path uses, exposed for staging so links can be checked before
     /// they are committed as downloads.
-    public func probeLink(_ url: URL) async -> LinkProbe {
+    public func probeLink(_ url: URL, proxy: TaskProxy? = nil) async -> LinkProbe {
         // Resolve share links first (MediaFire pages need a page fetch to
         // find the real file) so staged links show the true size/name.
+        // The per-task override is honored when the caller has one
+        // (staging has none — the global proxy applies there).
         let url = await MediaFireResolver.resolve(
             ShareURLRewriter.rewrite(url),
-            proxyDictionary: proxyDictionary())
-        if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
+            proxyDictionary: proxyDictionary(for: proxy))
+        if let (status, headers) = await fetchHeaders(url, method: "HEAD", proxy: proxy),
            (200...299).contains(status)
         {
             var result = ProbeResult()
@@ -187,7 +189,7 @@ public final class DownloadEngine {
             return LinkProbe(online: true, totalBytes: result.totalBytes, filename: result.filename)
         }
         if let (status, headers) = await fetchHeaders(
-            url, method: "GET", range: "bytes=0-0"),
+            url, method: "GET", range: "bytes=0-0", proxy: proxy),
            status == 206 || (200...299).contains(status)
         {
             var result = ProbeResult()
@@ -246,7 +248,7 @@ public final class DownloadEngine {
     }
 
     private func fetchHeaders(
-        _ url: URL, method: String, range: String? = nil
+        _ url: URL, method: String, range: String? = nil, proxy: TaskProxy? = nil
     ) async -> (status: Int, headers: [String: String])? {
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -258,13 +260,13 @@ public final class DownloadEngine {
         if let range {
             request.setValue(range, forHTTPHeaderField: "Range")
         }
-        // Phase 5 proxy: run the probe through the user's proxy (if any)
-        // so size discovery works behind it. This session has no proxy-auth
-        // challenge handler, so an authenticated proxy just degrades to
-        // unknown-size here — the real download still authenticates via
-        // HTTP1Transport.
+        // Phase 5 proxy: run the probe through the task's effective proxy
+        // (a per-task Direct/Custom override wins over the global setting).
+        // This session has no proxy-auth challenge handler, so an
+        // authenticated proxy just degrades to unknown-size here — the
+        // real download still authenticates via HTTP1Transport.
         let session: URLSession
-        if let proxyDict = proxyDictionary() {
+        if let proxyDict = proxyDictionary(for: proxy) {
             let config = URLSessionConfiguration.ephemeral
             config.connectionProxyDictionary = proxyDict
             session = URLSession(configuration: config)
@@ -398,7 +400,7 @@ public final class DownloadEngine {
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
-        let probe = await probe(resolvedURL)
+        let probe = await probe(resolvedURL, proxy: proxy)
         let totalBytes = probe.totalBytes
 
         // Explicit filename wins; otherwise the packagizer template
