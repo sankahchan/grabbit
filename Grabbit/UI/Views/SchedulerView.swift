@@ -11,7 +11,7 @@ enum ScheduleAction: String, CaseIterable, Codable {
     }
 }
 
-struct ScheduleEntry: Identifiable, Codable {
+public struct ScheduleEntry: Identifiable, Codable {
     var id: UUID = UUID()
     var time: Date
     var action: ScheduleAction
