@@ -107,9 +107,14 @@ final class QueuePriorityTests: XCTestCase {
         XCTAssertEqual(engine.items.map(\.id), [ids[1], ids[2], ids[0]])
         XCTAssertEqual(engine.items.map(\.sortRank), [0, 1, 2])
 
+        // Dragging upward lands *before* the target.
+        engine.moveItem(draggedID: ids[2], to: ids[1])
+        XCTAssertEqual(engine.items.map(\.id), [ids[2], ids[1], ids[0]])
+        XCTAssertEqual(engine.items.map(\.sortRank), [0, 1, 2])
+
         // Order survives a reload.
         let reloaded = DownloadEngine(resumeStore: ResumeStore(directory: dir))
-        XCTAssertEqual(reloaded.items.map(\.id), [ids[1], ids[2], ids[0]])
+        XCTAssertEqual(reloaded.items.map(\.id), [ids[2], ids[1], ids[0]])
     }
 
     @MainActor

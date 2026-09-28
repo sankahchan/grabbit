@@ -608,9 +608,11 @@ public final class DownloadEngine {
               let to = items.firstIndex(where: { $0.id == targetID })
         else { return }
         let moving = items.remove(at: from)
-        // Removing shifts the target left when it was after the source.
-        let insertAt = from < to ? to - 1 : to
-        items.insert(moving, at: insertAt)
+        // Insert at the target's original index: after removal the target
+        // sits at `to - 1` when dragged from above (so this lands *after*
+        // it) and at `to` when dragged from below (landing *before* it) —
+        // the dragged card follows the drag in both directions.
+        items.insert(moving, at: to)
         for (rank, index) in items.indices.enumerated() {
             items[index].sortRank = rank
             persistItem(id: items[index].id)
