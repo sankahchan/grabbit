@@ -413,6 +413,17 @@ struct NeoStepper<V: Strideable>: View {
     let label: (V) -> String
     @Environment(\.colorScheme) private var scheme
 
+    /// Mirrors the system `Stepper(value:in:step:)` labels.
+    init(
+        value: Binding<V>, in range: ClosedRange<V>, step: V.Stride,
+        label: @escaping (V) -> String
+    ) {
+        _value = value
+        self.range = range
+        self.step = step
+        self.label = label
+    }
+
     var body: some View {
         HStack(spacing: 6) {
             stepButton(icon: "minus", disabled: value <= range.lowerBound) {
