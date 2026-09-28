@@ -282,4 +282,41 @@ final class HistoryTests: XCTestCase {
         XCTAssertTrue(toast.message.contains("vid.mp4"))
         XCTAssertTrue(toast.message.contains("daemon is down"))
     }
+
+    func testRetryCarriesProxyOverride() {
+        var entry = retryEntry(
+            kind: .download, sourceURL: "https://example.com/f.zip")
+        entry.proxy = TaskProxy(scope: .none)
+        let req = HistoryRetry.request(
+            for: entry,
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp"))!
+        XCTAssertEqual(req.proxy?.scope, .none)
+    }
+
+    func testRetryHasNilProxyForGlobalTasks() {
+        let req = HistoryRetry.request(
+            for: retryEntry(kind: .download, sourceURL: "https://example.com/f.zip"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp"))!
+        XCTAssertNil(req.proxy)
+    }
+
+    func testHistoryEntryPersistsProxy() throws {
+        var entry = retryEntry(
+            kind: .download, sourceURL: "https://example.com/f.zip")
+        entry.proxy = TaskProxy(scope: .none)
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(HistoryEntry.self, from: data)
+        XCTAssertEqual(decoded.proxy?.scope, .none)
+    }
+
+    func testHistoryEntryDecodesWithoutProxy() throws {
+        let entry = retryEntry(
+            kind: .download, sourceURL: "https://example.com/f.zip")
+        let data = try JSONEncoder().encode(entry)
+        var raw = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        raw.removeValue(forKey: "proxy")
+        let legacy = try JSONSerialization.data(withJSONObject: raw)
+        let decoded = try JSONDecoder().decode(HistoryEntry.self, from: legacy)
+        XCTAssertNil(decoded.proxy)
+    }
 }

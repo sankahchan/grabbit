@@ -60,6 +60,10 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
     public var finishedAt: Date
     /// Failure reason; only set when `status == .failed`.
     public var errorMessage: String?
+    /// The task's proxy override at finish time, so retry re-applies it
+    /// (a Direct task retried without this would fall back to the global
+    /// proxy). Nil for entries recorded before this field existed.
+    public var proxy: TaskProxy? = nil
 
     public init(
         id: UUID = UUID(),
@@ -70,7 +74,8 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
         sourceURL: String,
         savePath: String? = nil,
         finishedAt: Date = Date(),
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        proxy: TaskProxy? = nil
     ) {
         self.id = id
         self.name = name
@@ -81,6 +86,7 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
         self.savePath = savePath
         self.finishedAt = finishedAt
         self.errorMessage = errorMessage
+        self.proxy = proxy
     }
 
     /// Short source label for the row: host of an http(s) URL, "magnet"
@@ -106,7 +112,8 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
             totalBytes: item.totalBytes,
             sourceURL: item.url.absoluteString,
             savePath: item.destinationURL.path,
-            errorMessage: status == .failed ? item.errorMessage : nil)
+            errorMessage: status == .failed ? item.errorMessage : nil,
+            proxy: item.proxy)
     }
 
     static func from(torrent item: TorrentItem, status: HistoryStatus) -> HistoryEntry {
@@ -119,7 +126,8 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
             totalBytes: item.totalBytes > 0 ? item.totalBytes : nil,
             sourceURL: link,
             savePath: nil,
-            errorMessage: status == .failed ? item.errorMessage : nil)
+            errorMessage: status == .failed ? item.errorMessage : nil,
+            proxy: item.proxy)
     }
 
     static func media(

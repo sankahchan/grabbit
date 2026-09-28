@@ -12,6 +12,10 @@ public enum HistoryRetry {
         public let name: String
         /// Torrent save folder; downloads resolve their own destination.
         public let torrentSaveFolder: URL?
+        /// The finished task's proxy override, re-applied on retry so a
+        /// Direct task doesn't fall back to the (possibly dead) global
+        /// proxy. Nil when the task followed the global proxy.
+        public let proxy: TaskProxy?
     }
 
     /// Retry parameters for a history entry, or nil when the entry cannot
@@ -30,14 +34,16 @@ public enum HistoryRetry {
                 kind: .download,
                 sourceURL: entry.sourceURL,
                 name: entry.name,
-                torrentSaveFolder: nil)
+                torrentSaveFolder: nil,
+                proxy: entry.proxy)
         case .torrent:
             guard !entry.sourceURL.isEmpty else { return nil }
             return Request(
                 kind: .torrent,
                 sourceURL: entry.sourceURL,
                 name: entry.name,
-                torrentSaveFolder: torrentSaveFolder)
+                torrentSaveFolder: torrentSaveFolder,
+                proxy: entry.proxy)
         case .media:
             return nil
         }

@@ -282,7 +282,7 @@ struct HistoryView: View {
                 torrentSaveFolder: settings.folderURL(for: .other)
             ), let url = URL(string: request.sourceURL) else { return }
             Task { @MainActor in
-                await downloadEngine.add(url: url, filename: request.name)
+                await downloadEngine.add(url: url, filename: request.name, proxy: request.proxy)
                 toastCenter.push(HistoryRetry.startedToast(for: request))
             }
         case .torrent:
@@ -294,7 +294,8 @@ struct HistoryView: View {
                 do {
                     try await torrentEngine.add(
                         magnetOrURL: request.sourceURL,
-                        savePath: request.torrentSaveFolder ?? settings.folderURL(for: .other))
+                        savePath: request.torrentSaveFolder ?? settings.folderURL(for: .other),
+                        proxy: request.proxy)
                     toastCenter.push(HistoryRetry.startedToast(for: request))
                 } catch {
                     toastCenter.push(HistoryRetry.failedToast(for: request, error: error))
