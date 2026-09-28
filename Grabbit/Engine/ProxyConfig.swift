@@ -124,7 +124,7 @@ public enum ProxyHandshake {
     // MARK: - HTTP CONNECT
 
     /// `CONNECT target:port HTTP/1.1` request (+ optional auth).
-connectRequest(targetHost: String, targetPort: Int,
+    public static func connectRequest(targetHost: String, targetPort: Int,
                                proxy: ProxyConfig) -> Data
     {
         var lines = [
