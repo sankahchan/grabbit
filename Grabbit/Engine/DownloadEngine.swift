@@ -364,7 +364,7 @@ public final class DownloadEngine {
         let url = ShareURLRewriter.rewrite(url)
         // MediaFire share pages serve HTML, not the file — resolve to the
         // direct download*.mediafire.com URL via the share page.
-        let url = await MediaFireResolver.resolve(
+        let resolvedURL = await MediaFireResolver.resolve(
             url, proxyDictionary: proxyDictionary())
 
         // Probe the server for total size. We deliberately do NOT gate
@@ -372,10 +372,10 @@ public final class DownloadEngine {
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
-        let probe = await probe(url)
+        let probe = await probe(resolvedURL)
         let totalBytes = probe.totalBytes
 
-        let candidate = filename ?? probe.filename ?? url.lastPathComponent
+        let candidate = filename ?? probe.filename ?? resolvedURL.lastPathComponent
         let decoded = candidate.removingPercentEncoding ?? candidate
         // sanitize_filename: never let a hostile name escape the folder.
         let name = Self.sanitizeFilename(decoded.isEmpty ? "download" : decoded)
@@ -418,7 +418,7 @@ public final class DownloadEngine {
         }
 
         var item = DownloadItem(
-            url: url,
+            url: resolvedURL,
             filename: uniqueName,
             totalBytes: totalBytes,
             segments: segments,
