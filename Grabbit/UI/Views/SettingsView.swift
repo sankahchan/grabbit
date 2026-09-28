@@ -74,6 +74,9 @@ struct SettingsView: View {
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.showCompletionToast) { _, _ in store.save() }
+                .onChange(of: store.settings.showFailureToast) { _, _ in store.save() }
+                .onChange(of: store.settings.completionSoundEnabled) { _, _ in store.save() }
                 .modifier(SettingsChangeHandlersB(onOpenAtLogin: onOpenAtLogin))
         }
     }
@@ -215,6 +218,12 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.toast.completed", comment: ""), isOn: settings.showCompletionToast)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.toast.failed", comment: ""), isOn: settings.showFailureToast)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.toast.sound", comment: ""), isOn: settings.completionSoundEnabled)
             .toggleStyle(NeoToggleStyle())
             runAsRow(settings: settings)
             Divider()

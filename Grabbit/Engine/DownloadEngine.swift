@@ -22,6 +22,8 @@ public final class DownloadEngine {
     public private(set) var items: [DownloadItem] = []
     public private(set) var recoveredCount = 0
     public var maxConnections = 16
+    /// In-app completion/failure toast cards. Wired by GrabbitApp.
+    public weak var toastCenter: ToastCenter?
 
     private let resumeStore: ResumeStore
     private let history: HistoryStore
@@ -1091,6 +1093,18 @@ public final class DownloadEngine {
                 folder: items[itemIndex].destinationURL.deletingLastPathComponent().lastPathComponent
             )
         }
+        if settings.settings.showCompletionToast {
+            toastCenter?.push(AppToast(
+                kind: .completed,
+                source: .download,
+                title: NSLocalizedString("toast.completed.title", comment: ""),
+                message: items[itemIndex].filename,
+                fileURL: items[itemIndex].destinationURL
+            ))
+        }
+        if settings.settings.completionSoundEnabled {
+            ToastCenter.playSound(for: .completed)
+        }
         speedSamples[item.id] = nil
         updateSleepPrevention()
         // No resume state needed for a finished download.
@@ -1122,6 +1136,18 @@ public final class DownloadEngine {
                     filename: items[itemIndex].filename,
                     message: message
                 )
+            }
+            if settings.settings.showFailureToast {
+                toastCenter?.push(AppToast(
+                    kind: .failed,
+                    source: .download,
+                    title: NSLocalizedString("toast.failed.title", comment: ""),
+                    message: items[itemIndex].filename + " — " + message,
+                    taskID: id
+                ))
+            }
+            if settings.settings.completionSoundEnabled {
+                ToastCenter.playSound(for: .failed)
             }
         }
         speedSamples[id] = nil

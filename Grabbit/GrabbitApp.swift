@@ -19,6 +19,7 @@ struct GrabbitApp: App {
     @State private var queueStore: QueueStore
     @State private var watchFolderStore: WatchFolderStore
     @State private var linkGrabberStore: LinkGrabberStore
+    @State private var toastCenter: ToastCenter
     /// Phase 5 watch folders: plain let — it owns no UI state itself.
     private let watchMonitor = WatchFolderMonitor()
     @State private var updater: SPUStandardUpdaterController?
@@ -44,8 +45,12 @@ struct GrabbitApp: App {
         _queueStore = State(initialValue: sharedQueues)
         _watchFolderStore = State(initialValue: WatchFolderStore())
         _linkGrabberStore = State(initialValue: LinkGrabberStore())
+        _toastCenter = State(initialValue: ToastCenter())
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
+        // Toast cards: both engines push completion/failure cards here.
+        _downloadEngine.wrappedValue.toastCenter = _toastCenter.wrappedValue
+        _torrentEngine.wrappedValue.toastCenter = _toastCenter.wrappedValue
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
         _schedulerStore = State(initialValue: SchedulerStore())
         _trayController = State(initialValue: TrayController())
@@ -104,6 +109,7 @@ struct GrabbitApp: App {
                 .environment(queueStore)
                 .environment(watchFolderStore)
                 .environment(linkGrabberStore)
+                .environment(toastCenter)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.

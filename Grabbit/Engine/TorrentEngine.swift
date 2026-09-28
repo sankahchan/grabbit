@@ -59,6 +59,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
     public private(set) var torrents: [TorrentItem] = []
     public private(set) var daemonState: DaemonState = .stopped
     public var vpnHolding: Bool { daemonState == .suspendedVPN }
+    /// In-app completion/failure toast cards. Wired by GrabbitApp.
+    public weak var toastCenter: ToastCenter?
 
     private let settings: SettingsStore
     private let history: HistoryStore
@@ -540,6 +542,18 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     // of an already-finished torrent must not re-record it.
                     if newState == .completed {
                         history.record(.from(torrent: item, status: .completed))
+                        if settings.settings.showCompletionToast {
+                            toastCenter?.push(AppToast(
+                                kind: .completed,
+                                source: .torrent,
+                                title: NSLocalizedString("toast.completed.title", comment: ""),
+                                message: item.name,
+                                fileURL: item.savePath
+                            ))
+                        }
+                        if settings.settings.completionSoundEnabled {
+                            ToastCenter.playSound(for: .completed)
+                        }
                         if settings.settings.autoClearFinished {
                             toPurge.append((item.id, st.gid))
                         }
@@ -551,6 +565,18 @@ public final class TorrentEngine: TorrentEngineProtocol {
                             failedItem.errorMessage = st.errorDisplay
                         }
                         history.record(.from(torrent: failedItem, status: .failed))
+                        if settings.settings.showFailureToast {
+                            toastCenter?.push(AppToast(
+                                kind: .failed,
+                                source: .torrent,
+                                title: NSLocalizedString("toast.failed.title", comment: ""),
+                                message: failedItem.name + " — " + (failedItem.errorMessage ?? ""),
+                                taskID: item.id
+                            ))
+                        }
+                        if settings.settings.completionSoundEnabled {
+                            ToastCenter.playSound(for: .failed)
+                        }
                     }
                     item.state = newState
                     changed = true

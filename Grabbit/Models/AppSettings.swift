@@ -41,6 +41,12 @@ public struct AppSettings: Codable {
     public var autoClearFinished = true
     public var autoUpdateEnabled = true
     public var notificationsEnabled = true
+    /// In-app toast cards (bottom-right) on download completion / failure,
+    /// with Open File / Open Folder / Try Again actions.
+    public var showCompletionToast = true
+    public var showFailureToast = true
+    /// Subtle system alert sound alongside the toast cards.
+    public var completionSoundEnabled = true
     public var defaultConnections = 16
     public var folders: [DownloadCategory: String]
     // Torrents (Phase 4).
@@ -88,6 +94,7 @@ extension AppSettings {
     private enum CodingKeys: String, CodingKey {
         case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
         case autoResumeOnLaunch, autoClearFinished, autoUpdateEnabled, notificationsEnabled
+        case showCompletionToast, showFailureToast, completionSoundEnabled
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
         case autoUpdateTrackers
@@ -107,6 +114,9 @@ extension AppSettings {
         autoClearFinished = try c.decodeIfPresent(Bool.self, forKey: .autoClearFinished) ?? true
         autoUpdateEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateEnabled) ?? true
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        showCompletionToast = try c.decodeIfPresent(Bool.self, forKey: .showCompletionToast) ?? true
+        showFailureToast = try c.decodeIfPresent(Bool.self, forKey: .showFailureToast) ?? true
+        completionSoundEnabled = try c.decodeIfPresent(Bool.self, forKey: .completionSoundEnabled) ?? true
         defaultConnections = try c.decodeIfPresent(Int.self, forKey: .defaultConnections) ?? 16
         folders = try c.decodeIfPresent([DownloadCategory: String].self, forKey: .folders) ?? [:]
         vpnKillSwitchEnabled = try c.decodeIfPresent(Bool.self, forKey: .vpnKillSwitchEnabled) ?? false
