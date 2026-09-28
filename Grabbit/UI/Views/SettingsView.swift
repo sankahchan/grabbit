@@ -7,8 +7,6 @@ import ServiceManagement
 /// on change.
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
-    @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
-    @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
     @Environment(\.colorScheme) private var scheme
     /// Display name of the app macOS currently routes magnet: links to
     /// (e.g. "Motrix"); empty when none is set.
@@ -43,31 +41,62 @@ struct SettingsView: View {
             refreshMagnetHandler()
             syncOpenAtLogin()
         }
-        .onChange(of: store.settings.theme) { _, _ in store.save() }
-        .onChange(of: store.settings.language, handleLanguageChange)
-        .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
-        .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
-        .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
-        .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
-        .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
-        .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
-        .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
-        .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
-        .onChange(of: store.settings.vpnKillSwitchEnabled) { _, _ in store.save() }
-        .onChange(of: store.settings.vpnInterfaceName) { _, _ in store.save() }
-        .onChange(of: store.settings.defaultSeedRatio) { _, _ in store.save() }
-        .onChange(of: store.settings.defaultSeedTimeMinutes) { _, _ in store.save() }
-        .onChange(of: store.settings.openAtLogin) { _, new in
-            store.save()
-            applyOpenAtLogin(new)
+        .modifier(SettingsChangeHandlers(
+            onLanguageChange: handleLanguageChange,
+            onOpenAtLogin: applyOpenAtLogin))
+    }
+
+    // MARK: - Change handlers
+
+    /// The settings screen's `.onChange` save triggers, extracted into
+    /// ViewModifiers so the main `body` stays small enough for the
+    /// type-checker (the full modifier chain timed it out in CI).
+    /// Split in two so neither chain gets long enough to stall it.
+    private struct SettingsChangeHandlers: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        var onLanguageChange: (AppLanguage, AppLanguage) -> Void
+        var onOpenAtLogin: (Bool) -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: store.settings.theme) { _, _ in store.save() }
+                .onChange(of: store.settings.language, onLanguageChange)
+                .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
+                .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
+                .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
+                .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
+                .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
+                .modifier(SettingsChangeHandlersB(onOpenAtLogin: onOpenAtLogin))
         }
-        .onChange(of: store.settings.keepWindowFrame) { _, _ in store.save() }
-        .onChange(of: store.settings.maxActiveTasks) { _, _ in
-            store.save()
-            downloadEngine.kickQueue()
-            Task { await torrentEngine.applyMaxActiveTasks() }
+    }
+
+    private struct SettingsChangeHandlersB: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
+        @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+        var onOpenAtLogin: (Bool) -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
+                .onChange(of: store.settings.vpnKillSwitchEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.vpnInterfaceName) { _, _ in store.save() }
+                .onChange(of: store.settings.defaultSeedRatio) { _, _ in store.save() }
+                .onChange(of: store.settings.defaultSeedTimeMinutes) { _, _ in store.save() }
+                .onChange(of: store.settings.openAtLogin) { _, new in
+                    store.save()
+                    onOpenAtLogin(new)
+                }
+                .onChange(of: store.settings.keepWindowFrame) { _, _ in store.save() }
+                .onChange(of: store.settings.maxActiveTasks) { _, _ in
+                    store.save()
+                    downloadEngine.kickQueue()
+                    Task { await torrentEngine.applyMaxActiveTasks() }
+                }
+                .onChange(of: store.settings.runMode) { _, _ in store.save() }
         }
-        .onChange(of: store.settings.runMode) { _, _ in store.save() }
     }
 
     // MARK: - Language
