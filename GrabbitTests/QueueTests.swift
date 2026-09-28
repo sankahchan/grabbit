@@ -20,8 +20,8 @@ final class QueueTests: XCTestCase {
             id: id,
             url: URL(string: "https://example.com/file")!,
             filename: "file",
-            destinationURL: URL(fileURLWithPath: "/tmp/file"),
             state: state,
+            destinationURL: URL(fileURLWithPath: "/tmp/file"),
             queueID: queueID)
     }
 
