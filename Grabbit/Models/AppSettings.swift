@@ -160,19 +160,76 @@ extension AppSettings {
 public final class SettingsStore {
     public var settings: AppSettings
 
-    private static let userDefaultsKey = "com.sankahchan.grabbit.settings"
+    /// Keychain account holding the global proxy password.
+    public static let proxyPasswordAccount = "proxy-password"
 
-    public init() {
+    static let userDefaultsKey = "com.sankahchan.grabbit.settings"
+
+    /// Keychain account this instance reads/writes (the production one by
+    /// default; tests inject an isolated account).
+    private let keychainAccount: String
+    /// True once the Keychain password state is definitively known
+    /// (loaded, confirmed absent, or migrated). While false, `save()`
+    /// never deletes the Keychain item — a transient Keychain error must
+    /// not wipe a credential it never saw.
+    private var proxyPasswordKeychainKnown = false
+
+    public init(keychainAccount: String? = nil) {
+        self.keychainAccount = keychainAccount ?? Self.proxyPasswordAccount
         if let data = UserDefaults.standard.data(forKey: Self.userDefaultsKey),
            let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
             settings = decoded
         } else {
             settings = .default
         }
+        migrateProxyPasswordToKeychain()
+    }
+
+    /// One-way migration: a plaintext password left in UserDefaults by
+    /// older builds moves to the Keychain, and the in-memory working copy
+    /// is repopulated from the Keychain. See `save()` for the guarantee:
+    /// the UserDefaults copy is scrubbed only once the Keychain holds the
+    /// secret — a Keychain failure keeps the old copy so the proxy keeps
+    /// working, and the migration retries on the next launch.
+    private func migrateProxyPasswordToKeychain() {
+        if !settings.proxyPassword.isEmpty {
+            save() // moves it to the Keychain when possible; else keeps it
+            return
+        }
+        switch KeychainStore.load(account: keychainAccount) {
+        case .success(let password):
+            settings.proxyPassword = password
+            proxyPasswordKeychainKnown = true
+        case .failure(.notFound):
+            proxyPasswordKeychainKnown = true // definitively no password
+        case .failure:
+            break // transient error: leave the working copy alone
+        }
     }
 
     public func save() {
-        if let data = try? JSONEncoder().encode(settings) {
+        var toPersist = settings
+        if !settings.proxyPassword.isEmpty {
+            if KeychainStore.save(
+                settings.proxyPassword, account: keychainAccount)
+            {
+                // The Keychain holds the secret — it never touches
+                // UserDefaults.
+                toPersist.proxyPassword = ""
+                proxyPasswordKeychainKnown = true
+            } else {
+                // Keychain failed: keep the plaintext fallback in
+                // UserDefaults so the credential (and the proxy) survives;
+                // the migration retries on a later save/launch.
+                proxyPasswordKeychainKnown = false
+            }
+        } else if proxyPasswordKeychainKnown {
+            // No password configured (or it was cleared): drop any stale
+            // Keychain item. Skipped while the Keychain state is unknown —
+            // never delete a credential we never saw.
+            KeychainStore.delete(account: keychainAccount)
+        }
+        if let data = try? JSONEncoder().encode(toPersist) {
             UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
         }
     }

@@ -90,6 +90,30 @@ final class CompletionActionCenterTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// Regression: a drain fires, then a NEW task starts and drains —
+    /// the second drain must fire too. (Previously `firedForCurrentDrain`
+    /// was only reset when a settle observed active tasks, so a clean
+    /// start→settle cycle after a drain never fired again.)
+    func testRearmsWhenNewTaskStartsAfterDrain() {
+        var active = 0
+        let settings = SettingsStore()
+        settings.settings.completionAction = .sleep
+        var fired = 0
+        let center = CompletionActionCenter(
+            settings: settings,
+            activeTaskCount: { active },
+            executor: { _, _ in fired += 1 })
+        // First drain fires.
+        center.taskDidSettle()
+        XCTAssertEqual(fired, 1)
+        // A new task starts (no settle in between) and later drains.
+        active = 1
+        center.taskDidStart()
+        active = 0
+        center.taskDidSettle()
+        XCTAssertEqual(fired, 2)
+    }
+
     private func makeCenter(
         action: CompletionAction, active: Int
     ) -> (CompletionActionCenter, [(CompletionAction, String)]) {

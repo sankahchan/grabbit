@@ -99,6 +99,9 @@ public final class DownloadEngine {
                 item.speedBytesPerSec = 0
                 recovered += 1
             }
+            // Per-task proxy passwords live in the Keychain, never in the
+            // task JSON — migrate legacy copies / repopulate the working copy.
+            TaskProxy.restorePassword(&item.proxy, for: item.id)
             migrated.append(item)
         }
         self.items = migrated
@@ -486,6 +489,8 @@ public final class DownloadEngine {
             sortRank: (items.map(\.sortRank).max() ?? -1) + 1,
             proxy: proxy
         )
+        // Per-task proxy passwords live in the Keychain, never in task JSON.
+        TaskProxy.restorePassword(&item.proxy, for: item.id)
 
         let partialURL = resumeStore.partialFileURL(for: item)
         let created = FileManager.default.createFile(atPath: partialURL.path, contents: nil)
@@ -567,6 +572,9 @@ public final class DownloadEngine {
         items[itemIndex].errorMessage = nil
         items[itemIndex].linkExpired = false // fresh attempt; re-set on 403/410 if still dead
         speedSamples[id] = []
+        // New activity: rearm the completion-action center so the next
+        // drain fires even if this task settles cleanly.
+        completionCenter?.taskDidStart()
         launchSegmentTasks(for: id)
         updateSleepPrevention()
         persistItem(id: id)
@@ -742,6 +750,8 @@ public final class DownloadEngine {
         // A manual remove during finalize must not leave a stale journal
         // that relaunch would "complete".
         finalizeJournal.delete(id)
+        // Drop the task's proxy password from the Keychain too.
+        TaskProxy.deletePassword(for: id)
         speedSamples[id] = nil
         updateSleepPrevention()
         kickQueue()

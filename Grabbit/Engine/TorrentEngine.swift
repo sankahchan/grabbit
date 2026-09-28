@@ -289,7 +289,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
         let isMagnet = MagnetParser.isMagnet(input)
         let name = Self.resolveDisplayName(magnetOrURL: input, displayName: displayName)
-        let item = TorrentItem(
+        var item = TorrentItem(
             name: name,
             magnetURI: isMagnet ? input : "",
             sourceURI: input,
@@ -297,9 +297,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
             state: .downloading,
             savePath: dir,
             proxy: proxy)
+        // Per-task proxy passwords live in the Keychain, never in task JSON.
+        TaskProxy.restorePassword(&item.proxy, for: item.id)
         // Persist before the RPC call (cross-cutting crash-recovery rule):
         // a lost response retries by GID/info-hash lookup, never double-adds.
         torrents.append(item)
+        completionCenter?.taskDidStart()
         save()
         do {
             let gid = try await rpc.addUri(
@@ -328,10 +331,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
             state: .downloading,
             savePath: dir,
             proxy: proxy)
+        // Per-task proxy passwords live in the Keychain, never in task JSON.
+        TaskProxy.restorePassword(&item.proxy, for: item.id)
         if data.count < 2_000_000 {
             item.torrentFileBase64 = data.base64EncodedString()
         }
         torrents.append(item)
+        completionCenter?.taskDidStart()
         save()
         do {
             let gid = try await rpc.addTorrent(
@@ -392,6 +398,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
               torrents[index].state == .failed else { return }
         torrents[index].state = .downloading
         torrents[index].errorMessage = nil
+        completionCenter?.taskDidStart()
         save()
         Task {
             try? await self.ensureStarted()
@@ -420,6 +427,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
         lineage.forgetItem(id)
         torrents.removeAll { $0.id == id }
+        // Drop the task's proxy password from the Keychain too.
+        TaskProxy.deletePassword(for: id)
         save()
     }
 
@@ -804,6 +813,9 @@ public final class TorrentEngine: TorrentEngineProtocol {
     private func setLocalState(_ id: UUID, _ state: TorrentState) {
         if let index = torrents.firstIndex(where: { $0.id == id }) {
             torrents[index].state = state
+            // New activity: rearm the completion-action center so the next
+            // drain fires even if this task settles cleanly.
+            if state == .downloading { completionCenter?.taskDidStart() }
             save()
         }
     }
@@ -857,6 +869,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
         guard let data = try? Data(contentsOf: Self.storeURL),
               let items = try? JSONDecoder().decode([TorrentItem].self, from: data)
         else { return }
-        torrents = items
+        // Per-task proxy passwords live in the Keychain, never in the
+        // task JSON — migrate legacy copies / repopulate the working copy.
+        torrents = items.map { item in
+            var t = item
+            TaskProxy.restorePassword(&t.proxy, for: t.id)
+            return t
+        }
     }
 }

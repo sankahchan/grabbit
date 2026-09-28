@@ -68,6 +68,20 @@ public final class CompletionActionCenter {
         }
     }
 
+    /// Called when a task starts (or resumes) downloading. Rearms the
+    /// center so the next drain fires again — without this, a
+    /// drain → new activity → drain sequence would never fire a second
+    /// time, because `firedForCurrentDrain` is otherwise only reset when
+    /// a settle observes still-active tasks (which never happens when the
+    /// new task starts and settles cleanly between drains).
+    public func taskDidStart() {
+        if Thread.isMainThread {
+            MainActor.assumeIsolated { self.firedForCurrentDrain = false }
+        } else {
+            Task { @MainActor [weak self] in self?.firedForCurrentDrain = false }
+        }
+    }
+
     @MainActor
     private func settleOnMain() {
         let action = settings.settings.completionAction
