@@ -27,6 +27,7 @@ final class FinalizeJournalTests: XCTestCase {
     @MainActor
     func testReconcileCompletesWithoutRedownload() throws {
         let dir = tmp()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         // The finished file made it to its destination...
         let dest = dir.appendingPathComponent("f.zip")
@@ -64,6 +65,7 @@ final class FinalizeJournalTests: XCTestCase {
     @MainActor
     func testReconcileDoesNotDuplicateHistory() throws {
         let dir = tmp()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let dest = dir.appendingPathComponent("g.zip")
         try Data("done".utf8).write(to: dest)
