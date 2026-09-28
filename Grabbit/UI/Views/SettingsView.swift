@@ -17,14 +17,16 @@ struct SettingsView: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                // Appearance + Language always share one row; the wide
-                // cards (downloads/torrents) get the full row below.
-                // Content breathes with the window (capped at 1000 so rows
-                // don't stretch across ultra-wide displays).
+                // The three small cards share one row; the wide cards
+                // (downloads/torrents) get full rows below. Content breathes
+                // with the window (capped at 1000 so rows don't stretch
+                // across ultra-wide displays).
                 HStack(alignment: .top, spacing: 16) {
                     appearanceCard(settings: settings)
                         .frame(maxWidth: .infinity, alignment: .top)
                     languageCard(settings: settings)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    generalCard(settings: settings)
                         .frame(maxWidth: .infinity, alignment: .top)
                 }
                 downloadsCard(settings: settings)
@@ -34,8 +36,6 @@ struct SettingsView: View {
                 if GrabbitApp.isUpdaterConfigured {
                     updatesCard(settings: settings)
                 }
-                // General always comes last.
-                generalCard(settings: settings)
             }
             .frame(maxWidth: 1000)
             .frame(maxWidth: .infinity)
@@ -81,7 +81,9 @@ struct SettingsView: View {
     private func appearanceCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.appearance", comment: ""))
-            Picker(NSLocalizedString("settings.theme", comment: ""), selection: settings.theme) {
+            // No inline label — the header above already says what this is,
+            // and the label would squeeze the segments on narrow cards.
+            Picker("", selection: settings.theme) {
                 Text(NSLocalizedString("settings.theme.system", comment: "")).tag(ThemeMode.system)
                 Text(NSLocalizedString("settings.theme.light", comment: "")).tag(ThemeMode.light)
                 Text(NSLocalizedString("settings.theme.dark", comment: "")).tag(ThemeMode.dark)
@@ -95,7 +97,8 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.language", comment: ""))
             // Autonyms are shown in their own language by convention.
-            Picker(NSLocalizedString("settings.section.language", comment: ""), selection: settings.language) {
+            // No inline label — it clipped the မြန်မာ segment on narrow cards.
+            Picker("", selection: settings.language) {
                 Text(NSLocalizedString("settings.language.system", comment: "")).tag(AppLanguage.system)
                 Text("English").tag(AppLanguage.en)
                 Text("မြန်မာ").tag(AppLanguage.my)
