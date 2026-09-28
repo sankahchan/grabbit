@@ -230,19 +230,20 @@ struct SettingsView: View {
 
     /// Standard / tray / hidden dropdown. The mode itself is applied in
     /// GrabbitApp (activation policy + menu bar extra).
+    /// Run As: standard app, tray (menu bar) app, or fully hidden.
+    /// NeoSegmented matches the theme/language rows above — and keeps the
+    /// type-checker happy (a Picker+tags here timed it out in CI).
     private func runAsRow(settings: Binding<AppSettings>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            subHeader(NSLocalizedString("settings.runAs", comment: ""))
             HStack {
-                Text(NSLocalizedString("settings.runAs", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                NeoSegmented(selection: settings.runMode, titles: [
+                    (RunMode.standard, NSLocalizedString("settings.runAs.standard", comment: "")),
+                    (RunMode.tray, NSLocalizedString("settings.runAs.tray", comment: "")),
+                    (RunMode.hidden, NSLocalizedString("settings.runAs.hidden", comment: "")),
+                ])
+                .frame(maxWidth: 420)
                 Spacer()
-                Picker("", selection: settings.runMode) {
-                    Text(NSLocalizedString("settings.runAs.standard", comment: "")).tag(RunMode.standard)
-                    Text(NSLocalizedString("settings.runAs.tray", comment: "")).tag(RunMode.tray)
-                    Text(NSLocalizedString("settings.runAs.hidden", comment: "")).tag(RunMode.hidden)
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
             }
             if settings.wrappedValue.runMode == .hidden {
                 Text(NSLocalizedString("settings.runAs.hiddenNote", comment: ""))

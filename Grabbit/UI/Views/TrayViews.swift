@@ -9,6 +9,8 @@ enum MainWindowHolder {
 /// Combined live download speed across the direct-download and torrent
 /// engines. Media downloads are short-lived yt-dlp runs without a
 /// per-second speed signal, so they are not counted.
+/// @MainActor because TorrentEngine's state is main-actor-isolated.
+@MainActor
 func trayTotalSpeed(downloads: DownloadEngine, torrents: TorrentEngine) -> Double {
     let direct = downloads.items
         .filter { $0.state == .downloading }
@@ -94,9 +96,19 @@ final class TrayController {
         refresh()
     }
 
-    /// Live speed readout. Also re-resolves the menu titles, so an
-    /// in-app language switch applies without recreating the menu.
+    /// Bounce through the main actor: the engines' state is
+    /// @MainActor-isolated, while the timer/NSStatusItem side stays
+    /// plain main-thread code.
     private func refresh() {
+        Task { @MainActor [weak self] in
+            self?.refreshOnMain()
+        }
+    }
+
+    @MainActor
+    private func refreshOnMain() {
+        // Live speed readout. Also re-resolves the menu titles, so an
+        // in-app language switch applies without recreating the menu.
         guard let downloads, let torrents else { return }
         let total = trayTotalSpeed(downloads: downloads, torrents: torrents)
         if let button = statusItem?.button {
