@@ -30,11 +30,6 @@ struct SettingsView: View {
                 // stretch across ultra-wide displays).
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
-                // Backlog #3/#4: per-host profiles and packagizer rules.
-                HostProfilesCard()
-                PackagizerCard()
-                completionCard(settings: settings)
-                proxyCard(settings: settings)
                 torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually
                 // run (signed Release build + real SUPublicEDKey).
@@ -294,18 +289,27 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Divider()
+            HostProfilesSection()
+            Divider()
+            PackagizerRulesSection()
+            Divider()
             queuesSection()
             Divider()
             watchSection()
+            Divider()
+            completionSection(settings: settings)
+            Divider()
+            proxySection(settings: settings)
         }
         .neoCard()
     }
 
     // MARK: - Backlog #9: after-downloads-finish actions
 
-    private func completionCard(settings: Binding<AppSettings>) -> some View {
+    /// Renders inside the Downloads card (not as a standalone card).
+    private func completionSection(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.completion.title", comment: ""))
+            subHeader(NSLocalizedString("settings.completion.title", comment: ""))
             Picker(
                 NSLocalizedString("settings.completion.action", comment: ""),
                 selection: settings.completionAction
@@ -328,7 +332,6 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .neoCard()
     }
 
     // MARK: - Phase 5 named queues
@@ -454,9 +457,10 @@ struct SettingsView: View {
 
     /// Proxy card: mode (Off/HTTP/SOCKS5) + host/port/credentials. Applies
     /// to the native download engine and to aria2 torrents.
-    private func proxyCard(settings: Binding<AppSettings>) -> some View {
+    /// Renders inside the Downloads card (not as a standalone card).
+    private func proxySection(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("proxy.title", comment: ""))
+            subHeader(NSLocalizedString("proxy.title", comment: ""))
             HStack {
                 NeoSegmented(selection: settings.proxyMode, titles: [
                     (ProxyMode.none, NSLocalizedString("proxy.mode.off", comment: "")),
@@ -501,7 +505,6 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .neoCard()
     }
 
     private func torrentsCard(settings: Binding<AppSettings>) -> some View {

@@ -2,16 +2,16 @@ import SwiftUI
 
 // MARK: - Backlog #3: per-host profiles
 
-/// Settings card listing saved per-host profiles (credentials, thread
+/// Downloads-card section listing saved per-host profiles (credentials, thread
 /// count, user-agent). Applied automatically by DownloadEngine.add when a
 /// download URL's host matches.
-struct HostProfilesCard: View {
+struct HostProfilesSection: View {
     @Environment(HostProfileStore.self) private var store
     @State private var editTarget: HostProfile?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.hostProfiles.title", comment: ""))
+            subHeader(NSLocalizedString("settings.hostProfiles.title", comment: ""))
             Text(NSLocalizedString("settings.hostProfiles.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -26,7 +26,6 @@ struct HostProfilesCard: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
             }
         }
-        .neoCard()
         .sheet(item: $editTarget) { target in
             HostProfileEditSheet(initial: target) { saved in
                 if store.profiles.contains(where: { $0.id == saved.id }) {
@@ -69,8 +68,7 @@ struct HostProfilesCard: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }
-        .padding(8)
-        .neoCard()
+        .padding(.vertical, 4)
     }
 
     private func summary(for profile: HostProfile) -> String {
@@ -91,10 +89,12 @@ struct HostProfilesCard: View {
         return parts.joined(separator: " • ")
     }
 
-    private func sectionHeader(_ title: String) -> some View {
+    private func subHeader(_ title: String) -> some View {
         Text(title)
-            .font(.headline.weight(.heavy))
+            .font(.subheadline.weight(.heavy))
             .textCase(.uppercase)
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
     }
 }
 
@@ -188,16 +188,16 @@ private struct HostProfileEditSheet: View {
 
 // MARK: - Backlog #4: packagizer-style rules
 
-/// Settings card listing regex download rules (rename template and/or
+/// Downloads-card section listing regex download rules (rename template and/or
 /// category override). The first enabled rule matching a URL applies at
 /// add time.
-struct PackagizerCard: View {
+struct PackagizerRulesSection: View {
     @Environment(PackagizerStore.self) private var store
     @State private var editTarget: PackagizerRule?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.packagizer.title", comment: ""))
+            subHeader(NSLocalizedString("settings.packagizer.title", comment: ""))
             Text(NSLocalizedString("settings.packagizer.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -212,7 +212,6 @@ struct PackagizerCard: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
             }
         }
-        .neoCard()
         .sheet(item: $editTarget) { target in
             PackagizerRuleEditSheet(initial: target) { saved in
                 if store.rules.contains(where: { $0.id == saved.id }) {
@@ -257,8 +256,7 @@ struct PackagizerCard: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }
-        .padding(8)
-        .neoCard()
+        .padding(.vertical, 4)
     }
 
     private func summary(for rule: PackagizerRule) -> String {
@@ -272,10 +270,12 @@ struct PackagizerCard: View {
         return parts.joined(separator: " • ")
     }
 
-    private func sectionHeader(_ title: String) -> some View {
+    private func subHeader(_ title: String) -> some View {
         Text(title)
-            .font(.headline.weight(.heavy))
+            .font(.subheadline.weight(.heavy))
             .textCase(.uppercase)
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
     }
 }
 
