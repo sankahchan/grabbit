@@ -57,7 +57,10 @@ final class DragReorderTests: XCTestCase {
     }
 
     func testCommitClearsSnapshotSoLaterCancelCannotRevertIt() throws {
-        let (engine, _) = try engine(withFilenames: ["a", "b", "c"])
+        // .completed: commitItemOrder's kickQueue is a no-op for these
+        // (fresh .queued items have no segments, so start() would instantly
+        // "finish" and auto-clear them — a test artifact, not the point here).
+        let (engine, _) = try engine(withFilenames: ["a", "b", "c"], state: .completed)
         let ids = engine.items.map(\.id)
         engine.beginDragReorder()
         engine.moveItem(draggedID: ids[0], to: ids[2])
