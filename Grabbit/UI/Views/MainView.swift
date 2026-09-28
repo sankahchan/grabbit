@@ -1,4 +1,34 @@
 import SwiftUI
+import AppKit
+
+/// Bridges NSWindow frame autosave into SwiftUI: when enabled, the main
+/// window restores its last size/position on launch and macOS keeps saving
+/// it on move/resize. Disabled removes the autosave name (stops saving).
+private struct WindowFrameSaver: NSViewRepresentable {
+    var enabled: Bool
+    private let name = "GrabbitMainWindow"
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { [weak view, enabled, name] in
+            guard let window = view?.window else { return }
+            if enabled {
+                window.setFrameUsingName(name)
+                window.setFrameAutosaveName(name)
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let window = nsView.window else { return }
+        if enabled, window.frameAutosaveName != name {
+            window.setFrameAutosaveName(name)
+        } else if !enabled, !window.frameAutosaveName.isEmpty {
+            window.setFrameAutosaveName("")
+        }
+    }
+}
 
 /// Root view: NavigationSplitView with a chunky neo-brutalist sidebar.
 ///
@@ -24,6 +54,9 @@ struct MainView: View {
         // The Appearance setting actually drives the UI: without this the
         // picker only saved the value and everything followed the system.
         .preferredColorScheme(resolvedTheme)
+        // Persists the window's size/position across launches when enabled
+        // in Settings > Basic > Startup.
+        .background(WindowFrameSaver(enabled: store.settings.keepWindowFrame))
         // Re-key on language AND theme: rebuilding the hierarchy makes
         // every NSLocalizedString re-evaluate (instant language switch)
         // and works around preferredColorScheme not reliably applying

@@ -1,11 +1,14 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
 
-/// Settings tab: neo-styled cards for appearance, language, downloads,
-/// torrents, updates, and general. Everything binds to `SettingsStore` and persists
-/// via `save()` on change.
+/// Settings tab: neo-styled cards for basic, downloads, torrents, and
+/// updates. Everything binds to `SettingsStore` and persists via `save()`
+/// on change.
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
+    @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
+    @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
     @Environment(\.colorScheme) private var scheme
     /// Display name of the app macOS currently routes magnet: links to
     /// (e.g. "Motrix"); empty when none is set.
@@ -17,27 +20,12 @@ struct SettingsView: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                // The three small cards share one row; the wide cards
-                // (downloads/torrents) get full rows below. Content breathes
-                // with the window (capped at 1000 so rows don't stretch
-                // across ultra-wide displays).
-                // Three strictly equal cards. LazyVGrid assigns identical widths
-                // to flexible columns — HStack's flexible distribution cannot:
-                // it adds equal *extra* space to different ideal widths, so
-                // the narrower General card always came out smaller.
-                LazyVGrid(
-                    columns: Array(
-                        repeating: GridItem(.flexible(minimum: 0), spacing: 16),
-                        count: 3
-                    ),
-                    alignment: .leading,
-                    spacing: 16
-                ) {
-                    appearanceCard(settings: settings)
-                    languageCard(settings: settings)
-                    generalCard(settings: settings)
-                }
-                .frame(maxWidth: .infinity)
+                // One wide Basic card (Motrix-style): appearance, language,
+                // startup, seeding, and task management. The wide
+                // downloads/torrents cards get full rows below. Content
+                // breathes with the window (capped at 1000 so rows don't
+                // stretch across ultra-wide displays).
+                basicCard(settings: settings)
                 downloadsCard(settings: settings)
                 torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually
@@ -51,7 +39,10 @@ struct SettingsView: View {
             .padding(16)
         }
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
-        .onAppear { refreshMagnetHandler() }
+        .onAppear {
+            refreshMagnetHandler()
+            syncOpenAtLogin()
+        }
         .onChange(of: store.settings.theme) { _, _ in store.save() }
         .onChange(of: store.settings.language, handleLanguageChange)
         .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
@@ -66,6 +57,16 @@ struct SettingsView: View {
         .onChange(of: store.settings.vpnInterfaceName) { _, _ in store.save() }
         .onChange(of: store.settings.defaultSeedRatio) { _, _ in store.save() }
         .onChange(of: store.settings.defaultSeedTimeMinutes) { _, _ in store.save() }
+        .onChange(of: store.settings.openAtLogin) { _, new in
+            store.save()
+            applyOpenAtLogin(new)
+        }
+        .onChange(of: store.settings.keepWindowFrame) { _, _ in store.save() }
+        .onChange(of: store.settings.maxActiveTasks) { _, _ in
+            store.save()
+            downloadEngine.kickQueue()
+            Task { await torrentEngine.applyMaxActiveTasks() }
+        }
     }
 
     // MARK: - Language
@@ -87,47 +88,86 @@ struct SettingsView: View {
             .textCase(.uppercase)
     }
 
-    private func appearanceCard(settings: Binding<AppSettings>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.section.appearance", comment: ""))
-            // Icons so the theme reads at a glance, not just as text.
-            NeoSegmented(selection: settings.theme, options: [
-                .init(value: ThemeMode.system,
-                      title: NSLocalizedString("settings.theme.system", comment: ""),
-                      icon: "circle.lefthalf.filled"),
-                .init(value: ThemeMode.light,
-                      title: NSLocalizedString("settings.theme.light", comment: ""),
-                      icon: "sun.max.fill"),
-                .init(value: ThemeMode.dark,
-                      title: NSLocalizedString("settings.theme.dark", comment: ""),
-                      icon: "moon.fill"),
-            ])
-        }
-        // Fill the equal share: the frame must sit INSIDE (before neoCard),
-        // otherwise the card keeps its ideal width and only the invisible
-        // frame expands.
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard()
+    private func subHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.subheadline.weight(.heavy))
+            .textCase(.uppercase)
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
     }
 
-    private func languageCard(settings: Binding<AppSettings>) -> some View {
+    /// Motrix-style wide card: appearance, language, startup, seeding, and
+    /// task management in one place.
+    private func basicCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.section.language", comment: ""))
-            // Autonyms are shown in their own language by convention.
-            NeoSegmented(selection: settings.language, titles: [
-                (AppLanguage.system, NSLocalizedString("settings.language.system", comment: "")),
-                (AppLanguage.en, "English"),
-                (AppLanguage.my, "မြန်မာ"),
-            ])
+            sectionHeader(NSLocalizedString("settings.section.basic", comment: ""))
+            subHeader(NSLocalizedString("settings.section.appearance", comment: ""))
+            // Icons so the theme reads at a glance, not just as text.
+            // Capped width — full-bleed segments look stretched in a wide card.
+            HStack {
+                NeoSegmented(selection: settings.theme, options: [
+                    .init(value: ThemeMode.system,
+                          title: NSLocalizedString("settings.theme.system", comment: ""),
+                          icon: "circle.lefthalf.filled"),
+                    .init(value: ThemeMode.light,
+                          title: NSLocalizedString("settings.theme.light", comment: ""),
+                          icon: "sun.max.fill"),
+                    .init(value: ThemeMode.dark,
+                          title: NSLocalizedString("settings.theme.dark", comment: ""),
+                          icon: "moon.fill"),
+                ])
+                .frame(maxWidth: 420)
+                Spacer()
+            }
+            subHeader(NSLocalizedString("settings.section.language", comment: ""))
+            HStack {
+                // Autonyms are shown in their own language by convention.
+                NeoSegmented(selection: settings.language, titles: [
+                    (AppLanguage.system, NSLocalizedString("settings.language.system", comment: "")),
+                    (AppLanguage.en, "English"),
+                    (AppLanguage.my, "မြန်မာ"),
+                ])
+                .frame(maxWidth: 420)
+                Spacer()
+            }
             Text(NSLocalizedString("settings.language.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
+            .toggleStyle(NeoToggleStyle())
+            Divider()
+            subHeader(NSLocalizedString("settings.section.startup", comment: ""))
+            Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.startup.keepWindowFrame", comment: ""), isOn: settings.keepWindowFrame)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.startup.autoResumeTasks", comment: ""), isOn: settings.autoResumeOnLaunch)
+            .toggleStyle(NeoToggleStyle())
+            Divider()
+            subHeader(NSLocalizedString("settings.section.seeding", comment: ""))
+            seedRatioRow(settings: settings)
+            seedTimeRow(settings: settings)
+            Divider()
+            subHeader(NSLocalizedString("settings.section.taskManagement", comment: ""))
+            maxActiveTasksRow(settings: settings)
         }
-        // Fill the equal share: the frame must sit INSIDE (before neoCard),
-        // otherwise the card keeps its ideal width and only the invisible
-        // frame expands.
-        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
+    }
+
+    private func maxActiveTasksRow(settings: Binding<AppSettings>) -> some View {
+        let count = Binding<Int>(
+            get: { settings.wrappedValue.maxActiveTasks },
+            set: {
+                settings.wrappedValue.maxActiveTasks = max(1, $0)
+                store.save()
+            }
+        )
+        return HStack {
+            Text(NSLocalizedString("settings.maxActiveTasks", comment: ""))
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            NeoStepper(value: count, in: 1...20, step: 1) { "\($0)" }
+        }
     }
 
     private func downloadsCard(settings: Binding<AppSettings>) -> some View {
@@ -139,8 +179,6 @@ struct SettingsView: View {
             Divider()
             speedLimitRow(settings: settings)
             Toggle(NSLocalizedString("settings.clipboard", comment: ""), isOn: settings.clipboardMonitorEnabled)
-            .toggleStyle(NeoToggleStyle())
-            Toggle(NSLocalizedString("settings.autoResume", comment: ""), isOn: settings.autoResumeOnLaunch)
             .toggleStyle(NeoToggleStyle())
             Toggle(NSLocalizedString("settings.autoClear", comment: ""), isOn: settings.autoClearFinished)
             .toggleStyle(NeoToggleStyle())
@@ -172,9 +210,6 @@ struct SettingsView: View {
                     .disabled(!settings.wrappedValue.vpnKillSwitchEnabled)
             }
             Divider()
-            seedRatioRow(settings: settings)
-            seedTimeRow(settings: settings)
-            Divider()
             Toggle(
                 NSLocalizedString("settings.trackers.autoUpdate", comment: ""),
                 isOn: settings.autoUpdateTrackers
@@ -187,6 +222,25 @@ struct SettingsView: View {
             magnetHandlerRow()
         }
         .neoCard()
+    }
+
+    // MARK: - Startup
+
+    /// Registers/unregisters Grabbit as a login item (macOS 13+ API).
+    private func applyOpenAtLogin(_ enabled: Bool) {
+        if enabled {
+            try? SMAppService.mainApp.register()
+        } else {
+            try? SMAppService.mainApp.unregister()
+        }
+    }
+
+    /// If the user removed Grabbit from Login Items in System Settings, the
+    /// toggle would lie — re-register on appear when the setting says on.
+    private func syncOpenAtLogin() {
+        if store.settings.openAtLogin {
+            try? SMAppService.mainApp.register()
+        }
     }
 
     // MARK: - Magnet link handler
@@ -298,19 +352,6 @@ struct SettingsView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
         }
-        .neoCard()
-    }
-
-    private func generalCard(settings: Binding<AppSettings>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.section.general", comment: ""))
-            Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
-            .toggleStyle(NeoToggleStyle())
-        }
-        // Fill the equal share: the frame must sit INSIDE (before neoCard),
-        // otherwise the card keeps its ideal width and only the invisible
-        // frame expands.
-        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
     }
 

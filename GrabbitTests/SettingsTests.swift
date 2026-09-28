@@ -19,6 +19,26 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(decoded.autoClearFinished)
     }
 
+    func testBasicCardSettingsDecodeLegacyJSON() throws {
+        // Settings saved before the Basic-card keys existed must decode
+        // with safe defaults (no login item, no frame restore, 5 tasks).
+        let data = #"{"language":"system"}"#.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertFalse(decoded.openAtLogin)
+        XCTAssertFalse(decoded.keepWindowFrame)
+        XCTAssertEqual(decoded.maxActiveTasks, 5)
+    }
+
+    func testMaxActiveTasksRoundTrips() throws {
+        var settings = AppSettings.default
+        settings.maxActiveTasks = 3
+        settings.openAtLogin = true
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertEqual(decoded.maxActiveTasks, 3)
+        XCTAssertTrue(decoded.openAtLogin)
+    }
+
     func testTorrentsSidebarIconIsSet() {
         // Regression: "magnet" is not a real SF Symbol and rendered blank.
         XCTAssertEqual(SidebarSelection.torrents.icon, "arrow.triangle.2.circlepath")

@@ -132,11 +132,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 downloadDir: settings.folderURL(for: .other),
                 seedRatio: settings.settings.defaultSeedRatio,
                 seedTimeMinutes: settings.settings.defaultSeedTimeMinutes,
-                interfaceName: boundInterfaceName())
+                interfaceName: boundInterfaceName(),
+                maxConcurrentDownloads: settings.settings.maxActiveTasks)
             rpc = client
             try? await client.changeGlobalOption([
                 "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
                 "seed-time": "\(settings.settings.defaultSeedTimeMinutes)",
+                "max-concurrent-downloads": "\(max(1, settings.settings.maxActiveTasks))",
                 // Reclaimed daemons were spawned before the tracker list
                 // existed; push it at runtime too (fresh spawns get it via
                 // --bt-tracker). try? — a rejection must never break startup.
@@ -165,6 +167,15 @@ public final class TorrentEngine: TorrentEngineProtocol {
             rpc = nil
             throw TorrentError.daemonFailed(error.localizedDescription)
         }
+    }
+
+    /// Pushes the current max-active-tasks cap into the running daemon
+    /// (fresh spawns get it via --max-concurrent-downloads; reclaimed ones
+    /// get it here, like the seed settings in ensureStarted).
+    public func applyMaxActiveTasks() async {
+        try? await rpc?.changeGlobalOption([
+            "max-concurrent-downloads": "\(max(1, settings.settings.maxActiveTasks))",
+        ])
     }
 
     public func shutdown() async {

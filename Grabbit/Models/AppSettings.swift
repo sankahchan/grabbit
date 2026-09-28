@@ -37,6 +37,12 @@ public struct AppSettings: Codable {
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
     public var defaultSeedTimeMinutes: Int = 0
+    // Basic card: startup + task management.
+    public var openAtLogin = false
+    public var keepWindowFrame = false
+    /// Max simultaneously downloading tasks (downloads engine queue +
+    /// aria2 max-concurrent-downloads). At least 1.
+    public var maxActiveTasks: Int = 5
 
     public static var `default`: AppSettings {
         AppSettings(folders: [
@@ -59,6 +65,7 @@ extension AppSettings {
         case vpnKillSwitchEnabled, vpnInterfaceName
         case autoUpdateTrackers
         case defaultSeedRatio, defaultSeedTimeMinutes
+        case openAtLogin, keepWindowFrame, maxActiveTasks
     }
 
     public init(from decoder: Decoder) throws {
@@ -78,6 +85,9 @@ extension AppSettings {
         autoUpdateTrackers = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateTrackers) ?? true
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
+        openAtLogin = try c.decodeIfPresent(Bool.self, forKey: .openAtLogin) ?? false
+        keepWindowFrame = try c.decodeIfPresent(Bool.self, forKey: .keepWindowFrame) ?? false
+        maxActiveTasks = try c.decodeIfPresent(Int.self, forKey: .maxActiveTasks) ?? 5
     }
 }
 

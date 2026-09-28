@@ -272,6 +272,16 @@ public final class DownloadEngine {
         case .downloading, .completed:
             return
         }
+        // Task Management: cap simultaneous downloads. Over-cap tasks wait
+        // in .queued; kickQueue() starts the oldest when a slot frees up.
+        let maxActive = max(1, settings.settings.maxActiveTasks)
+        let activeCount = items.filter { $0.state == .downloading }.count
+        if activeCount >= maxActive {
+            items[itemIndex].state = .queued
+            items[itemIndex].errorMessage = nil
+            persistItem(id: id)
+            return
+        }
         // If the partial file vanished (e.g. user deleted it), restart cleanly.
         let partialURL = resumeStore.partialFileURL(for: items[itemIndex])
         if !FileManager.default.fileExists(atPath: partialURL.path) {
@@ -305,6 +315,18 @@ public final class DownloadEngine {
         start(id)
     }
 
+    /// Starts queued tasks while under the max-active-tasks cap. Called
+    /// whenever a slot frees up (finish/fail/pause/remove) and when the cap
+    /// itself is raised in Settings. Idempotent — `start()` re-checks the cap.
+    @MainActor
+    public func kickQueue(excluding: UUID? = nil) {
+        let maxActive = max(1, settings.settings.maxActiveTasks)
+        while items.filter({ $0.state == .downloading }).count < maxActive,
+              let next = items.first(where: { $0.state == .queued && $0.id != excluding }) {
+            start(next.id)
+        }
+    }
+
     /// Swaps the download URL in place (XDM `SetDownloadInfo` idea) — used
     /// when a signed link expires and the user pastes a fresh one. All
     /// downloaded segments are kept; validators are cleared because a fresh
@@ -333,6 +355,7 @@ public final class DownloadEngine {
         speedSamples[id] = nil
         updateSleepPrevention()
         persistItem(id: id)
+        kickQueue()
     }
 
     /// Stops the download, deletes the partial file and its resume state, and
@@ -352,6 +375,9 @@ public final class DownloadEngine {
         items[itemIndex].errorMessage = nil
         speedSamples[id] = nil
         updateSleepPrevention()
+        // The just-cancelled item stays queued for a manual start — but a
+        // freed slot should go to the next already-waiting task.
+        kickQueue(excluding: items[itemIndex].id)
     }
 
     /// Drops the record entirely (stops workers, deletes partial file + state).
@@ -364,6 +390,7 @@ public final class DownloadEngine {
         try? resumeStore.delete(item.id)
         speedSamples[id] = nil
         updateSleepPrevention()
+        kickQueue()
     }
 
     @MainActor
@@ -865,6 +892,7 @@ public final class DownloadEngine {
         } else {
             persistItem(id: item.id)
         }
+        kickQueue()
     }
 
     @MainActor
@@ -885,6 +913,7 @@ public final class DownloadEngine {
         segmentRetries[id] = nil
         updateSleepPrevention()
         persistItem(id: id)
+        kickQueue()
     }
 
     @MainActor

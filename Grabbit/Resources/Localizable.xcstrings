@@ -3468,6 +3468,142 @@
           }
         }
       }
+    },
+    "settings.section.basic": {
+      "comment": "Settings section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အခြေခံ"
+          }
+        }
+      }
+    },
+    "settings.section.startup": {
+      "comment": "Settings section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startup"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စတင်ခြင်း"
+          }
+        }
+      }
+    },
+    "settings.startup.openAtLogin": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open at login"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လော့ဂ်အင်ဝင်လျှင် အလိုအလျောက်ဖွင့်"
+          }
+        }
+      }
+    },
+    "settings.startup.keepWindowFrame": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep size and position of the window when exited"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထွက်ချိန်က ဝင်းဒိုးအရွယ်အစားနှင့် နေရာကို မှတ်ထား"
+          }
+        }
+      }
+    },
+    "settings.startup.autoResumeTasks": {
+      "comment": "Setting toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically resume all unfinished tasks"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မပြီးသေးသော လုပ်ငန်းများ အလိုအလျောက်ပြန်စ"
+          }
+        }
+      }
+    },
+    "settings.section.seeding": {
+      "comment": "Settings section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeding"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆီဒင်း"
+          }
+        }
+      }
+    },
+    "settings.section.taskManagement": {
+      "comment": "Settings section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task Management"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ငန်းစီမံခန့်ခွဲမှု"
+          }
+        }
+      }
+    },
+    "settings.maxActiveTasks": {
+      "comment": "Task management setting",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum active tasks"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တစ်ပြိုင်နက် လုပ်နိုင်သော အများဆုံးလုပ်ငန်း"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
