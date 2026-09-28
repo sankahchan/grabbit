@@ -17,6 +17,9 @@ struct GrabbitApp: App {
     @State private var settings: SettingsStore
     @State private var schedulerStore: SchedulerStore
     @State private var queueStore: QueueStore
+    @State private var watchFolderStore: WatchFolderStore
+    /// Phase 5 watch folders: plain let — it owns no UI state itself.
+    private let watchMonitor = WatchFolderMonitor()
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
     @State private var trayController: TrayController
@@ -38,6 +41,7 @@ struct GrabbitApp: App {
         // Phase 5 named queues: one store shared by the engine and the UI.
         let sharedQueues = QueueStore()
         _queueStore = State(initialValue: sharedQueues)
+        _watchFolderStore = State(initialValue: WatchFolderStore())
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
@@ -93,6 +97,7 @@ struct GrabbitApp: App {
                 .environment(settings)
                 .environment(schedulerStore)
                 .environment(queueStore)
+                .environment(watchFolderStore)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.
@@ -128,6 +133,12 @@ struct GrabbitApp: App {
                     schedulerStore.start(
                         downloadEngine: downloadEngine,
                         torrentEngine: torrentEngine)
+                    // Phase 5 watch folders: poll watched dirs for .txt
+                    // link files and feed new links to the engine.
+                    watchMonitor.start(
+                        store: watchFolderStore,
+                        engine: downloadEngine,
+                        history: historyStore)
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
                     if CommandLine.arguments.contains("--native-messaging") {

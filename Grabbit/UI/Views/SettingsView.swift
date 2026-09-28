@@ -8,6 +8,7 @@ import ServiceManagement
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
     @Environment(QueueStore.self) private var queueStore: QueueStore
+    @Environment(WatchFolderStore.self) private var watchFolderStore: WatchFolderStore
     @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
     @Environment(\.colorScheme) private var scheme
     /// Display name of the app macOS currently routes magnet: links to
@@ -228,6 +229,8 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
             Divider()
             queuesSection()
+            Divider()
+            watchSection()
         }
         .neoCard()
     }
@@ -302,6 +305,52 @@ struct SettingsView: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
                 .accessibilityLabel(NSLocalizedString("queue.delete", comment: ""))
             }
+        }
+    }
+
+    // MARK: - Phase 5 watch folders
+
+    /// Watched folders: drop a .txt file (one link per line) in and new
+    /// links are added automatically; duplicates are skipped.
+    private func watchSection() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            subHeader(NSLocalizedString("watch.title", comment: ""))
+            if watchFolderStore.folders.isEmpty {
+                Text(NSLocalizedString("watch.empty", comment: ""))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(watchFolderStore.folders) { folder in
+                HStack(spacing: 8) {
+                    Toggle("", isOn: Binding(
+                        get: { folder.isEnabled },
+                        set: { watchFolderStore.setEnabled(id: folder.id, enabled: $0) }
+                    ))
+                    .toggleStyle(NeoToggleStyle())
+                    .labelsHidden()
+                    Text(folder.path)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button {
+                        watchFolderStore.remove(id: folder.id)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
+                    .accessibilityLabel(NSLocalizedString("common.delete", comment: ""))
+                }
+            }
+            Text(NSLocalizedString("watch.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button(NSLocalizedString("watch.add", comment: "")) {
+                if let url = chooseDirectory(initial: nil) {
+                    watchFolderStore.add(path: url.path)
+                }
+            }
+            .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
         }
     }
 

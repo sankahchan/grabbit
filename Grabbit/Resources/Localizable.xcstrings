@@ -4011,6 +4011,70 @@
           }
         }
       }
+    },
+    "watch.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch folders"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စောင့်ကြည့်ဖိုဒါများ"
+          }
+        }
+      }
+    },
+    "watch.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No folders watched"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စောင့်ကြည့်နေသော ဖိုဒါမရှိသေးပါ"
+          }
+        }
+      }
+    },
+    "watch.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုဒါထည့်ရန်"
+          }
+        }
+      }
+    },
+    "watch.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop a .txt file (one link per line) into a watched folder — new links are added automatically. Duplicates are skipped."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စောင့်ကြည့်ဖိုဒါထဲသို့ .txt ဖိုင် (တစ်ကြောင်းလျှင် လင့်ခ်တစ်ခု) ချပေးပါ — လင့်ခ်အသစ်များ အလိုအလျောက်ထည့်သွင်းမည်။ ထပ်နေသည်များကို ကျော်သွားမည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
