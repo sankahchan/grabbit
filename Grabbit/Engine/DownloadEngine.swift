@@ -117,14 +117,14 @@ public final class DownloadEngine {
         if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
            (200...299).contains(status)
         {
-            applyProbeHeaders(&result, headers: headers)
+            Self.applyProbeHeaders(&result, headers: headers)
             if result.totalBytes != nil { return result }
         }
         if let (status, headers) = await fetchHeaders(
             url, method: "GET", range: "bytes=0-0"),
            status == 206
         {
-            applyProbeHeaders(&result, headers: headers)
+            Self.applyProbeHeaders(&result, headers: headers)
             if result.totalBytes == nil,
                let range = headers["content-range"],
                let total = DownloadItem.totalFromContentRange(range)

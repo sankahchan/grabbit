@@ -240,16 +240,14 @@ final class ProxyHTTP1Transport: HTTP1Transport {
     }
 
     private func teardown() {
-        let rs: CFReadStream?
-        let ws: CFWriteStream?
-        let socketFD: Int32
-        lock.withLock {
-            rs = readStream
-            ws = writeStream
-            socketFD = fd
+        let (rs, ws, socketFD): (CFReadStream?, CFWriteStream?, Int32) = lock.withLock {
+            let rs = readStream
+            let ws = writeStream
+            let socketFD = fd
             readStream = nil
             writeStream = nil
             fd = -1
+            return (rs, ws, socketFD)
         }
         if let rs { CFReadStreamClose(rs) }
         if let ws { CFWriteStreamClose(ws) }
@@ -327,9 +325,10 @@ final class ProxyHTTP1Transport: HTTP1Transport {
             kCFStreamSSLLevel: kCFStreamSocketSecurityLevelNegotiatedSSL,
             kCFStreamSSLPeerName: targetHost as CFString,
         ]
-        let key = CFStreamPropertyKey(kCFStreamPropertySSLSettings as String)
-        CFReadStreamSetProperty(readStream, key, ssl as CFDictionary)
-        CFWriteStreamSetProperty(writeStream, key, ssl as CFDictionary)
+        // CFStreamPropertyKey is an NSString typealias: pass the constant
+        // straight through (toll-free bridged), no struct init involved.
+        CFReadStreamSetProperty(readStream, kCFStreamPropertySSLSettings, ssl as CFDictionary)
+        CFWriteStreamSetProperty(writeStream, kCFStreamPropertySSLSettings, ssl as CFDictionary)
         guard CFReadStreamOpen(readStream), CFWriteStreamOpen(writeStream) else {
             CFReadStreamClose(readStream)
             CFWriteStreamClose(writeStream)
