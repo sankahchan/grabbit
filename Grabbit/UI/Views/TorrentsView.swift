@@ -338,9 +338,8 @@ struct TorrentAddSheet: View {
             }
 
             // MARK: Proxy (optional per-task override)
-            DisclosureGroup(NSLocalizedString("taskProxy.title", comment: "")) {
+            ExpandableSection(title: NSLocalizedString("taskProxy.title", comment: "")) {
                 TaskProxySection(draft: $taskProxy)
-                    .padding(.top, 4)
             }
 
             HStack {

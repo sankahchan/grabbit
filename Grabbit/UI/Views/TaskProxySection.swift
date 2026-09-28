@@ -1,5 +1,37 @@
 import SwiftUI
 
+/// Tappable expand/collapse section for sheets. Used instead of
+/// DisclosureGroup: DisclosureGroup's internal expansion state
+/// intermittently fails to toggle inside `.sheet` on macOS (tap does
+/// nothing), while an explicit `@State` Bool always works.
+struct ExpandableSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 16)
+                    Text(title)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if isExpanded {
+                content()
+                    .padding(.top, 4)
+            }
+        }
+    }
+}
+
 /// Per-task proxy override picker, shared by the Add Download and Add
 /// Torrent sheets (Motrix parity). Binds to a non-optional draft; the
 /// caller stores `nil` (follow global) when `draft.scope == .global`.

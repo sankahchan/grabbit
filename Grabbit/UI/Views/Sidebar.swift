@@ -109,13 +109,21 @@ struct Sidebar: View {
         .buttonStyle(.plain)
     }
 
+    /// Badge counts: only actively-downloading tasks, and hidden entirely
+    /// when zero — a "0" badge next to every tab is noise.
     private func count(for item: SidebarSelection) -> Int? {
+        let n: Int
         switch item {
-        case .downloads: engine.items.count
-        case .linkgrabber: linkGrabberStore.stagedCount
-        case .torrents: torrentEngine.torrents.count
-        case .grabber, .media, .history, .scheduler, .settings: nil
+        case .downloads:
+            n = engine.items.filter { $0.state == .downloading }.count
+        case .torrents:
+            n = torrentEngine.torrents.filter { $0.state == .downloading }.count
+        case .linkgrabber:
+            n = linkGrabberStore.stagedCount
+        case .grabber, .media, .history, .scheduler, .settings:
+            return nil
         }
+        return n > 0 ? n : nil
     }
 
 }
