@@ -1,4 +1,5 @@
 import Foundation
+import CFNetwork
 
 /// User-configured proxy for Grabbit's own engines.
 ///
@@ -111,7 +112,7 @@ public struct ProxyConfig: Equatable {
         case .socks5:
             return [
                 kCFNetworkProxiesSOCKSEnable as String: true,
-                kCFNetworkProxiesSOCKSHost as String: host,
+                kCFNetworkProxiesSOCKSProxy as String: host,
                 kCFNetworkProxiesSOCKSPort as String: port,
             ]
         }

@@ -200,7 +200,7 @@ final class ProxyTests: XCTestCase {
         XCTAssertEqual(http?[kCFNetworkProxiesHTTPSProxy as String] as? String, "proxy.local")
         let socks = ProxyConfig(mode: .socks5, host: "proxy.local", port: 1080)
             .urlSessionProxyDictionary()
-        XCTAssertEqual(socks?[kCFNetworkProxiesSOCKSHost as String] as? String, "proxy.local")
+        XCTAssertEqual(socks?[kCFNetworkProxiesSOCKSProxy as String] as? String, "proxy.local")
         XCTAssertEqual(socks?[kCFNetworkProxiesSOCKSPort as String] as? Int, 1080)
     }
 }
