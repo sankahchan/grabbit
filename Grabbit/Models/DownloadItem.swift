@@ -174,6 +174,35 @@ public struct DownloadItem: Identifiable, Codable {
         self.speedLimitBytesPerSec = speedLimitBytesPerSec
     }
 
+    /// Custom decoder: `speedLimitBytesPerSec` (Phase 5) is absent from
+    /// resume-store JSON written by older builds and must default to
+    /// unlimited (0) instead of failing the whole file. (The synthesized
+    /// decoder uses plain `decode` per key even for defaulted properties —
+    /// hence the explicit `decodeIfPresent` here, mirroring AppSettings.)
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        url = try c.decode(URL.self, forKey: .url)
+        filename = try c.decode(String.self, forKey: .filename)
+        totalBytes = try c.decodeIfPresent(Int64.self, forKey: .totalBytes)
+        downloadedBytes = try c.decode(Int64.self, forKey: .downloadedBytes)
+        segments = try c.decode([Segment].self, forKey: .segments)
+        state = try c.decode(DownloadState.self, forKey: .state)
+        speedBytesPerSec = try c.decode(Double.self, forKey: .speedBytesPerSec)
+        category = try c.decode(DownloadCategory.self, forKey: .category)
+        sourceSite = try c.decode(SourceSite.self, forKey: .sourceSite)
+        destinationURL = try c.decode(URL.self, forKey: .destinationURL)
+        addedAt = try c.decode(Date.self, forKey: .addedAt)
+        errorMessage = try c.decodeIfPresent(String.self, forKey: .errorMessage)
+        sourcePageURL = try c.decodeIfPresent(URL.self, forKey: .sourcePageURL)
+        eTag = try c.decodeIfPresent(String.self, forKey: .eTag)
+        lastModified = try c.decodeIfPresent(String.self, forKey: .lastModified)
+        linkExpired = try c.decodeIfPresent(Bool.self, forKey: .linkExpired) ?? false
+        speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
+        // requestHeaders is runtime-only and never persisted.
+        requestHeaders = nil
+    }
+
     /// 0...1. Uses the server-advertised total when known, otherwise falls back
     /// to the sum of the segment ranges (e.g. size unknown at HEAD time).
     public var progress: Double {
