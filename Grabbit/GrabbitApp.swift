@@ -66,7 +66,11 @@ struct GrabbitApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        // Single-window scene: unlike WindowGroup, a Window never spawns a
+        // new window for an incoming URL event (magnet:/grabbit:) — the URL
+        // is delivered to this window's onOpenURL instead. WindowGroup's
+        // default external-event routing opened a fresh window per click.
+        Window("Grabbit", id: "main") {
             // MainView is owned by another workstream; it reads the engines and
             // settings from the environment.
             MainView()
