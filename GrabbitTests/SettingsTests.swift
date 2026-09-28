@@ -1,4 +1,5 @@
 import XCTest
+import ObjectiveC
 @testable import Grabbit
 
 final class SettingsTests: XCTestCase {
@@ -36,14 +37,22 @@ final class SettingsTests: XCTestCase {
         BundleLocalization.apply(.system)
     }
 
-    func testMyanmarLocalizationActuallyResolves() {
-        // End-to-end: selecting Myanmar must serve Myanmar strings through
-        // the normal String(localized:) path. If this fails, the .lproj
-        // isn't in the built bundle or the override isn't intercepting.
+    func testDiagnoseLocalizationPaths() {
+        // Diagnostic: which lookup paths does the swizzle intercept?
+        // The log lines below show exactly where String(localized:) resolves.
         BundleLocalization.apply(.my)
-        XCTAssertEqual(String(localized: "settings.title"), "ဆက်တင်များ")
-        BundleLocalization.apply(.en)
-        XCTAssertEqual(String(localized: "settings.title"), "Settings")
+        let direct = Bundle.main.localizedString(
+            forKey: "settings.title", value: nil, table: nil)
+        let viaMacro = NSLocalizedString("settings.title", comment: "")
+        let viaInit = String(localized: "settings.title")
+        print("DIAG direct=\(direct)")
+        print("DIAG NSLocalizedString=\(viaMacro)")
+        print("DIAG String(localized:)=\(viaInit)")
+        print("DIAG mainBundleClass=\(object_getClass(Bundle.main))")
+        print("DIAG my.lproj=\(Bundle.main.path(forResource: "my", ofType: "lproj") ?? "nil")")
+        XCTAssertEqual(direct, "ဆက်တင်များ")
+        XCTAssertEqual(viaMacro, "ဆက်တင်များ")
+        XCTAssertEqual(viaInit, "ဆက်တင်များ")
         BundleLocalization.apply(.system)
     }
 }
