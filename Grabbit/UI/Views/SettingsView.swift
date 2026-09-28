@@ -21,16 +21,13 @@ struct SettingsView: View {
                 // (downloads/torrents) get full rows below. Content breathes
                 // with the window (capped at 1000 so rows don't stretch
                 // across ultra-wide displays).
-                // The row must fill the content width itself — VStack children
-                // default to ideal width (centered), which left each card at
-                // its own size and the maxWidth:.infinity inside dead.
+                // Each card fills its share via its own inner
+                // `.frame(maxWidth: .infinity)` (before neoCard), so the
+                // HStack distributes three equal widths.
                 HStack(alignment: .top, spacing: 16) {
                     appearanceCard(settings: settings)
-                        .frame(maxWidth: .infinity, alignment: .top)
                     languageCard(settings: settings)
-                        .frame(maxWidth: .infinity, alignment: .top)
                     generalCard(settings: settings)
-                        .frame(maxWidth: .infinity, alignment: .top)
                 }
                 .frame(maxWidth: .infinity)
                 downloadsCard(settings: settings)
@@ -98,6 +95,10 @@ struct SettingsView: View {
                       icon: "moon.fill"),
             ])
         }
+        // Fill the equal share: the frame must sit INSIDE (before neoCard),
+        // otherwise the card keeps its ideal width and only the invisible
+        // frame expands.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
     }
 
@@ -114,6 +115,10 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        // Fill the equal share: the frame must sit INSIDE (before neoCard),
+        // otherwise the card keeps its ideal width and only the invisible
+        // frame expands.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
     }
 
@@ -294,6 +299,10 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
             .toggleStyle(NeoToggleStyle())
         }
+        // Fill the equal share: the frame must sit INSIDE (before neoCard),
+        // otherwise the card keeps its ideal width and only the invisible
+        // frame expands.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
     }
 
