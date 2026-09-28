@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum ScheduleAction: String, CaseIterable {
+enum ScheduleAction: String, CaseIterable, Codable {
     case download, stop
 
     var localizedTitle: String {
@@ -11,11 +11,18 @@ enum ScheduleAction: String, CaseIterable {
     }
 }
 
-struct ScheduleEntry: Identifiable {
-    let id: UUID = UUID()
+struct ScheduleEntry: Identifiable, Codable {
+    var id: UUID = UUID()
     var time: Date
     var action: ScheduleAction
     var isEnabled: Bool = true
+    /// Weekday bitmask: bit (weekday - 1), Calendar weekday 1 = Sunday …
+    /// 7 = Saturday. `allWeekdays` = every day.
+    var weekdays: Int = ScheduleEntry.allWeekdays
+    /// Last fire date — an entry fires at most once per calendar day.
+    var lastFired: Date? = nil
+
+    static let allWeekdays = 0b1111111
 }
 
 /// Scheduler tab: list of time-based entries (start downloads / stop all).
@@ -24,13 +31,13 @@ struct ScheduleEntry: Identifiable {
 /// persisted entries plus actual timed triggers (launchd / background tasks) —
 /// is future work.
 struct SchedulerView: View {
-    @State private var entries: [ScheduleEntry] = []
+    @Environment(SchedulerStore.self) private var scheduler
     @State private var showingAdd = false
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         VStack(spacing: 12) {
-            if !entries.isEmpty {
+            if !scheduler.entries.isEmpty {
                 HStack {
                     Spacer()
                     Button(NSLocalizedString("scheduler.add", comment: "")) {
@@ -40,15 +47,15 @@ struct SchedulerView: View {
                 }
             }
 
-            if entries.isEmpty {
+            if scheduler.entries.isEmpty {
                 Spacer()
                 emptyState
                 Spacer()
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach($entries) { $entry in
-                            entryRow($entry)
+                        ForEach(scheduler.entries) { entry in
+                            entryRow(entry)
                         }
                     }
                     .padding(8)
@@ -59,7 +66,7 @@ struct SchedulerView: View {
         .navigationTitle(NSLocalizedString("scheduler.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddScheduleSheet { entry in
-                entries.append(entry)
+                scheduler.add(entry)
             }
         }
     }
@@ -86,27 +93,45 @@ struct SchedulerView: View {
 
     // MARK: - Entry row
 
-    private func entryRow(_ entry: Binding<ScheduleEntry>) -> some View {
+    private func entryRow(_ entry: ScheduleEntry) -> some View {
         HStack(spacing: 12) {
-            Toggle("", isOn: entry.isEnabled)
-                .labelsHidden()
-                .toggleStyle(NeoToggleStyle())
+            Toggle("", isOn: Binding(
+                get: { entry.isEnabled },
+                set: { var updated = entry; updated.isEnabled = $0; scheduler.update(updated) }
+            ))
+            .labelsHidden()
+            .toggleStyle(NeoToggleStyle())
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.wrappedValue.time.formatted(date: .omitted, time: .shortened))
+                Text(entry.time.formatted(date: .omitted, time: .shortened))
                     .font(.headline.weight(.bold))
-                Text(entry.wrappedValue.action.localizedTitle)
+                Text(entry.action.localizedTitle)
                     .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(weekdaySummary(for: entry))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             Button {
-                entries.removeAll { $0.id == entry.wrappedValue.id }
+                scheduler.remove(id: entry.id)
             } label: {
                 Image(systemName: "trash")
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }
         .neoCard()
+    }
+
+    /// "Daily", or the system-localized short weekday names for the set bits.
+    private func weekdaySummary(for entry: ScheduleEntry) -> String {
+        if entry.weekdays == ScheduleEntry.allWeekdays {
+            return NSLocalizedString("scheduler.daily", comment: "")
+        }
+        let symbols = Calendar.current.shortWeekdaySymbols
+        return symbols.indices
+            .filter { entry.weekdays & (1 << $0) != 0 }
+            .map { symbols[$0] }
+            .joined(separator: ", ")
     }
 }
 
@@ -118,6 +143,7 @@ private struct AddScheduleSheet: View {
 
     @State private var time = Date()
     @State private var action: ScheduleAction = .download
+    @State private var weekdays: Int = ScheduleEntry.allWeekdays
 
     var onSave: (ScheduleEntry) -> Void
 
@@ -136,6 +162,24 @@ private struct AddScheduleSheet: View {
                 ($0, $0.localizedTitle)
             })
 
+            // Repeat on specific weekdays (system-localized short names).
+            VStack(alignment: .leading, spacing: 6) {
+                Text(NSLocalizedString("scheduler.repeat", comment: ""))
+                    .font(.headline)
+                HStack(spacing: 6) {
+                    ForEach(0..<7, id: \.self) { day in
+                        let on = weekdays & (1 << day) != 0
+                        Button(Calendar.current.shortWeekdaySymbols[day]) {
+                            weekdays ^= (1 << day)
+                        }
+                        .buttonStyle(NeoButtonStyle(
+                            bg: on ? Neo.yellow : Neo.paper(scheme),
+                            compact: true
+                        ))
+                    }
+                }
+            }
+
             HStack {
                 Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
@@ -143,7 +187,10 @@ private struct AddScheduleSheet: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
                 Button(NSLocalizedString("common.save", comment: "")) {
-                    onSave(ScheduleEntry(time: time, action: action))
+                    // An entry with no weekdays would never fire; fall back
+                    // to daily rather than saving a dead entry.
+                    let days = weekdays == 0 ? ScheduleEntry.allWeekdays : weekdays
+                    onSave(ScheduleEntry(time: time, action: action, weekdays: days))
                     dismiss()
                 }
                 .neoButton(bg: Neo.green)

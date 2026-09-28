@@ -309,6 +309,22 @@ public final class TorrentEngine: TorrentEngineProtocol {
         Task { try? await rpc.pause(gid: gid) }
     }
 
+    /// Phase 5 scheduler: pauses every active torrent (downloading or
+    /// seeding — a scheduled stop should quiet the radio entirely).
+    public func pauseAll() {
+        for t in torrents where t.state == .downloading || t.state == .seeding {
+            pause(t.id)
+        }
+    }
+
+    /// Phase 5 scheduler "download" action: resumes every paused torrent.
+    /// (The VPN kill-switch inside `resume` still holds while active.)
+    public func resumeAllEligible() {
+        for t in torrents where t.state == .paused {
+            resume(t.id)
+        }
+    }
+
     public func resume(_ id: UUID) {
         // While the kill-switch holds, nothing may start.
         guard !vpnHolding else { return }

@@ -333,12 +333,29 @@ public final class DownloadEngine {
         }
     }
 
-    /// Phase 5 speed limiter: pushes the current global cap from Settings
+    /// Phase 5 scheduler: pushes the current global cap from Settings
     /// into the shared bucket. Called whenever a download launches and
     /// when the setting changes (0 = unlimited).
     @MainActor
     public func syncSpeedLimit() {
         globalSpeedBucket.rate = Double(max(0, settings.settings.speedLimitBytesPerSec))
+    }
+
+    /// Phase 5 scheduler "download" action: starts everything that's
+    /// waiting — queued, paused, or interrupted by an app kill.
+    @MainActor
+    public func startAllEligible() {
+        for item in items where item.state == .queued || item.state == .paused || item.state == .interrupted {
+            start(item.id)
+        }
+    }
+
+    /// Phase 5 scheduler "stop" action: pauses every active download.
+    @MainActor
+    public func pauseAll() {
+        for item in items where item.state == .downloading {
+            pause(item.id)
+        }
     }
 
     /// Swaps the download URL in place (XDM `SetDownloadInfo` idea) — used

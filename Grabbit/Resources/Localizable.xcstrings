@@ -3739,6 +3739,38 @@
           }
         }
       }
+    },
+    "scheduler.daily": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နေ့တိုင်း"
+          }
+        }
+      }
+    },
+    "scheduler.repeat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်လုပ်ရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

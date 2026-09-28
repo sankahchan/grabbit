@@ -15,6 +15,7 @@ struct GrabbitApp: App {
     @State private var mediaEngine: MediaEngine
     @State private var historyStore: HistoryStore
     @State private var settings: SettingsStore
+    @State private var schedulerStore: SchedulerStore
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
     @State private var trayController: TrayController
@@ -36,6 +37,7 @@ struct GrabbitApp: App {
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
+        _schedulerStore = State(initialValue: SchedulerStore())
         _trayController = State(initialValue: TrayController())
         _trayController.wrappedValue.configure(
             downloads: _downloadEngine.wrappedValue,
@@ -85,6 +87,7 @@ struct GrabbitApp: App {
                 .environment(mediaEngine)
                 .environment(historyStore)
                 .environment(settings)
+                .environment(schedulerStore)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.
@@ -115,6 +118,11 @@ struct GrabbitApp: App {
                 }
                 .onAppear {
                     applyRunMode(initial: true)
+                    // Phase 5 scheduler: persisted entries + 1-minute
+                    // firing timer driving both engines.
+                    schedulerStore.start(
+                        downloadEngine: downloadEngine,
+                        torrentEngine: torrentEngine)
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
                     if CommandLine.arguments.contains("--native-messaging") {
