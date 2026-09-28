@@ -50,6 +50,7 @@ struct SettingsView: View {
         .modifier(SettingsChangeHandlers(
             onLanguageChange: handleLanguageChange,
             onOpenAtLogin: applyOpenAtLogin))
+        .modifier(ProxyChangeHandlers())
     }
 
     // MARK: - Change handlers
@@ -108,22 +109,31 @@ struct SettingsView: View {
                     Task { await torrentEngine.applyMaxActiveTasks() }
                 }
                 .onChange(of: store.settings.runMode) { _, _ in store.save() }
-                // Phase 5 proxy: save + push into the running aria2 daemon.
-                // The native engine reads the proxy live at segment launch,
-                // so only the torrent engine needs an explicit push.
-                .onChange(of: store.settings.proxyMode) { _, _ in
-                    store.save()
-                    Task { await torrentEngine.applyProxy() }
-                }
-                .onChange(of: (
-                    store.settings.proxyHost,
-                    store.settings.proxyPort,
-                    store.settings.proxyUsername,
-                    store.settings.proxyPassword
-                )) { _, _ in
-                    store.save()
-                    Task { await torrentEngine.applyProxy() }
-                }
+        }
+    }
+
+    // MARK: - Proxy change handlers
+
+    /// Phase 5 proxy: saves + pushes the proxy into the running aria2
+    /// daemon. A third small modifier so the main settings chains stay
+    /// short enough for the type-checker. The native engine reads the
+    /// proxy live at segment launch, so only torrents need the push.
+    private struct ProxyChangeHandlers: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+
+        private func proxyChanged() {
+            store.save()
+            Task { await torrentEngine.applyProxy() }
+        }
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: store.settings.proxyMode) { _, _ in proxyChanged() }
+                .onChange(of: store.settings.proxyHost) { _, _ in proxyChanged() }
+                .onChange(of: store.settings.proxyPort) { _, _ in proxyChanged() }
+                .onChange(of: store.settings.proxyUsername) { _, _ in proxyChanged() }
+                .onChange(of: store.settings.proxyPassword) { _, _ in proxyChanged() }
         }
     }
 
