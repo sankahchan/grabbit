@@ -120,7 +120,12 @@ public struct Segment: Codable, Identifiable {
     }
 
     public var byteCount: Int64 {
-        max(0, endByte - startByte + 1)
+        // Open-ended segment (unknown total size): endByte == .max is the
+        // sentinel. Saturate instead of trapping on `.max - startByte + 1`
+        // — Swift integer overflow is a hard runtime crash (hit via
+        // DownloadItem.progress the moment an unknown-size task renders).
+        if endByte == .max { return .max }
+        return max(0, endByte - startByte + 1)
     }
 }
 
@@ -264,8 +269,10 @@ public struct DownloadItem: Identifiable, Codable {
         if let total = totalBytes, total > 0 {
             remaining = max(0, total - downloadedBytes)
         } else {
-            let expected = segments.reduce(0) { $0 + $1.byteCount }
-            remaining = max(0, expected - downloadedBytes)
+            // Unknown total size: there is no meaningful remaining-bytes
+            // estimate (the open-ended segment saturates byteCount at .max),
+            // so report no ETA instead of an astronomic one.
+            return nil
         }
         return Double(remaining) / speedBytesPerSec
     }
@@ -299,7 +306,8 @@ extension DownloadItem {
     /// at least `minSplitBytes` remaining. Returns its index and the split
     /// point; the caller halves it and spawns a connection for the second
     /// half. Only untouched segments are split, so there is no byte-overlap
-    /// bookkeeping at all.
+    /// bookkeeping at all. Open-ended segments (endByte == .max, unknown
+    /// total size) are never split — there is no meaningful midpoint.
     public static func growthSplitPoint(
         segments: [Segment],
         maxConnections: Int,
@@ -308,7 +316,7 @@ extension DownloadItem {
         let incomplete = segments.filter { !$0.isComplete }
         guard incomplete.count < maxConnections else { return nil }
         guard let target = incomplete
-            .filter({ $0.receivedBytes == 0 && $0.byteCount >= minSplitBytes })
+            .filter({ $0.receivedBytes == 0 && $0.endByte != .max && $0.byteCount >= minSplitBytes })
             .max(by: { $0.byteCount < $1.byteCount })
         else { return nil }
         return (target.index, target.startByte + target.byteCount / 2)

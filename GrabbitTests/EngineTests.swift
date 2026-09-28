@@ -423,4 +423,46 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(engine.items[0].state, .paused)
         XCTAssertEqual(engine.recoveredCount, 0)
     }
+
+    // MARK: - Open-ended segment sentinel (endByte == .max)
+
+    /// Regression: byteCount used to compute `.max - startByte + 1`, which
+    /// traps with a Swift arithmetic-overflow crash the moment an
+    /// unknown-size task's progress rendered.
+    func testOpenEndedSegmentByteCountSaturates() {
+        let segment = Segment(index: 0, startByte: 0, endByte: .max)
+        XCTAssertEqual(segment.byteCount, .max)
+        XCTAssertFalse(segment.isComplete)
+    }
+
+    func testProgressDoesNotTrapForUnknownSize() {
+        let segments = [Segment(index: 0, startByte: 0, endByte: .max, receivedBytes: 4096)]
+        let progress = makeItem(totalBytes: nil, downloadedBytes: 4096, segments: segments).progress
+        XCTAssertTrue(progress.isFinite)
+        XCTAssertGreaterThanOrEqual(progress, 0)
+        XCTAssertLessThanOrEqual(progress, 1)
+    }
+
+    func testGrowthNeverSplitsOpenEndedSegment() {
+        let segments = [Segment(index: 0, startByte: 0, endByte: .max)]
+        XCTAssertNil(DownloadItem.growthSplitPoint(
+            segments: segments, maxConnections: 16, minSplitBytes: 8 * 1024 * 1024))
+    }
+
+    func testGrowthStillSplitsNormalSegments() {
+        let segments = DownloadItem.makeSegments(totalBytes: 100 * 1024 * 1024, connections: 1)
+        let split = DownloadItem.growthSplitPoint(
+            segments: segments, maxConnections: 16, minSplitBytes: 8 * 1024 * 1024)
+        XCTAssertNotNil(split)
+        XCTAssertEqual(split?.mid, 50 * 1024 * 1024)
+    }
+
+    func testEtaIsNilForUnknownSize() {
+        var item = makeItem(
+            totalBytes: nil, downloadedBytes: 4096,
+            segments: [Segment(index: 0, startByte: 0, endByte: .max, receivedBytes: 4096)])
+        item.state = .downloading
+        item.speedBytesPerSec = 100
+        XCTAssertNil(item.etaSeconds)
+    }
 }
