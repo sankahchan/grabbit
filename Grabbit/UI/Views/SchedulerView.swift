@@ -27,6 +27,41 @@ public struct ScheduleEntry: Identifiable, Codable {
     var speedLimitBytesPerSec: Int64 = 0
 
     static let allWeekdays = 0b1111111
+
+    // MARK: - Codable (backward compatible)
+
+    // `speedLimitBytesPerSec` was added after entries were already being
+    // persisted. Synthesized decoding would throw on the missing key and
+    // SchedulerStore.load would silently drop EVERY entry (`?? []`), so
+    // every defaulted property decodes with decodeIfPresent instead.
+    private enum CodingKeys: String, CodingKey {
+        case id, time, action, isEnabled, weekdays, lastFired,
+             speedLimitBytesPerSec
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        time = try c.decode(Date.self, forKey: .time)
+        action = try c.decode(ScheduleAction.self, forKey: .action)
+        isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        weekdays = try c.decodeIfPresent(Int.self, forKey: .weekdays)
+            ?? Self.allWeekdays
+        lastFired = try c.decodeIfPresent(Date.self, forKey: .lastFired)
+        speedLimitBytesPerSec = try c.decodeIfPresent(
+            Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(time, forKey: .time)
+        try c.encode(action, forKey: .action)
+        try c.encode(isEnabled, forKey: .isEnabled)
+        try c.encode(weekdays, forKey: .weekdays)
+        try c.encodeIfPresent(lastFired, forKey: .lastFired)
+        try c.encode(speedLimitBytesPerSec, forKey: .speedLimitBytesPerSec)
+    }
 }
 
 /// Scheduler tab: list of time-based entries (start downloads / stop all).

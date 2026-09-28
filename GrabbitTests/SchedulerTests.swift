@@ -135,4 +135,25 @@ final class SchedulerTests: XCTestCase {
             atomically: true, encoding: .utf8)
         XCTAssertTrue(SchedulerStore(directory: dir).entries.isEmpty)
     }
+
+    func testLegacyEntryWithoutSpeedLimitDecodes() throws {
+        // Pre-#8 JSON lacks speedLimitBytesPerSec entirely. The entry must
+        // survive with the default (0 = unlimited), not drop the schedule.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let legacy = """
+            [{"id":"\(UUID().uuidString)","time":786240000,\
+            "action":"download","isEnabled":true,"weekdays":127,\
+            "lastFired":null}]
+            """
+        try legacy.write(
+            to: dir.appendingPathComponent("schedule.json"),
+            atomically: true, encoding: .utf8)
+        let entries = SchedulerStore(directory: dir).entries
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries[0].action, .download)
+        XCTAssertEqual(entries[0].speedLimitBytesPerSec, 0)
+        XCTAssertTrue(entries[0].isEnabled)
+    }
 }
