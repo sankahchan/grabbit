@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum ScheduleAction: String, CaseIterable, Codable {
+public enum ScheduleAction: String, CaseIterable, Codable {
     case download, stop, speedLimit
 
     var localizedTitle: String {
@@ -26,7 +26,7 @@ public struct ScheduleEntry: Identifiable, Codable {
     /// Global cap in bytes/sec applied at fire time (0 = unlimited).
     var speedLimitBytesPerSec: Int64 = 0
 
-    static let allWeekdays = 0b1111111
+    public static let allWeekdays = 0b1111111
 
     public init(
         id: UUID = UUID(),

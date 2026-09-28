@@ -24,7 +24,7 @@ public enum RunMode: String, Codable, CaseIterable {
 /// Custom proxy for Grabbit's own engines (native direct downloads +
 /// aria2 torrents). `.none` = direct connection (the URLSession-based size
 /// probe still honors the *system* proxy automatically).
-public enum ProxyMode: String, Codable, CaseIterable {
+public enum ProxyMode: String, Codable, CaseIterable, Sendable {
     case none
     case http
     case socks5
