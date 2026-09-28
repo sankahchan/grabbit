@@ -7,6 +7,7 @@ import SwiftUI
 /// toolbar add button.
 struct MainView: View {
     @State private var selection: SidebarSelection = .downloads
+    @Environment(SettingsStore.self) private var store: SettingsStore
 
     var body: some View {
         NavigationSplitView {
@@ -16,6 +17,18 @@ struct MainView: View {
             detailView
         }
         .navigationTitle("Grabbit")
+        // The Appearance setting actually drives the UI: without this the
+        // picker only saved the value and everything followed the system.
+        .preferredColorScheme(colorSchemeOverride)
+    }
+
+    /// Maps the saved theme to a SwiftUI override; nil means "follow system".
+    private var colorSchemeOverride: ColorScheme? {
+        switch store.settings.theme {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
     }
 
     @ViewBuilder
