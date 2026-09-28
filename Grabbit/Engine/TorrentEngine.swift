@@ -61,6 +61,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
     public var vpnHolding: Bool { daemonState == .suspendedVPN }
     /// In-app completion/failure toast cards. Wired by GrabbitApp.
     public weak var toastCenter: ToastCenter?
+    /// After-downloads-finish actions (sleep/shutdown/…). Wired by GrabbitApp.
+    public weak var completionCenter: CompletionActionCenter?
 
     private let settings: SettingsStore
     private let history: HistoryStore
@@ -554,6 +556,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.completionSoundEnabled {
                             ToastCenter.playSound(for: .completed)
                         }
+                        completionCenter?.taskDidSettle()
                         if settings.settings.autoClearFinished {
                             toPurge.append((item.id, st.gid))
                         }
@@ -577,6 +580,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.completionSoundEnabled {
                             ToastCenter.playSound(for: .failed)
                         }
+                        completionCenter?.taskDidSettle()
                     }
                     item.state = newState
                     changed = true

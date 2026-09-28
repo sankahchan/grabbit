@@ -30,6 +30,7 @@ struct SettingsView: View {
                 // stretch across ultra-wide displays).
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
+                completionCard(settings: settings)
                 proxyCard(settings: settings)
                 torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually
@@ -77,6 +78,10 @@ struct SettingsView: View {
                 .onChange(of: store.settings.showCompletionToast) { _, _ in store.save() }
                 .onChange(of: store.settings.showFailureToast) { _, _ in store.save() }
                 .onChange(of: store.settings.completionSoundEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.autoExtractArchives) { _, _ in store.save() }
+                .onChange(of: store.settings.deleteArchiveAfterExtract) { _, _ in store.save() }
+                .onChange(of: store.settings.completionAction) { _, _ in store.save() }
+                .onChange(of: store.settings.completionCommand) { _, _ in store.save() }
                 .modifier(SettingsChangeHandlersB(onOpenAtLogin: onOpenAtLogin))
         }
     }
@@ -277,9 +282,48 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Divider()
+            subHeader(NSLocalizedString("settings.section.archives", comment: ""))
+            Toggle(NSLocalizedString("settings.archives.autoExtract", comment: ""), isOn: settings.autoExtractArchives)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.archives.deleteAfterExtract", comment: ""), isOn: settings.deleteArchiveAfterExtract)
+            .toggleStyle(NeoToggleStyle())
+            Text(NSLocalizedString("settings.archives.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Divider()
             queuesSection()
             Divider()
             watchSection()
+        }
+        .neoCard()
+    }
+
+    // MARK: - Backlog #9: after-downloads-finish actions
+
+    private func completionCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(NSLocalizedString("settings.completion.title", comment: ""))
+            Picker(
+                NSLocalizedString("settings.completion.action", comment: ""),
+                selection: settings.completionAction
+            ) {
+                ForEach(CompletionAction.allCases, id: \.self) { action in
+                    Text(NSLocalizedString(action.localizationKey, comment: ""))
+                        .tag(action)
+                }
+            }
+            .pickerStyle(.menu)
+            if settings.wrappedValue.completionAction == .runCommand {
+                TextField(
+                    NSLocalizedString(
+                        "settings.completion.command.placeholder", comment: ""),
+                    text: settings.completionCommand
+                )
+                .textFieldStyle(.roundedBorder)
+            }
+            Text(NSLocalizedString("settings.completion.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .neoCard()
     }

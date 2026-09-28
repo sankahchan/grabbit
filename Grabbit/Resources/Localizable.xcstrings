@@ -2711,6 +2711,54 @@
         }
       }
     },
+    "settings.archives.autoExtract": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extract archives automatically"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အာခိုက်များ အလိုအလျောက်ဖြည်"
+          }
+        }
+      }
+    },
+    "settings.archives.deleteAfterExtract": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move archive to Trash after extracting"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖြည်ပြီးရင် အာခိုက်ကို Trash သို့ပို့"
+          }
+        }
+      }
+    },
+    "settings.archives.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zip and tar archives are extracted with macOS system tools."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zip နှင့် tar အာခိုက်များကို macOS system tools ဖြင့် ဖြည်ပါမည်။"
+          }
+        }
+      }
+    },
     "settings.autoClear": {
       "comment": "Setting toggle",
       "localizations": {
@@ -2809,6 +2857,150 @@
           "stringUnit": {
             "state": "translated",
             "value": "လင့်ခ်များအတွက် ကလစ်ဘုတ်စောင့်ကြည့်"
+          }
+        }
+      }
+    },
+    "settings.completion.action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်ချက်"
+          }
+        }
+      }
+    },
+    "settings.completion.action.command": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run command"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command run"
+          }
+        }
+      }
+    },
+    "settings.completion.action.none": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do nothing"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဘာမှမလုပ်"
+          }
+        }
+      }
+    },
+    "settings.completion.action.quit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ပိတ်"
+          }
+        }
+      }
+    },
+    "settings.completion.action.shutdown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shut down Mac"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac ပိတ်"
+          }
+        }
+      }
+    },
+    "settings.completion.action.sleep": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Mac"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac ကို Sleep လုပ်"
+          }
+        }
+      }
+    },
+    "settings.completion.command.placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell command…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell command…"
+          }
+        }
+      }
+    },
+    "settings.completion.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs when every download and torrent has finished or failed. Nothing happens while anything is still downloading."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်နှင့် torrent အားလုံး ပြီးဆုံး (သို့မဟုတ် မအောင်မြင်) တဲ့အခါ လုပ်ဆောင်မည်။ တစ်ခုခု ဒေါင်းလုဒ်ဆွဲနေသေးရင် ဘာမှမလုပ်ပါ။"
+          }
+        }
+      }
+    },
+    "settings.completion.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When Downloads Finish"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များပြီးတဲ့အခါ"
           }
         }
       }
@@ -3132,6 +3324,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "အသွင်အပြင်"
+          }
+        }
+      }
+    },
+    "settings.section.archives": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archives"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အာခိုက်များ"
           }
         }
       }
@@ -3999,6 +4207,22 @@
         }
       }
     },
+    "toast.extractFailed.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extraction failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖြည်မရပါ"
+          }
+        }
+      }
+    },
     "toast.failed.title": {
       "localizations": {
         "en": {
@@ -4370,6 +4594,38 @@
         }
       }
     },
+    "torrents.files.selectAll": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select all"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံးရွေး"
+          }
+        }
+      }
+    },
+    "torrents.files.selectNone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select none"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တစ်ခုမှမရွေး"
+          }
+        }
+      }
+    },
     "torrents.files.title": {
       "comment": "File selection sheet title",
       "localizations": {
@@ -4383,6 +4639,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "ဒေါင်းမည့်ဖိုင်များ ရွေးပါ"
+          }
+        }
+      }
+    },
+    "torrents.health.fair": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Few seeders — may be slow"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeder နည်းပါတယ် — နှေးနိုင်တယ်"
+          }
+        }
+      }
+    },
+    "torrents.health.good": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Healthy swarm — plenty of seeders"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeder များများရှိပါတယ်"
+          }
+        }
+      }
+    },
+    "torrents.health.poor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No seeders — download may stall"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeder မရှိပါ — ရပ်သွားနိုင်တယ်"
           }
         }
       }

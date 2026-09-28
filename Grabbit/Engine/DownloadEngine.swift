@@ -24,6 +24,8 @@ public final class DownloadEngine {
     public var maxConnections = 16
     /// In-app completion/failure toast cards. Wired by GrabbitApp.
     public weak var toastCenter: ToastCenter?
+    /// After-downloads-finish actions (sleep/shutdown/…). Wired by GrabbitApp.
+    public weak var completionCenter: CompletionActionCenter?
 
     private let resumeStore: ResumeStore
     private let history: HistoryStore
@@ -1105,6 +1107,34 @@ public final class DownloadEngine {
         if settings.settings.completionSoundEnabled {
             ToastCenter.playSound(for: .completed)
         }
+        // Backlog #2: auto-extract archives with system tools. Runs
+        // off-main (Process.waitUntilExit blocks); a failure leaves the
+        // archive in place and shows an informational toast.
+        if settings.settings.autoExtractArchives,
+           ArchiveExtractor.isExtractableArchive(items[itemIndex].filename)
+        {
+            let archiveURL = items[itemIndex].destinationURL
+            let deleteAfter = settings.settings.deleteArchiveAfterExtract
+            let center = toastCenter
+            Task.detached(priority: .utility) {
+                do {
+                    try ArchiveExtractor.extract(archiveURL: archiveURL)
+                    if deleteAfter {
+                        try? FileManager.default.trashItem(
+                            at: archiveURL, resultingItemURL: nil)
+                    }
+                } catch {
+                    center?.push(AppToast(
+                        kind: .failed,
+                        source: .download,
+                        title: NSLocalizedString(
+                            "toast.extractFailed.title", comment: ""),
+                        message: archiveURL.lastPathComponent
+                            + " — " + error.localizedDescription
+                    ))
+                }
+            }
+        }
         speedSamples[item.id] = nil
         updateSleepPrevention()
         // No resume state needed for a finished download.
@@ -1116,6 +1146,8 @@ public final class DownloadEngine {
             persistItem(id: item.id)
         }
         kickQueue()
+        // Backlog #9: may trigger the after-downloads-finish action.
+        completionCenter?.taskDidSettle()
     }
 
     @MainActor
@@ -1155,6 +1187,11 @@ public final class DownloadEngine {
         updateSleepPrevention()
         persistItem(id: id)
         kickQueue()
+        // Backlog #9: only on the terminal transition (fail can fire
+        // repeatedly for the same stalled item).
+        if !wasAlreadyFailed {
+            completionCenter?.taskDidSettle()
+        }
     }
 
     @MainActor

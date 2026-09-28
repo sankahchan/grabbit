@@ -47,6 +47,14 @@ public struct AppSettings: Codable {
     public var showFailureToast = true
     /// Subtle system alert sound alongside the toast cards.
     public var completionSoundEnabled = true
+    /// Auto-extract zip/tar archives after download (system tools only).
+    public var autoExtractArchives = true
+    /// Move the archive to Trash after a successful extraction.
+    public var deleteArchiveAfterExtract = false
+    /// Action when every download/torrent has finished (or failed).
+    public var completionAction: CompletionAction = .none
+    /// Shell command for the `.runCommand` completion action.
+    public var completionCommand = ""
     public var defaultConnections = 16
     public var folders: [DownloadCategory: String]
     // Torrents (Phase 4).
@@ -95,6 +103,8 @@ extension AppSettings {
         case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
         case autoResumeOnLaunch, autoClearFinished, autoUpdateEnabled, notificationsEnabled
         case showCompletionToast, showFailureToast, completionSoundEnabled
+        case autoExtractArchives, deleteArchiveAfterExtract
+        case completionAction, completionCommand
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
         case autoUpdateTrackers
@@ -117,6 +127,10 @@ extension AppSettings {
         showCompletionToast = try c.decodeIfPresent(Bool.self, forKey: .showCompletionToast) ?? true
         showFailureToast = try c.decodeIfPresent(Bool.self, forKey: .showFailureToast) ?? true
         completionSoundEnabled = try c.decodeIfPresent(Bool.self, forKey: .completionSoundEnabled) ?? true
+        autoExtractArchives = try c.decodeIfPresent(Bool.self, forKey: .autoExtractArchives) ?? true
+        deleteArchiveAfterExtract = try c.decodeIfPresent(Bool.self, forKey: .deleteArchiveAfterExtract) ?? false
+        completionAction = try c.decodeIfPresent(CompletionAction.self, forKey: .completionAction) ?? .none
+        completionCommand = try c.decodeIfPresent(String.self, forKey: .completionCommand) ?? ""
         defaultConnections = try c.decodeIfPresent(Int.self, forKey: .defaultConnections) ?? 16
         folders = try c.decodeIfPresent([DownloadCategory: String].self, forKey: .folders) ?? [:]
         vpnKillSwitchEnabled = try c.decodeIfPresent(Bool.self, forKey: .vpnKillSwitchEnabled) ?? false

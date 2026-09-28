@@ -156,7 +156,14 @@ struct TorrentsView: View {
             NeoLinearBar(progress: item.progress, fill: Neo.purple)
 
             HStack(spacing: 12) {
-                Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(item.numSeeders)")
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(swarmHealthColor(seeders: item.numSeeders))
+                        .frame(width: 8, height: 8)
+                    Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(item.numSeeders)")
+                }
+                .help(NSLocalizedString(
+                    SwarmHealth.of(seeders: item.numSeeders).helpKey, comment: ""))
                 Text("\(NSLocalizedString("torrents.peers", comment: "")): \(item.peers)")
                 Text("\(NSLocalizedString("torrents.ratio", comment: "")): \(String(format: "%.2f", item.ratio))")
                 Spacer()
@@ -202,6 +209,16 @@ struct TorrentsView: View {
             }
         case .details:
             detailsSubject = .torrent(item)
+        }
+    }
+
+    /// Swarm health dot color: green = healthy (5+ seeders),
+    /// orange = fair (1-4), red = poor (none).
+    private func swarmHealthColor(seeders: Int) -> Color {
+        switch SwarmHealth.of(seeders: seeders) {
+        case .healthy: Neo.green
+        case .fair: Neo.orange
+        case .poor: Neo.red
         }
     }
 }
@@ -395,6 +412,7 @@ struct TorrentFilesSheet: View {
     let item: TorrentItem
     @State private var files: [Aria2File]?
     @State private var selected: Set<Int> = []
+    @State private var expanded: Set<String> = []
     @State private var errorMessage: String?
     @State private var applying = false
 
@@ -414,20 +432,24 @@ struct TorrentFilesSheet: View {
             }
 
             if let files {
+                HStack {
+                    Button(NSLocalizedString("torrents.files.selectAll", comment: "")) {
+                        selected = Set(files.map(\.index))
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                    Button(NSLocalizedString("torrents.files.selectNone", comment: "")) {
+                        selected = []
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                    Spacer()
+                    Text("\(selected.count) / \(files.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 6) {
-                        ForEach(files) { file in
-                            Toggle(isOn: binding(for: file.index)) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(URL(fileURLWithPath: file.path).lastPathComponent)
-                                        .font(.subheadline)
-                                        .lineLimit(1)
-                                    Text(formatBytes(file.length))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .toggleStyle(NeoToggleStyle())
+                        ForEach(roots) { node in
+                            nodeRow(node, depth: 0)
                         }
                     }
                 }
@@ -457,10 +479,97 @@ struct TorrentFilesSheet: View {
                 let fetched = try await torrentEngine.fetchFiles(item.id)
                 files = fetched
                 selected = Set(fetched.filter { $0.selected }.map { $0.index })
+                expanded = Set(
+                    allDirectoryIDs(in: TorrentFileTree.build(from: fetched)))
             } catch {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    /// Forest roots of the current file list.
+    private var roots: [TorrentFileNode] {
+        guard let files else { return [] }
+        return TorrentFileTree.build(from: files)
+    }
+
+    private func allDirectoryIDs(in nodes: [TorrentFileNode]) -> [String] {
+        nodes.flatMap { node in
+            node.isDirectory
+                ? [node.id] + allDirectoryIDs(in: node.children) : []
+        }
+    }
+
+    private func nodeRow(_ node: TorrentFileNode, depth: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                if node.isDirectory {
+                    Button {
+                        if expanded.contains(node.id) {
+                            expanded.remove(node.id)
+                        } else {
+                            expanded.insert(node.id)
+                        }
+                    } label: {
+                        Image(systemName: expanded.contains(node.id)
+                            ? "chevron.down" : "chevron.right")
+                            .font(.caption)
+                            .frame(width: 16)
+                    }
+                    .buttonStyle(.plain)
+                    folderCheckbox(for: node)
+                    Text(node.name)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Text(formatBytes(node.size))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if let index = node.fileIndex {
+                    Toggle(isOn: binding(for: index)) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(node.name)
+                                .font(.subheadline)
+                                .lineLimit(1)
+                            Text(formatBytes(node.size))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .toggleStyle(NeoToggleStyle())
+                }
+            }
+            .padding(.leading, CGFloat(depth) * 20)
+            if node.isDirectory, expanded.contains(node.id) {
+                ForEach(node.children) { child in
+                    nodeRow(child, depth: depth + 1)
+                }
+            }
+        }
+    }
+
+    /// Tri-state folder checkbox: all / some / none of the files below
+    /// are selected. Tapping selects or clears the whole subtree.
+    private func folderCheckbox(for node: TorrentFileNode) -> some View {
+        let state = TorrentFileTree.selection(of: node, selected: selected)
+        let systemName: String
+        switch state {
+        case .all: systemName = "checkmark.square.fill"
+        case .some: systemName = "minus.square.fill"
+        case .none: systemName = "square"
+        }
+        return Button {
+            let indices = TorrentFileTree.descendantIndices(of: node)
+            if state == .all {
+                selected.subtract(indices)
+            } else {
+                selected.formUnion(indices)
+            }
+        } label: {
+            Image(systemName: systemName)
+                .foregroundStyle(state == .none ? .secondary : Neo.green)
+                .font(.title3)
+        }
+        .buttonStyle(.plain)
     }
 
     private func binding(for index: Int) -> Binding<Bool> {
