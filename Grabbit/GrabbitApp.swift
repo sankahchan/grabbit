@@ -160,6 +160,10 @@ struct GrabbitApp: App {
                 }
                 .onAppear {
                     applyRunMode(initial: true)
+                    // Durable finalize: complete any journal left by a crash
+                    // (file moved but completion never persisted) before the
+                    // resume logic sees the items.
+                    downloadEngine.reconcileFinalizeJournals()
                     // Startup > "Auto-resume unfinished tasks": interrupted
                     // downloads restart on launch instead of waiting behind
                     // the recovery banner in the Downloads tab.

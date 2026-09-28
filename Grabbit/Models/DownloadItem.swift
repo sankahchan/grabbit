@@ -177,12 +177,14 @@ public struct DownloadItem: Identifiable, Codable {
     /// by (sortRank, addedAt); legacy saves have sortRank 0 everywhere so
     /// their addedAt order is preserved.
     public var sortRank: Int = 0
+    /// Per-task proxy override (nil = follow the global Settings proxy).
+    public var proxy: TaskProxy? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id, url, filename, totalBytes, downloadedBytes, segments, state,
              speedBytesPerSec, category, sourceSite, destinationURL, addedAt,
              errorMessage, sourcePageURL, eTag, lastModified, linkExpired,
-             speedLimitBytesPerSec, queueID, priority, sortRank
+             speedLimitBytesPerSec, queueID, priority, sortRank, proxy
         // requestHeaders intentionally absent: runtime-only secret.
     }
 
@@ -208,7 +210,8 @@ public struct DownloadItem: Identifiable, Codable {
         speedLimitBytesPerSec: Int64 = 0,
         queueID: UUID? = nil,
         priority: Int = 0,
-        sortRank: Int = 0
+        sortRank: Int = 0,
+        proxy: TaskProxy? = nil
     ) {
         self.id = id
         self.url = url
@@ -232,6 +235,7 @@ public struct DownloadItem: Identifiable, Codable {
         self.queueID = queueID
         self.priority = priority
         self.sortRank = sortRank
+        self.proxy = proxy
     }
 
     /// Custom decoder: `speedLimitBytesPerSec` (Phase 5) is absent from
@@ -262,6 +266,7 @@ public struct DownloadItem: Identifiable, Codable {
         queueID = try c.decodeIfPresent(UUID.self, forKey: .queueID)
         priority = try c.decodeIfPresent(Int.self, forKey: .priority) ?? 0
         sortRank = try c.decodeIfPresent(Int.self, forKey: .sortRank) ?? 0
+        proxy = try c.decodeIfPresent(TaskProxy.self, forKey: .proxy)
         // requestHeaders is runtime-only and never persisted.
         requestHeaders = nil
     }

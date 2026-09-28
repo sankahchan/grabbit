@@ -116,7 +116,8 @@ public final class Aria2Daemon {
         seedTimeMinutes: Int,
         interfaceName: String?,
         maxConcurrentDownloads: Int = 5,
-        proxy: ProxyConfig = ProxyConfig()
+        proxy: ProxyConfig = ProxyConfig(),
+        performanceProfile: Aria2PerformanceProfile = .balanced
     ) async throws -> (rpc: Aria2RPC, manifest: Manifest) {
         try FileManager.default.createDirectory(at: Self.stateDir, withIntermediateDirectories: true)
 
@@ -146,7 +147,8 @@ public final class Aria2Daemon {
             seedTimeMinutes: seedTimeMinutes,
             interfaceName: interfaceName,
             maxConcurrentDownloads: maxConcurrentDownloads,
-            proxy: proxy)
+            proxy: proxy,
+            performanceProfile: performanceProfile)
     }
 
     /// Asks the daemon to save its session and exit, SIGTERMs it if it
@@ -246,7 +248,8 @@ public final class Aria2Daemon {
         seedTimeMinutes: Int,
         interfaceName: String?,
         maxConcurrentDownloads: Int = 5,
-        proxy: ProxyConfig = ProxyConfig()
+        proxy: ProxyConfig = ProxyConfig(),
+        performanceProfile: Aria2PerformanceProfile = .balanced
     ) async throws -> (rpc: Aria2RPC, manifest: Manifest) {
         let secret = (0..<32).map { _ in String(format: "%02x", UInt8.random(in: 0...255)) }.joined()
         let state = Self.stateDir.path
@@ -279,7 +282,7 @@ public final class Aria2Daemon {
             "--seed-ratio=\(String(format: "%.1f", seedRatio))",
             "--seed-time=\(seedTimeMinutes)",
             "--max-concurrent-downloads=\(max(1, maxConcurrentDownloads))",
-        ] + proxy.aria2Arguments()
+        ] + performanceProfile.launchArgs + proxy.aria2Arguments()
         if let interfaceName, !interfaceName.isEmpty {
             // VPN kill-switch: bind every socket to the VPN interface.
             args.append("--interface=\(interfaceName)")

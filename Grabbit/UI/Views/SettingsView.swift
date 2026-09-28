@@ -71,6 +71,7 @@ struct SettingsView: View {
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
+                .onChange(of: store.settings.trackerSyncHours) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.showCompletionToast) { _, _ in store.save() }
@@ -140,6 +141,11 @@ struct SettingsView: View {
                 .onChange(of: store.settings.proxyPort) { _, _ in proxyChanged() }
                 .onChange(of: store.settings.proxyUsername) { _, _ in proxyChanged() }
                 .onChange(of: store.settings.proxyPassword) { _, _ in proxyChanged() }
+                // Performance profile: save + push into the running daemon.
+                .onChange(of: store.settings.torrentPerformanceProfile) { _, _ in
+                    store.save()
+                    Task { await torrentEngine.applyPerformanceProfile() }
+                }
         }
     }
 
@@ -510,6 +516,21 @@ struct SettingsView: View {
     private func torrentsCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.torrents", comment: ""))
+            HStack {
+                Text(NSLocalizedString("settings.torrents.profile", comment: ""))
+                    .font(.subheadline)
+                Spacer()
+                NeoSegmented(selection: settings.torrentPerformanceProfile, titles: [
+                    (Aria2PerformanceProfile.balanced, Aria2PerformanceProfile.balanced.localizedName),
+                    (Aria2PerformanceProfile.high, Aria2PerformanceProfile.high.localizedName),
+                    (Aria2PerformanceProfile.maximum, Aria2PerformanceProfile.maximum.localizedName),
+                ])
+                .frame(maxWidth: 340)
+            }
+            Text(NSLocalizedString("settings.torrents.profile.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Divider()
             Toggle(NSLocalizedString("settings.vpnKillSwitch", comment: ""), isOn: settings.vpnKillSwitchEnabled)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.vpnKillSwitch.note", comment: ""))
@@ -536,6 +557,15 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.trackers.autoUpdate.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            HStack {
+                Text(NSLocalizedString("settings.trackers.syncInterval", comment: ""))
+                    .font(.subheadline)
+                Spacer()
+                NeoStepper(value: settings.trackerSyncHours, in: 1.0...168.0, step: 1.0) { v in
+                    "\(Int(v))h"
+                }
+                .disabled(!settings.wrappedValue.autoUpdateTrackers)
+            }
             Divider()
             magnetHandlerRow()
         }

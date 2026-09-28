@@ -28,6 +28,7 @@ struct AddDownloadSheet: View {
     @State private var authorization = ""
     @State private var userAgent = ""
     @State private var isAdding = false
+    @State private var taskProxy = TaskProxy()
 
     enum MediaFormat: String, CaseIterable {
         case video, audio
@@ -170,6 +171,12 @@ struct AddDownloadSheet: View {
                 .padding(.top, 4)
             }
 
+            // MARK: Proxy (optional per-task override)
+            DisclosureGroup(NSLocalizedString("taskProxy.title", comment: "")) {
+                TaskProxySection(draft: $taskProxy)
+                    .padding(.top, 4)
+            }
+
             Spacer()
 
             // MARK: Actions
@@ -284,7 +291,8 @@ struct AddDownloadSheet: View {
                 destination: destination,
                 headers: headers.isEmpty ? nil : headers,
                 speedLimitBytesPerSec: Int64(speedLimitMB) * 1_048_576,
-                queueID: queueID
+                queueID: queueID,
+                proxy: taskProxy.scope == .global ? nil : taskProxy
             )
             dismiss()
         }

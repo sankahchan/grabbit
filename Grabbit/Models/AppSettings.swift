@@ -64,6 +64,10 @@ public struct AppSettings: Codable {
     /// Refresh the public tracker list from ngosang/trackerslist at most
     /// once a day (Motrix-style). A failed/never refresh keeps the old list.
     public var autoUpdateTrackers = true
+    /// aria2 multi-connection performance profile for torrents.
+    public var torrentPerformanceProfile: Aria2PerformanceProfile = .balanced
+    /// Minimum hours between tracker-list refreshes.
+    public var trackerSyncHours = 24.0
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -107,7 +111,7 @@ extension AppSettings {
         case completionAction, completionCommand
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
-        case autoUpdateTrackers
+        case autoUpdateTrackers, trackerSyncHours, torrentPerformanceProfile
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -136,6 +140,8 @@ extension AppSettings {
         vpnKillSwitchEnabled = try c.decodeIfPresent(Bool.self, forKey: .vpnKillSwitchEnabled) ?? false
         vpnInterfaceName = try c.decodeIfPresent(String.self, forKey: .vpnInterfaceName) ?? ""
         autoUpdateTrackers = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateTrackers) ?? true
+        trackerSyncHours = try c.decodeIfPresent(Double.self, forKey: .trackerSyncHours) ?? 24
+        torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
         openAtLogin = try c.decodeIfPresent(Bool.self, forKey: .openAtLogin) ?? false

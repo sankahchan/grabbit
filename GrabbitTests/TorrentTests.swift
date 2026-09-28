@@ -607,7 +607,26 @@ final class TrackerUpdaterTests: XCTestCase {
         // Fresh cache: no refresh due. Stale cache: refresh due.
         XCTAssertFalse(TrackerUpdater.needsRefresh(now: stamp.addingTimeInterval(3600)))
         XCTAssertTrue(TrackerUpdater.needsRefresh(
-            now: stamp.addingTimeInterval(TrackerUpdater.refreshInterval + 1)))
+            now: stamp.addingTimeInterval(TrackerUpdater.defaultSyncHours * 3600 + 1)))
+    }
+
+    func testNeedsRefreshHonorsCustomSyncHours() {
+        clearCache()
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        TrackerUpdater.saveCache(["udp://a.example:1337/announce"], at: stamp)
+        // 6h sync: stale after 6h; 48h sync: still fresh at 12h.
+        XCTAssertTrue(TrackerUpdater.needsRefresh(
+            now: stamp.addingTimeInterval(6 * 3600 + 1), syncHours: 6))
+        XCTAssertFalse(TrackerUpdater.needsRefresh(
+            now: stamp.addingTimeInterval(12 * 3600), syncHours: 48))
+    }
+
+    func testSourcesHaveCDNFallbacks() {
+        XCTAssertEqual(TrackerUpdater.sources.count, 2)
+        for source in TrackerUpdater.sources {
+            XCTAssertGreaterThanOrEqual(source.urls.count, 2)
+            XCTAssertTrue(source.urls.contains { $0.host == "cdn.jsdelivr.net" })
+        }
     }
 
     func testCurrentTrackersFallsBackToDefaults() {
@@ -675,5 +694,86 @@ final class TorrentRenameTests: XCTestCase {
                 magnetOrURL: "https://example.com/files/ubuntu.torrent",
                 displayName: "Ubuntu 24.04"),
             "Ubuntu 24.04")
+    }
+}
+
+// MARK: - Tracker UDP prober (pure packet helpers)
+
+final class TrackerProberTests: XCTestCase {
+    func testConnectRequestPacket() {
+        let txID: UInt32 = 0x12345678
+        let req = TrackerProber.connectRequest(transactionID: txID)
+        XCTAssertEqual(req.count, 16)
+        let proto = req.withUnsafeBytes { $0.load(as: UInt64.self).bigEndian }
+        XCTAssertEqual(proto, 0x41727101980)
+        let action = req.withUnsafeBytes { $0.load(fromByteOffset: 8, as: UInt32.self).bigEndian }
+        XCTAssertEqual(action, 0)
+        let echo = req.withUnsafeBytes { $0.load(fromByteOffset: 12, as: UInt32.self).bigEndian }
+        XCTAssertEqual(echo, txID)
+    }
+
+    func testParseConnectResponse() {
+        let txID: UInt32 = 0xAABBCCDD
+        var resp = Data(count: 16)
+        resp.withUnsafeMutableBytes { raw in
+            raw.storeBytes(of: UInt32(0).bigEndian, as: UInt32.self)
+            raw.storeBytes(of: txID.bigEndian, as: UInt32.self, at: 4)
+            raw.storeBytes(of: UInt64(0x1234).bigEndian, as: UInt64.self, at: 8)
+        }
+        XCTAssertEqual(TrackerProber.parseConnectResponse(resp), txID)
+        // Wrong action.
+        var bad = resp
+        bad.withUnsafeMutableBytes { $0.storeBytes(of: UInt32(3).bigEndian, as: UInt32.self) }
+        XCTAssertNil(TrackerProber.parseConnectResponse(bad))
+        // Truncated.
+        XCTAssertNil(TrackerProber.parseConnectResponse(Data(count: 8)))
+    }
+
+    func testUdpEndpointParsing() {
+        let ep = TrackerProber.udpEndpoint(for: "udp://tracker.opentrackr.org:1337/announce")
+        XCTAssertEqual(ep?.host, "tracker.opentrackr.org")
+        XCTAssertEqual(ep?.port, 1337)
+        // Not UDP.
+        XCTAssertNil(TrackerProber.udpEndpoint(for: "http://tracker.dler.org:6969/announce"))
+        // No port.
+        XCTAssertNil(TrackerProber.udpEndpoint(for: "udp://tracker.example/announce"))
+        // Garbage.
+        XCTAssertNil(TrackerProber.udpEndpoint(for: "not a url"))
+    }
+}
+
+// MARK: - aria2 performance profiles
+
+final class Aria2PerformanceProfileTests: XCTestCase {
+    func testBalancedMatchesMotrix() {
+        let p = Aria2PerformanceProfile.balanced
+        XCTAssertEqual(p.maxConnectionPerServer, 16)
+        XCTAssertEqual(p.split, 16)
+        XCTAssertEqual(p.minSplitSize, "10M")
+        XCTAssertEqual(p.diskCache, "32M")
+    }
+
+    func testMaximumIsMostAggressive() {
+        let p = Aria2PerformanceProfile.maximum
+        XCTAssertEqual(p.maxConnectionPerServer, 64)
+        XCTAssertEqual(p.split, 64)
+        XCTAssertEqual(p.minSplitSize, "1M")
+        XCTAssertEqual(p.diskCache, "64M")
+        XCTAssertTrue(p.launchArgs.contains("--max-connection-per-server=64"))
+        XCTAssertTrue(p.launchArgs.contains("--split=64"))
+    }
+
+    func testRpcOptionsMirrorLaunchArgs() {
+        for profile in Aria2PerformanceProfile.allCases {
+            XCTAssertEqual(
+                profile.globalRpcOptions["max-connection-per-server"],
+                "\(profile.maxConnectionPerServer)")
+            XCTAssertEqual(
+                profile.globalRpcOptions["split"], "\(profile.split)")
+            // disk-cache is global-only — it must ride the global push,
+            // never a per-download changeOption.
+            XCTAssertEqual(
+                profile.globalRpcOptions["disk-cache"], profile.diskCache)
+        }
     }
 }

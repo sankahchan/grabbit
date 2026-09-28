@@ -265,6 +265,7 @@ struct TorrentAddSheet: View {
     @State private var showingPicker = false
     @State private var errorMessage: String?
     @State private var adding = false
+    @State private var taskProxy = TaskProxy()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -336,6 +337,12 @@ struct TorrentAddSheet: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
             }
 
+            // MARK: Proxy (optional per-task override)
+            DisclosureGroup(NSLocalizedString("taskProxy.title", comment: "")) {
+                TaskProxySection(draft: $taskProxy)
+                    .padding(.top, 4)
+            }
+
             HStack {
                 Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
@@ -388,17 +395,20 @@ struct TorrentAddSheet: View {
         let savePath = destinationURL
         let customName = rename.trimmingCharacters(in: .whitespacesAndNewlines)
         let engine = torrentEngine
+        let taskProxy = taskProxy.scope == .global ? nil : taskProxy
         Task {
             do {
                 if mode == 0 {
                     try await engine.add(
                         magnetOrURL: input.trimmingCharacters(in: .whitespacesAndNewlines),
                         savePath: savePath,
-                        displayName: customName.isEmpty ? nil : customName)
+                        displayName: customName.isEmpty ? nil : customName,
+                        proxy: taskProxy)
                 } else if let data = torrentData {
                     try await engine.addTorrentFile(
                         data, savePath: savePath,
-                        name: customName.isEmpty ? torrentName : customName)
+                        name: customName.isEmpty ? torrentName : customName,
+                        proxy: taskProxy)
                 }
                 dismiss()
             } catch {

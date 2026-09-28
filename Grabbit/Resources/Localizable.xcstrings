@@ -5708,6 +5708,154 @@
           }
         }
       }
+    },
+    "settings.trackers.syncInterval": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "Sync interval"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "ထပ်မံ sync လုပ်မည့်ကြားကာလ"
+          }
+        }
+      }
+    },
+    "settings.torrents.profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "Performance profile"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "စွမ်းဆောင်ရည် ပရိုဖိုင်"
+          }
+        }
+      }
+    },
+    "settings.torrents.profile.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "Connection count and disk cache used by the torrent engine."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "တော်ရန့်အင်ဂျင် အသုံးပြုမည့် ချိတ်ဆက်မှုအရေအတွက်နှင့် disk cache။"
+          }
+        }
+      }
+    },
+    "settings.torrents.profile.balanced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "Balanced"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "မျှတ"
+          }
+        }
+      }
+    },
+    "settings.torrents.profile.high": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "High"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "မြင့်"
+          }
+        }
+      }
+    },
+    "settings.torrents.profile.maximum": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "value": "Maximum"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "value": "အမြင့်ဆုံး"
+          }
+        }
+      }
+    },
+    "taskProxy.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proxy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပရောက်စီ"
+          }
+        }
+      }
+    },
+    "taskProxy.scope.global": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use global"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဂလိုဘယ် setting အတိုင်း"
+          }
+        }
+      }
+    },
+    "taskProxy.scope.none": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တိုက်ရိုက်"
+          }
+        }
+      }
+    },
+    "taskProxy.scope.custom": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကိုယ်ပိုင်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

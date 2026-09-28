@@ -138,7 +138,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 seedTimeMinutes: settings.settings.defaultSeedTimeMinutes,
                 interfaceName: boundInterfaceName(),
                 maxConcurrentDownloads: settings.settings.maxActiveTasks,
-                proxy: ProxyConfig(settings: settings.settings))
+                proxy: ProxyConfig(settings: settings.settings),
+                performanceProfile: settings.settings.torrentPerformanceProfile)
             rpc = client
             try? await client.changeGlobalOption([
                 "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
@@ -150,7 +151,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 // existed; push it at runtime too (fresh spawns get it via
                 // --bt-tracker). try? — a rejection must never break startup.
                 "bt-tracker": Aria2Daemon.btTrackerList,
-            ])
+            ]
+            // Performance profile: fresh spawns get launch args; reclaimed
+            // daemons get the same values pushed here at runtime.
+            .merging(settings.settings.torrentPerformanceProfile.globalRpcOptions) { _, new in new })
             // Phase 5 proxy: fresh spawns get it via args; reclaimed daemons
             // (and fresh ones, harmlessly) get it pushed here at runtime.
             try? await client.changeGlobalOption(
@@ -164,7 +168,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
             // Fire-and-forget — a failed refresh keeps the current list.
             Task { [weak self] in
                 await TrackerUpdater.refreshIfNeeded(
-                    autoUpdate: self?.settings.settings.autoUpdateTrackers ?? true
+                    autoUpdate: self?.settings.settings.autoUpdateTrackers ?? true,
+                    syncHours: self?.settings.settings.trackerSyncHours
+                        ?? TrackerUpdater.defaultSyncHours,
+                    proxy: self.map { ProxyConfig(settings: $0.settings.settings) }
                 ) { [weak self] trackers in
                     try? await self?.rpc?.changeGlobalOption([
                         "bt-tracker": trackers.joined(separator: ","),
@@ -204,6 +211,16 @@ public final class TorrentEngine: TorrentEngineProtocol {
     public func applyProxy() async {
         try? await rpc?.changeGlobalOption(
             ProxyConfig(settings: settings.settings).aria2GlobalOptions())
+    }
+
+    /// Pushes the current performance profile into the running daemon as
+    /// global options (fresh spawns get it via launch args). Called when
+    /// the user switches profile in Settings while the daemon is running.
+    @MainActor
+    public func applyPerformanceProfile() async {
+        // Global options — a profile is daemon-wide (see globalRpcOptions).
+        try? await rpc?.changeGlobalOption(
+            settings.settings.torrentPerformanceProfile.globalRpcOptions)
     }
 
     public func shutdown() async {
@@ -249,7 +266,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
         return trimmed
     }
 
-    public func add(magnetOrURL: String, savePath: URL, displayName: String? = nil) async throws {
+    public func add(
+        magnetOrURL: String, savePath: URL, displayName: String? = nil,
+        proxy: TaskProxy? = nil
+    ) async throws {
         let input = magnetOrURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { throw TorrentError.invalidInput }
         let dir = resolvedSaveDir(savePath)
@@ -275,13 +295,15 @@ public final class TorrentEngine: TorrentEngineProtocol {
             sourceURI: input,
             infoHash: isMagnet ? MagnetParser.infoHash(from: input) : nil,
             state: .downloading,
-            savePath: dir)
+            savePath: dir,
+            proxy: proxy)
         // Persist before the RPC call (cross-cutting crash-recovery rule):
         // a lost response retries by GID/info-hash lookup, never double-adds.
         torrents.append(item)
         save()
         do {
-            let gid = try await rpc.addUri([input], options: addOptions(dir: dir))
+            let gid = try await rpc.addUri(
+                [input], options: addOptions(dir: dir, proxy: proxy))
             setGid(item.id, gid: gid)
             lineage.register(gid: gid, item: item.id)
         } catch {
@@ -290,7 +312,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
     }
 
-    public func addTorrentFile(_ data: Data, savePath: URL, name: String? = nil) async throws {
+    public func addTorrentFile(
+        _ data: Data, savePath: URL, name: String? = nil,
+        proxy: TaskProxy? = nil
+    ) async throws {
         guard !data.isEmpty else { throw TorrentError.invalidInput }
         let dir = resolvedSaveDir(savePath)
         try await ensureStarted()
@@ -301,14 +326,16 @@ public final class TorrentEngine: TorrentEngineProtocol {
             magnetURI: "",
             sourceURI: "",
             state: .downloading,
-            savePath: dir)
+            savePath: dir,
+            proxy: proxy)
         if data.count < 2_000_000 {
             item.torrentFileBase64 = data.base64EncodedString()
         }
         torrents.append(item)
         save()
         do {
-            let gid = try await rpc.addTorrent(data.base64EncodedString(), options: addOptions(dir: dir))
+            let gid = try await rpc.addTorrent(
+                data.base64EncodedString(), options: addOptions(dir: dir, proxy: proxy))
             setGid(item.id, gid: gid)
             lineage.register(gid: gid, item: item.id)
         } catch {
@@ -750,12 +777,17 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
     // MARK: - Helpers
 
-    private func addOptions(dir: URL) -> [String: String] {
-        [
+    private func addOptions(dir: URL, proxy: TaskProxy? = nil) -> [String: String] {
+        var options = [
             "dir": dir.path,
             "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
             "seed-time": "\(settings.settings.defaultSeedTimeMinutes)",
         ]
+        // Per-torrent proxy override (nil = daemon-wide global proxy).
+        if let proxyOptions = proxy?.aria2Options() {
+            options.merge(proxyOptions) { _, new in new }
+        }
+        return options
     }
 
     static func ratioString(_ ratio: Double) -> String {

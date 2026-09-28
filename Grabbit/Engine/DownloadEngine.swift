@@ -34,6 +34,9 @@ public final class DownloadEngine {
     private let resumeStore: ResumeStore
     private let history: HistoryStore
     private let settings: SettingsStore
+    /// Durable-finalize journal: closes the crash window between "file
+    /// moved into place" and "completion persisted/recorded".
+    private let finalizeJournal: FinalizeJournal
     /// Phase 5 named queues: per-queue concurrency limits. The global
     /// `maxActiveTasks` stays the overall ceiling across all queues.
     public let queues: QueueStore
@@ -80,6 +83,7 @@ public final class DownloadEngine {
         self.history = history
         self.settings = settings
         self.queues = queues
+        self.finalizeJournal = FinalizeJournal(resumeDirectory: resumeStore.directory)
         let loaded = resumeStore.loadAll()
         var migrated: [DownloadItem] = []
         migrated.reserveCapacity(loaded.count)
@@ -215,8 +219,9 @@ public final class DownloadEngine {
         return ["<!doctype", "<html", "<head"].contains { text.hasPrefix($0) }
     }
 
-    private func proxyDictionary() -> [AnyHashable: Any]? {
-        ProxyConfig(settings: settings.settings).urlSessionProxyDictionary()
+    private func proxyDictionary(for override: TaskProxy? = nil) -> [AnyHashable: Any]? {
+        TaskProxy.resolve(override: override, settings: settings.settings)
+            .urlSessionProxyDictionary()
     }
 
     /// True when the probe says HTML but the filename isn't a web page —
@@ -362,14 +367,15 @@ public final class DownloadEngine {
         sourcePageURL: URL? = nil,
         headers: [String: String]? = nil,
         speedLimitBytesPerSec: Int64 = 0,
-        queueID: UUID? = nil
+        queueID: UUID? = nil,
+        proxy: TaskProxy? = nil
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
         let url = ShareURLRewriter.rewrite(url)
         // MediaFire share pages serve HTML, not the file — resolve to the
         // direct download*.mediafire.com URL via the share page.
         let resolvedURL = await MediaFireResolver.resolve(
-            url, proxyDictionary: proxyDictionary())
+            url, proxyDictionary: proxyDictionary(for: proxy))
 
         // Backlog #4 (packagizer): the first enabled rule whose regex
         // matches the URL renames / re-routes the download.
@@ -477,7 +483,8 @@ public final class DownloadEngine {
             speedLimitBytesPerSec: speedLimitBytesPerSec,
             queueID: queueID,
             // Backlog #7: new tasks go last in the persisted list order.
-            sortRank: (items.map(\.sortRank).max() ?? -1) + 1
+            sortRank: (items.map(\.sortRank).max() ?? -1) + 1,
+            proxy: proxy
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -732,6 +739,9 @@ public final class DownloadEngine {
         let item = items.remove(at: itemIndex)
         try? FileManager.default.removeItem(at: resumeStore.partialFileURL(for: item))
         try? resumeStore.delete(item.id)
+        // A manual remove during finalize must not leave a stale journal
+        // that relaunch would "complete".
+        finalizeJournal.delete(id)
         speedSamples[id] = nil
         updateSleepPrevention()
         kickQueue()
@@ -742,6 +752,68 @@ public final class DownloadEngine {
         let ids = items.filter { $0.state == .interrupted }.map(\.id)
         for id in ids {
             start(id)
+        }
+    }
+
+    /// Completes finalize journals left behind by a crash (called at launch,
+    /// before `resumeAllInterrupted`). A record whose file reached its
+    /// destination is marked complete WITHOUT re-downloading; a record
+    /// whose file never arrived is dropped so the normal resume path
+    /// handles the item. Pending archive extraction is retried.
+    @MainActor
+    public func reconcileFinalizeJournals() {
+        for record in finalizeJournal.allRecords() {
+            let destURL = URL(fileURLWithPath: record.destinationPath)
+            guard FileManager.default.fileExists(atPath: record.destinationPath) else {
+                // Crashed before the move — drop the journal; the item's
+                // own resume state drives recovery.
+                finalizeJournal.delete(record.itemID)
+                continue
+            }
+            if let index = items.firstIndex(where: { $0.id == record.itemID }) {
+                items[index].state = .completed
+                items[index].speedBytesPerSec = 0
+                items[index].errorMessage = nil
+                if let total = record.totalBytes {
+                    items[index].downloadedBytes = total
+                }
+                if !record.historyRecorded {
+                    history.record(.from(
+                        download: items[index], status: .completed))
+                }
+                // Mirror finalize's ending: auto-clear drops the row, the
+                // History tab keeps the permanent record.
+                if settings.settings.autoClearFinished {
+                    remove(record.itemID)
+                } else {
+                    persistItem(id: record.itemID)
+                }
+            }
+            // A kill mid-extract leaves extractRequested && !extractDone —
+            // retry once now (honors the current auto-extract setting).
+            // The record is (re)written first: autoClearFinished's remove()
+            // above deletes the journal, and update() is a no-op on a
+            // missing record.
+            if record.extractRequested && !record.extractDone
+                && settings.settings.autoExtractArchives
+                && ArchiveExtractor.isExtractableArchive(filename: record.filename)
+            {
+                let journal = finalizeJournal
+                let itemID = record.itemID
+                journal.write(record)
+                Task.detached(priority: .utility) {
+                    do {
+                        try ArchiveExtractor.extract(archiveURL: destURL)
+                        // Success — the journal has served.
+                        journal.delete(itemID)
+                    } catch {
+                        // The journal survives with extractDone false — the
+                        // next launch retries again; the archive is safe.
+                    }
+                }
+            } else {
+                finalizeJournal.delete(record.itemID)
+            }
         }
     }
 
@@ -775,8 +847,10 @@ public final class DownloadEngine {
         transport.globalBucket = globalSpeedBucket
         transport.itemBucket = TokenBucket(rate: Double(item.speedLimitBytesPerSec))
         // Phase 5 proxy: read live so a settings change applies to newly
-        // launched segments without an app restart.
-        transport.proxyConfig = ProxyConfig(settings: settings.settings)
+        // launched segments without an app restart. A per-task override
+        // (Motrix parity) wins over the global setting.
+        transport.proxyConfig = TaskProxy.resolve(
+            override: item.proxy, settings: settings.settings)
         transports[id] = transport
         pendingSegments[id] = pending.count
         segmentRetries[id] = [:]
@@ -1218,12 +1292,24 @@ public final class DownloadEngine {
     private func finalize(itemIndex: Int) {
         let item = items[itemIndex]
         let partialURL = resumeStore.partialFileURL(for: item)
+        // Durable finalize: journal BEFORE the move, so a crash between
+        // "file in place" and "completion persisted" reconciles at launch
+        // instead of re-downloading from scratch.
+        let wantsExtract = settings.settings.autoExtractArchives
+            && ArchiveExtractor.isExtractableArchive(filename: item.filename)
+        finalizeJournal.write(FinalizeRecord(
+            itemID: item.id,
+            destinationPath: item.destinationURL.path,
+            filename: item.filename,
+            totalBytes: item.totalBytes,
+            extractRequested: wantsExtract))
         do {
             if FileManager.default.fileExists(atPath: item.destinationURL.path) {
                 try FileManager.default.removeItem(at: item.destinationURL)
             }
             try FileManager.default.moveItem(at: partialURL, to: item.destinationURL)
         } catch {
+            finalizeJournal.delete(item.id)
             fail(id: item.id, message: "Couldn't move finished file into place: \(error.localizedDescription)")
             return
         }
@@ -1234,6 +1320,7 @@ public final class DownloadEngine {
         if Self.fileLooksLikeHTML(items[itemIndex].destinationURL) {
             try? FileManager.default.removeItem(
                 at: items[itemIndex].destinationURL)
+            finalizeJournal.delete(item.id)
             fail(
                 id: item.id,
                 message: NSLocalizedString("download.error.htmlPage", comment: ""))
@@ -1246,6 +1333,7 @@ public final class DownloadEngine {
             items[itemIndex].downloadedBytes = total
         }
         history.record(.from(download: items[itemIndex], status: .completed))
+        finalizeJournal.update(item.id) { $0.historyRecorded = true }
         if settings.settings.notificationsEnabled {
             Notifier.downloadComplete(
                 filename: items[itemIndex].filename,
@@ -1266,13 +1354,14 @@ public final class DownloadEngine {
         }
         // Backlog #2: auto-extract archives with system tools. Runs
         // off-main (Process.waitUntilExit blocks); a failure leaves the
-        // archive in place and shows an informational toast.
-        if settings.settings.autoExtractArchives,
-           ArchiveExtractor.isExtractableArchive(filename: items[itemIndex].filename)
-        {
+        // archive in place and shows an informational toast. Completion is
+        // journaled so a kill mid-extract retries at next launch.
+        if wantsExtract {
             let archiveURL = items[itemIndex].destinationURL
             let deleteAfter = settings.settings.deleteArchiveAfterExtract
             let center = toastCenter
+            let journal = finalizeJournal
+            let itemID = item.id
             Task.detached(priority: .utility) {
                 do {
                     try ArchiveExtractor.extract(archiveURL: archiveURL)
@@ -1280,6 +1369,10 @@ public final class DownloadEngine {
                         try? FileManager.default.trashItem(
                             at: archiveURL, resultingItemURL: nil)
                     }
+                    // Extraction fully done — the journal has served.
+                    // (A kill before this line leaves extractDone false, so
+                    // the next launch retries; the extracted files are safe.)
+                    journal.delete(itemID)
                 } catch {
                     center?.push(AppToast(
                         kind: .failed,
@@ -1289,6 +1382,8 @@ public final class DownloadEngine {
                         message: archiveURL.lastPathComponent
                             + " — " + error.localizedDescription
                     ))
+                    // extractDone stays false and the journal survives —
+                    // the next launch retries.
                 }
             }
         }
@@ -1301,6 +1396,13 @@ public final class DownloadEngine {
             remove(item.id)
         } else {
             persistItem(id: item.id)
+        }
+        // Finalize fully persisted/recorded — the journal has served.
+        // When extraction was requested, the detached task owns the journal:
+        // it deletes the record only after extraction completes, so a kill
+        // mid-extract retries at the next launch.
+        if !wantsExtract {
+            finalizeJournal.delete(item.id)
         }
         kickQueue()
         // Backlog #9: may trigger the after-downloads-finish action.

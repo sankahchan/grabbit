@@ -97,6 +97,8 @@ public struct TorrentItem: Identifiable, Codable {
     public var seedTimeMinutes: Int?
     public var savePath: URL
     public var addedAt: Date
+    /// Per-torrent proxy override (nil = follow the global Settings proxy).
+    public var proxy: TaskProxy? = nil
 
     public init(
         id: UUID = UUID(),
@@ -121,7 +123,8 @@ public struct TorrentItem: Identifiable, Codable {
         seedRatio: Double? = nil,
         seedTimeMinutes: Int? = nil,
         savePath: URL,
-        addedAt: Date = Date()
+        addedAt: Date = Date(),
+        proxy: TaskProxy? = nil
     ) {
         self.id = id
         self.name = name
@@ -146,6 +149,7 @@ public struct TorrentItem: Identifiable, Codable {
         self.seedTimeMinutes = seedTimeMinutes
         self.savePath = savePath
         self.addedAt = addedAt
+        self.proxy = proxy
     }
 
     // Backward-compatible decoding: torrents persisted before these fields
@@ -154,7 +158,7 @@ public struct TorrentItem: Identifiable, Codable {
         case id, name, magnetURI, sourceURI, gid, infoHash, torrentFileBase64
         case totalBytes, downloadedBytes, uploadedBytes, downloadSpeed, uploadSpeed
         case seeds, peers, numSeeders, connections, ratio, state, errorMessage
-        case seedRatio, seedTimeMinutes, savePath, addedAt
+        case seedRatio, seedTimeMinutes, savePath, addedAt, proxy
     }
 
     public init(from decoder: Decoder) throws {
@@ -183,6 +187,7 @@ public struct TorrentItem: Identifiable, Codable {
         savePath = try c.decodeIfPresent(URL.self, forKey: .savePath)
             ?? URL(fileURLWithPath: NSHomeDirectory() + "/Downloads")
         addedAt = try c.decodeIfPresent(Date.self, forKey: .addedAt) ?? Date()
+        proxy = try c.decodeIfPresent(TaskProxy.self, forKey: .proxy)
     }
 
     public var progress: Double {
