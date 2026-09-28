@@ -130,9 +130,9 @@ struct BatchAddSheet: View {
                     .font(.headline)
                 NeoSegmented(selection: $destination, titles: [
                     (.downloads, NSLocalizedString("batch.destination.downloads", comment: "")),
-                    (.linkgrabber, NSLocalizedString("batch.destination.linkgrabber", comment: "")),
+                    (.linkGrabber, NSLocalizedString("batch.destination.linkgrabber", comment: "")),
                 ])
-                if destination == .linkgrabber {
+                if destination == .linkGrabber {
                     TextField(
                         NSLocalizedString("linkgrabber.packageName", comment: ""),
                         text: $packageName
@@ -167,7 +167,7 @@ struct BatchAddSheet: View {
         let urls = links
         // Staging needs no per-link probing here — the LinkGrabber store
         // probes each link itself as it lands in the package.
-        if destination == .linkgrabber {
+        if destination == .linkGrabber {
             let name = packageName.trimmingCharacters(in: .whitespacesAndNewlines)
             let fallback = String(
                 format: NSLocalizedString("linkgrabber.package.defaultName", comment: ""),
