@@ -30,6 +30,7 @@ struct SettingsView: View {
                 // stretch across ultra-wide displays).
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
+                proxyCard(settings: settings)
                 torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually
                 // run (signed Release build + real SUPublicEDKey).
@@ -107,6 +108,22 @@ struct SettingsView: View {
                     Task { await torrentEngine.applyMaxActiveTasks() }
                 }
                 .onChange(of: store.settings.runMode) { _, _ in store.save() }
+                // Phase 5 proxy: save + push into the running aria2 daemon.
+                // The native engine reads the proxy live at segment launch,
+                // so only the torrent engine needs an explicit push.
+                .onChange(of: store.settings.proxyMode) { _, _ in
+                    store.save()
+                    Task { await torrentEngine.applyProxy() }
+                }
+                .onChange(of: (
+                    store.settings.proxyHost,
+                    store.settings.proxyPort,
+                    store.settings.proxyUsername,
+                    store.settings.proxyPassword
+                )) { _, _ in
+                    store.save()
+                    Task { await torrentEngine.applyProxy() }
+                }
         }
     }
 
@@ -352,6 +369,60 @@ struct SettingsView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
         }
+    }
+
+    // MARK: - Phase 5 proxy
+
+    /// Proxy card: mode (Off/HTTP/SOCKS5) + host/port/credentials. Applies
+    /// to the native download engine and to aria2 torrents.
+    private func proxyCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(NSLocalizedString("proxy.title", comment: ""))
+            HStack {
+                NeoSegmented(selection: settings.proxyMode, titles: [
+                    (ProxyMode.none, NSLocalizedString("proxy.mode.off", comment: "")),
+                    (ProxyMode.http, NSLocalizedString("proxy.mode.http", comment: "")),
+                    (ProxyMode.socks5, NSLocalizedString("proxy.mode.socks5", comment: "")),
+                ])
+                .frame(maxWidth: 420)
+                Spacer()
+            }
+            if settings.proxyMode.wrappedValue != .none {
+                HStack(spacing: 8) {
+                    TextField(
+                        NSLocalizedString("proxy.host", comment: ""),
+                        text: settings.proxyHost,
+                        prompt: Text(NSLocalizedString("proxy.host", comment: ""))
+                    )
+                    .neoTextField()
+                    TextField(
+                        NSLocalizedString("proxy.port", comment: ""),
+                        value: settings.proxyPort,
+                        format: .number
+                    )
+                    .neoTextField()
+                    .frame(maxWidth: 110)
+                }
+                HStack(spacing: 8) {
+                    TextField(
+                        NSLocalizedString("proxy.username", comment: ""),
+                        text: settings.proxyUsername,
+                        prompt: Text(NSLocalizedString("proxy.username", comment: ""))
+                    )
+                    .neoTextField()
+                    SecureField(
+                        NSLocalizedString("proxy.password", comment: ""),
+                        text: settings.proxyPassword,
+                        prompt: Text(NSLocalizedString("proxy.password", comment: ""))
+                    )
+                    .neoTextField()
+                }
+            }
+            Text(NSLocalizedString("proxy.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .neoCard()
     }
 
     private func torrentsCard(settings: Binding<AppSettings>) -> some View {

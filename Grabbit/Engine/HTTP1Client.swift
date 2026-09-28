@@ -1,8 +1,7 @@
 import Foundation
-import Network
 import Security
 
-/// Minimal HTTP/1.1 client built on NWConnection (GET only).
+/// Minimal HTTP/1.1 client (GET only), one TCP connection per segment.
 ///
 /// Why this exists: URLSession negotiates HTTP/2 via ALPN whenever the server
 /// offers it, which multiplexes every segment task onto a SINGLE TCP
@@ -14,8 +13,9 @@ import Security
 /// TLS with ALPN pinned to "http/1.1" for https.
 ///
 /// Scope: http/https GET with a Range header, redirect following (max 5),
-/// Content-Length / chunked / close-delimited bodies. No proxy support yet
-/// (URLSession handled system proxies automatically; NWConnection does not).
+/// Content-Length / chunked / close-delimited bodies. Proxy support lives
+/// one layer down: `HTTP1Transport` (direct NWConnection, or a BSD socket
+/// doing HTTP CONNECT / SOCKS5 when a proxy is configured).
 final class HTTP1Client {
     enum Event {
         /// Status line + headers received; body follows via `.data`.
@@ -70,9 +70,13 @@ final class HTTP1Client {
     private let rangeValue: String
     private let basicAuth: String?
     private let extraHeaders: [String: String]
+    /// When set and enabled, segments tunnel through the proxy instead of
+    /// connecting directly. Read at segment start, so a settings change
+    /// applies to newly launched segments.
+    var proxyConfig: ProxyConfig?
 
     private var url: URL
-    private var connection: NWConnection?
+    private var transport: HTTP1Transport?
     private var redirectCount = 0
     private var cancelled = false
     private var finished = false
@@ -95,10 +99,15 @@ final class HTTP1Client {
     ///     extension (Cookie, Referer, …). A provided `User-Agent` replaces
     ///     the default; protocol headers (Host, Range, Connection, …) are
     ///     never overridden.
-    init(url: URL, start: Int64, end: Int64, queue: DispatchQueue, extraHeaders: [String: String] = [:]) {
+    ///   - proxyConfig: Optional proxy; when enabled the transport tunnels
+    ///     through it, otherwise it connects directly.
+    init(url: URL, start: Int64, end: Int64, queue: DispatchQueue,
+         extraHeaders: [String: String] = [:], proxyConfig: ProxyConfig? = nil)
+    {
         self.url = url
         self.queue = queue
         self.extraHeaders = extraHeaders
+        self.proxyConfig = proxyConfig
         rangeValue = end == .max ? "bytes=\(start)-" : "bytes=\(start)-\(end)"
         if let user = url.user, !user.isEmpty {
             let credentials = "\(user):\(url.password ?? "")"
@@ -118,8 +127,8 @@ final class HTTP1Client {
             self.cancelled = true
             self.idleTimer?.cancel()
             self.idleTimer = nil
-            self.connection?.cancel()
-            self.connection = nil
+            self.transport?.cancel()
+            self.transport = nil
         }
     }
 
@@ -131,74 +140,48 @@ final class HTTP1Client {
             finish(with: .failed(ClientError.unsupportedScheme))
             return
         }
-        guard let host = url.host, !host.isEmpty else {
-            finish(with: .failed(ClientError.badURL))
-            return
-        }
-        let isTLS = scheme == "https"
-        let port = url.port ?? (isTLS ? 443 : 80)
-        guard port > 0, port <= 65535 else {
+        guard url.host != nil else {
             finish(with: .failed(ClientError.badURL))
             return
         }
 
-        let parameters: NWParameters
-        if isTLS {
-            let tlsOptions = NWProtocolTLS.Options()
-            // Advertise ONLY http/1.1 via ALPN. Without this the server may
-            // negotiate h2 and then our raw HTTP/1.1 bytes would be garbage
-            // to it (this is also what defeats URLSession's h2 multiplexing).
-            // Implemented in ALPNPin.m: the sec_protocol_options ALPN
-            // functions are not visible to Swift, so a tiny ObjC shim does it.
-            GrabbitPinALPNToHTTP11(tlsOptions.securityProtocolOptions)
-            parameters = NWParameters(tls: tlsOptions)
+        let transport: HTTP1Transport
+        if let proxy = proxyConfig, proxy.isEnabled {
+            transport = ProxyHTTP1Transport(targetURL: url, proxy: proxy, queue: queue)
         } else {
-            parameters = NWParameters.tcp
+            transport = NWHTTP1Transport(url: url, queue: queue)
         }
+        self.transport = transport
 
         resetReceiveState()
-        let endpoint = NWEndpoint.hostPort(
-            host: NWEndpoint.Host(host),
-            port: NWEndpoint.Port(rawValue: UInt16(port))!
-        )
-        let conn = NWConnection(to: endpoint, using: parameters)
-        connection = conn
         armIdleTimer(seconds: Self.connectTimeout, error: .connectTimeout)
-        conn.stateUpdateHandler = { [weak self, weak conn] state in
-            guard let self, let conn, conn === self.connection else { return }
-            self.handleState(state)
-        }
-        conn.start(queue: queue)
-    }
-
-    private func handleState(_ state: NWConnection.State) {
-        guard !cancelled, !finished else { return }
-        switch state {
-        case .ready:
-            sendRequest()
-        case .failed(let error):
-            finish(with: .failed(ClientError.connectionFailed(error.localizedDescription)))
-        case .cancelled:
-            break // our own cancel(); stays silent
-        default:
-            break // .setup / .preparing / .waiting — the idle timer guards stalls
-        }
+        transport.connect(onReady: { [weak self, weak transport] in
+            guard let self, let transport, transport === self.transport,
+                  !self.cancelled, !self.finished else { return }
+            // Connected: the idle timer now guards request/response stalls.
+            self.armIdleTimer(seconds: Self.idleTimeout, error: .idleTimeout)
+            self.sendRequest()
+        }, onFailure: { [weak self, weak transport] error in
+            guard let self, let transport, transport === self.transport,
+                  !self.cancelled, !self.finished else { return }
+            self.finish(with: .failed(ClientError.connectionFailed(error.localizedDescription)))
+        })
     }
 
     // MARK: - Request
 
     private func sendRequest() {
-        guard let conn = connection, !cancelled, !finished else { return }
+        guard let transport, !cancelled, !finished else { return }
         let payload = buildRequest()
-        conn.send(content: payload, completion: .contentProcessed { [weak self, weak conn] error in
-            guard let self, let conn, conn === self.connection,
+        transport.send(payload) { [weak self, weak transport] error in
+            guard let self, let transport, transport === self.transport,
                   !self.cancelled, !self.finished else { return }
             if let error {
                 self.finish(with: .failed(ClientError.connectionFailed(error.localizedDescription)))
             } else {
                 self.receiveHeaders()
             }
-        })
+        }
     }
 
     private func buildRequest() -> Data {
@@ -260,9 +243,9 @@ final class HTTP1Client {
     // MARK: - Response headers
 
     private func receiveHeaders() {
-        guard let conn = connection, !cancelled, !finished else { return }
-        conn.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self, weak conn] data, _, isComplete, error in
-            guard let self, let conn, conn === self.connection,
+        guard let transport, !cancelled, !finished else { return }
+        transport.receive { [weak self, weak transport] data, isComplete, error in
+            guard let self, let transport, transport === self.transport,
                   !self.cancelled, !self.finished else { return }
             if let error {
                 self.finish(with: .failed(ClientError.connectionFailed(error.localizedDescription)))
@@ -345,8 +328,8 @@ final class HTTP1Client {
         }
         redirectCount += 1
         url = next
-        connection?.cancel()
-        connection = nil
+        transport?.cancel()
+        transport = nil
         connect() // new host => new TCP connection; absolute Range offsets stay valid
     }
 
@@ -363,9 +346,9 @@ final class HTTP1Client {
     }
 
     private func receiveBody() {
-        guard let conn = connection, !cancelled, !finished else { return }
-        conn.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self, weak conn] data, _, isComplete, error in
-            guard let self, let conn, conn === self.connection,
+        guard let transport, !cancelled, !finished else { return }
+        transport.receive { [weak self, weak transport] data, isComplete, error in
+            guard let self, let transport, transport === self.transport,
                   !self.cancelled, !self.finished else { return }
             if let error {
                 // A RST arriving right after the final byte is harmless.
@@ -441,8 +424,8 @@ final class HTTP1Client {
         finished = true
         idleTimer?.cancel()
         idleTimer = nil
-        connection?.cancel()
-        connection = nil
+        transport?.cancel()
+        transport = nil
         if !cancelled { onEvent?(event) }
     }
 }

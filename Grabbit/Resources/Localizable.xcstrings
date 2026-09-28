@@ -4075,6 +4075,150 @@
           }
         }
       }
+    },
+    "proxy.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proxy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပရောက်စီ"
+          }
+        }
+      }
+    },
+    "proxy.mode.off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်"
+          }
+        }
+      }
+    },
+    "proxy.mode.http": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP"
+          }
+        }
+      }
+    },
+    "proxy.mode.socks5": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SOCKS5"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SOCKS5"
+          }
+        }
+      }
+    },
+    "proxy.host": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဟို့စ်"
+          }
+        }
+      }
+    },
+    "proxy.port": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပေါ့"
+          }
+        }
+      }
+    },
+    "proxy.username": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသုံးပြုသူအမည်"
+          }
+        }
+      }
+    },
+    "proxy.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စကားဝှက်"
+          }
+        }
+      }
+    },
+    "proxy.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Routes downloads and torrents through the proxy. Applies to new connections; in-flight downloads keep the previous setting."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များနှင့် တောရင့်များကို ပရောက်စီမှတစ်ဆင့် ချိတ်ဆက်ပေးသည်။ ချိတ်ဆက်မှုအသစ်များတွင်သာ သက်ရောက်မည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -112,7 +112,7 @@ public final class DownloadEngine {
     /// `Content-Range` carries the total (QDM probe strategy).
     /// Also captures ETag / Last-Modified validators and a
     /// Content-Disposition filename when the server provides them.
-    private static func probe(_ url: URL) async -> ProbeResult {
+    private func probe(_ url: URL) async -> ProbeResult {
         var result = ProbeResult()
         if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
            (200...299).contains(status)
@@ -135,7 +135,7 @@ public final class DownloadEngine {
         return result
     }
 
-    private static func fetchHeaders(
+    private func fetchHeaders(
         _ url: URL, method: String, range: String? = nil
     ) async -> (status: Int, headers: [String: String])? {
         var request = URLRequest(url: url)
@@ -143,7 +143,20 @@ public final class DownloadEngine {
         if let range {
             request.setValue(range, forHTTPHeaderField: "Range")
         }
-        guard let (_, response) = try? await URLSession.shared.data(for: request),
+        // Phase 5 proxy: run the probe through the user's proxy (if any)
+        // so size discovery works behind it. This session has no proxy-auth
+        // challenge handler, so an authenticated proxy just degrades to
+        // unknown-size here — the real download still authenticates via
+        // HTTP1Transport.
+        let session: URLSession
+        if let proxyDict = ProxyConfig(settings: settings.settings).urlSessionProxyDictionary() {
+            let config = URLSessionConfiguration.ephemeral
+            config.connectionProxyDictionary = proxyDict
+            session = URLSession(configuration: config)
+        } else {
+            session = .shared
+        }
+        guard let (_, response) = try? await session.data(for: request),
               let http = response as? HTTPURLResponse
         else { return nil }
         var headers: [String: String] = [:]
@@ -198,7 +211,7 @@ public final class DownloadEngine {
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
-        let probe = await Self.probe(url)
+        let probe = await probe(url)
         let totalBytes = probe.totalBytes
 
         let candidate = filename ?? probe.filename ?? url.lastPathComponent
@@ -491,6 +504,9 @@ public final class DownloadEngine {
         syncSpeedLimit()
         transport.globalBucket = globalSpeedBucket
         transport.itemBucket = TokenBucket(rate: Double(item.speedLimitBytesPerSec))
+        // Phase 5 proxy: read live so a settings change applies to newly
+        // launched segments without an app restart.
+        transport.proxyConfig = ProxyConfig(settings: settings.settings)
         transports[id] = transport
         pendingSegments[id] = pending.count
         segmentRetries[id] = [:]

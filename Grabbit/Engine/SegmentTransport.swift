@@ -55,6 +55,10 @@ final class SegmentTransport {
     var globalBucket: TokenBucket?
     var itemBucket: TokenBucket?
 
+    /// Phase 5 proxy: read by the engine from settings at launch; new
+    /// segments tunnel through it when enabled.
+    var proxyConfig: ProxyConfig?
+
     private var jobs: [Int: Job] = [:]
     private let queue = DispatchQueue(label: "com.sankahchan.grabbit.transport")
     private var didReportFirstHeaders = false
@@ -94,7 +98,9 @@ final class SegmentTransport {
             return
         }
 
-        let client = HTTP1Client(url: url, start: start, end: end, queue: queue, extraHeaders: headers)
+        let client = HTTP1Client(
+            url: url, start: start, end: end, queue: queue,
+            extraHeaders: headers, proxyConfig: proxyConfig)
         jobs[index] = Job(
             segmentIndex: index, startByte: start, endByte: end,
             coversWholeFile: coversWholeFile, client: client,

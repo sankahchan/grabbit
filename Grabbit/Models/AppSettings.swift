@@ -21,6 +21,15 @@ public enum RunMode: String, Codable, CaseIterable {
     case hidden
 }
 
+/// Custom proxy for Grabbit's own engines (native direct downloads +
+/// aria2 torrents). `.none` = direct connection (the URLSession-based size
+/// probe still honors the *system* proxy automatically).
+public enum ProxyMode: String, Codable, CaseIterable {
+    case none
+    case http
+    case socks5
+}
+
 public struct AppSettings: Codable {
     public var language: AppLanguage = .system
     public var theme: ThemeMode = .system
@@ -53,6 +62,14 @@ public struct AppSettings: Codable {
     public var maxActiveTasks: Int = 5
     /// Standard (Dock), tray (menu bar, no Dock), or hidden (neither).
     public var runMode: RunMode = .standard
+    // Proxy (Phase 5): native engine + aria2.
+    public var proxyMode: ProxyMode = .none
+    public var proxyHost: String = ""
+    /// 1–65535.
+    public var proxyPort: Int = 8080
+    public var proxyUsername: String = ""
+    /// Stored in Grabbit's own settings file, like the rest of AppSettings.
+    public var proxyPassword: String = ""
 
     public static var `default`: AppSettings {
         AppSettings(folders: [
@@ -77,6 +94,7 @@ extension AppSettings {
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
+        case proxyMode, proxyHost, proxyPort, proxyUsername, proxyPassword
     }
 
     public init(from decoder: Decoder) throws {
@@ -100,6 +118,11 @@ extension AppSettings {
         keepWindowFrame = try c.decodeIfPresent(Bool.self, forKey: .keepWindowFrame) ?? false
         maxActiveTasks = try c.decodeIfPresent(Int.self, forKey: .maxActiveTasks) ?? 5
         runMode = try c.decodeIfPresent(RunMode.self, forKey: .runMode) ?? .standard
+        proxyMode = try c.decodeIfPresent(ProxyMode.self, forKey: .proxyMode) ?? .none
+        proxyHost = try c.decodeIfPresent(String.self, forKey: .proxyHost) ?? ""
+        proxyPort = try c.decodeIfPresent(Int.self, forKey: .proxyPort) ?? 8080
+        proxyUsername = try c.decodeIfPresent(String.self, forKey: .proxyUsername) ?? ""
+        proxyPassword = try c.decodeIfPresent(String.self, forKey: .proxyPassword) ?? ""
     }
 }
 

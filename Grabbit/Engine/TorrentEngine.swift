@@ -133,7 +133,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 seedRatio: settings.settings.defaultSeedRatio,
                 seedTimeMinutes: settings.settings.defaultSeedTimeMinutes,
                 interfaceName: boundInterfaceName(),
-                maxConcurrentDownloads: settings.settings.maxActiveTasks)
+                maxConcurrentDownloads: settings.settings.maxActiveTasks,
+                proxy: ProxyConfig(settings: settings.settings))
             rpc = client
             try? await client.changeGlobalOption([
                 "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
@@ -146,6 +147,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 // --bt-tracker). try? — a rejection must never break startup.
                 "bt-tracker": Aria2Daemon.btTrackerList,
             ])
+            // Phase 5 proxy: fresh spawns get it via args; reclaimed daemons
+            // (and fresh ones, harmlessly) get it pushed here at runtime.
+            try? await client.changeGlobalOption(
+                ProxyConfig(settings: settings.settings).aria2GlobalOptions())
             await reconcileAfterStart()
             daemonState = .running
             pollFailures = 0
@@ -186,6 +191,15 @@ public final class TorrentEngine: TorrentEngineProtocol {
         try? await rpc?.changeGlobalOption([
             "max-overall-download-limit": "\(max(0, settings.settings.speedLimitBytesPerSec))",
         ])
+    }
+
+    /// Phase 5 proxy: pushes the current proxy config into the running
+    /// daemon (fresh spawns get it via args; reclaimed ones get it here).
+    /// Disabling the proxy pushes empty strings, which aria2 treats as
+    /// "override with no proxy".
+    public func applyProxy() async {
+        try? await rpc?.changeGlobalOption(
+            ProxyConfig(settings: settings.settings).aria2GlobalOptions())
     }
 
     public func shutdown() async {
