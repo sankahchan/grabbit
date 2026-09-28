@@ -69,7 +69,7 @@ public final class CompletionActionCenter {
         executor(action, settings.settings.completionCommand)
     }
 
-    private static func execute(_ action: CompletionAction, command: String) {
+    static func execute(_ action: CompletionAction, command: String) {
         Task.detached {
             switch action {
             case .none:
