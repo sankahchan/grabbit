@@ -78,12 +78,12 @@ enum TaskAction: Hashable, CaseIterable {
     /// DownloadState.localizedName — no interpolation).
     var label: String {
         switch self {
-        case .pause: String(localized: "task.action.pause")
-        case .resume: String(localized: "task.action.resume")
-        case .delete: String(localized: "common.delete")
-        case .openFolder: String(localized: "task.action.openFolder")
-        case .copyLink: String(localized: "task.action.copyLink")
-        case .details: String(localized: "task.action.details")
+        case .pause: NSLocalizedString("task.action.pause", comment: "")
+        case .resume: NSLocalizedString("task.action.resume", comment: "")
+        case .delete: NSLocalizedString("common.delete", comment: "")
+        case .openFolder: NSLocalizedString("task.action.openFolder", comment: "")
+        case .copyLink: NSLocalizedString("task.action.copyLink", comment: "")
+        case .details: NSLocalizedString("task.action.details", comment: "")
         }
     }
 

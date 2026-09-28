@@ -10,11 +10,11 @@ public enum TorrentState: String, Codable, CaseIterable {
     /// Static-key lookup — see DownloadState.localizedName.
     public var localizedName: String {
         switch self {
-        case .downloading: String(localized: "state.downloading")
-        case .seeding: String(localized: "state.seeding")
-        case .paused: String(localized: "state.paused")
-        case .completed: String(localized: "state.completed")
-        case .failed: String(localized: "state.failed")
+        case .downloading: NSLocalizedString("state.downloading", comment: "")
+        case .seeding: NSLocalizedString("state.seeding", comment: "")
+        case .paused: NSLocalizedString("state.paused", comment: "")
+        case .completed: NSLocalizedString("state.completed", comment: "")
+        case .failed: NSLocalizedString("state.failed", comment: "")
         }
     }
 }
@@ -53,13 +53,13 @@ public enum TorrentDisplayStatus: Equatable {
 
     public var localizedName: String {
         switch self {
-        case .downloading: String(localized: "state.downloading")
-        case .waitingForMetadata: String(localized: "torrents.status.waitingMetadata")
-        case .connecting: String(localized: "torrents.status.connecting")
-        case .seeding: String(localized: "state.seeding")
-        case .paused: String(localized: "state.paused")
-        case .completed: String(localized: "state.completed")
-        case .failed: String(localized: "state.failed")
+        case .downloading: NSLocalizedString("state.downloading", comment: "")
+        case .waitingForMetadata: NSLocalizedString("torrents.status.waitingMetadata", comment: "")
+        case .connecting: NSLocalizedString("torrents.status.connecting", comment: "")
+        case .seeding: NSLocalizedString("state.seeding", comment: "")
+        case .paused: NSLocalizedString("state.paused", comment: "")
+        case .completed: NSLocalizedString("state.completed", comment: "")
+        case .failed: NSLocalizedString("state.failed", comment: "")
         }
     }
 }

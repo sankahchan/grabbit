@@ -40,7 +40,7 @@ struct GrabberView: View {
             }
             .padding(16)
         }
-        .navigationTitle(String(localized: "grabber.title"))
+        .navigationTitle(NSLocalizedString("grabber.title", comment: ""))
     }
 
     // MARK: - Status
@@ -53,8 +53,8 @@ struct GrabberView: View {
                 .frame(width: 14, height: 14)
                 .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
             Text(extensionConnected
-                 ? String(localized: "grabber.status.connected")
-                 : String(localized: "grabber.status.disconnected"))
+                 ? NSLocalizedString("grabber.status.connected", comment: "")
+                 : NSLocalizedString("grabber.status.disconnected", comment: ""))
                 .font(.headline.weight(.bold))
             Spacer()
         }
@@ -66,12 +66,12 @@ struct GrabberView: View {
 
     private var detectedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "grabber.detected.title"))
+            Text(NSLocalizedString("grabber.detected.title", comment: ""))
                 .font(.headline.weight(.heavy))
                 .textCase(.uppercase)
 
             if detected.isEmpty {
-                Text(String(localized: "grabber.detected.empty"))
+                Text(NSLocalizedString("grabber.detected.empty", comment: ""))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
@@ -93,7 +93,7 @@ struct GrabberView: View {
                 SourceBadge(site: media.site)
             }
             Spacer()
-            Button(String(localized: "grabber.grab")) {
+            Button(NSLocalizedString("grabber.grab", comment: "")) {
                 grab(media)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
@@ -124,7 +124,7 @@ struct GrabberView: View {
     // MARK: - Hint
 
     private var hintCard: some View {
-        Text(String(localized: "grabber.hint"))
+        Text(NSLocalizedString("grabber.hint", comment: ""))
             .font(.subheadline)
             .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
             .frame(maxWidth: .infinity, alignment: .leading)

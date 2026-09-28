@@ -5,8 +5,8 @@ enum ScheduleAction: String, CaseIterable {
 
     var localizedTitle: String {
         switch self {
-        case .download: String(localized: "scheduler.action.download")
-        case .stop: String(localized: "scheduler.action.stop")
+        case .download: NSLocalizedString("scheduler.action.download", comment: "")
+        case .stop: NSLocalizedString("scheduler.action.stop", comment: "")
         }
     }
 }
@@ -33,7 +33,7 @@ struct SchedulerView: View {
             if !entries.isEmpty {
                 HStack {
                     Spacer()
-                    Button(String(localized: "scheduler.add")) {
+                    Button(NSLocalizedString("scheduler.add", comment: "")) {
                         showingAdd = true
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
@@ -56,7 +56,7 @@ struct SchedulerView: View {
             }
         }
         .padding(12)
-        .navigationTitle(String(localized: "scheduler.title"))
+        .navigationTitle(NSLocalizedString("scheduler.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddScheduleSheet { entry in
                 entries.append(entry)
@@ -71,11 +71,11 @@ struct SchedulerView: View {
             Image(systemName: "clock")
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
-            Text(String(localized: "scheduler.empty"))
+            Text(NSLocalizedString("scheduler.empty", comment: ""))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(String(localized: "scheduler.add")) {
+            Button(NSLocalizedString("scheduler.add", comment: "")) {
                 showingAdd = true
             }
             .neoButton(bg: Neo.yellow)
@@ -122,16 +122,16 @@ private struct AddScheduleSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "scheduler.add"))
+            Text(NSLocalizedString("scheduler.add", comment: ""))
                 .font(.title2.weight(.heavy))
 
             DatePicker(
-                String(localized: "scheduler.time"),
+                NSLocalizedString("scheduler.time", comment: ""),
                 selection: $time,
                 displayedComponents: .hourAndMinute
             )
 
-            Picker(String(localized: "scheduler.add"), selection: $action) {
+            Picker(NSLocalizedString("scheduler.add", comment: ""), selection: $action) {
                 ForEach(ScheduleAction.allCases, id: \.self) { a in
                     Text(a.localizedTitle).tag(a)
                 }
@@ -139,12 +139,12 @@ private struct AddScheduleSheet: View {
             .pickerStyle(.segmented)
 
             HStack {
-                Button(String(localized: "common.cancel")) {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "common.save")) {
+                Button(NSLocalizedString("common.save", comment: "")) {
                     onSave(ScheduleEntry(time: time, action: action))
                     dismiss()
                 }

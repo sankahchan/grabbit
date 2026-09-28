@@ -62,7 +62,7 @@ struct TaskDetailsSheet: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "task.details.title"))
+            Text(NSLocalizedString("task.details.title", comment: ""))
                 .font(.title2.weight(.heavy))
             HStack(spacing: 8) {
                 Text(subject.name)
@@ -107,14 +107,14 @@ struct TaskDetailsSheet: View {
 
     private var saveToSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle(String(localized: "task.details.saveTo"))
+            sectionTitle(NSLocalizedString("task.details.saveTo", comment: ""))
             HStack(spacing: 8) {
                 Text(Self.tildePath(saveDirectory.path))
                     .font(.subheadline.monospaced())
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
-                Button(String(localized: "task.details.openFinder")) {
+                Button(NSLocalizedString("task.details.openFinder", comment: "")) {
                     openFolder()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
@@ -140,11 +140,11 @@ struct TaskDetailsSheet: View {
     @ViewBuilder
     private var progressSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle(String(localized: "task.details.progress"))
+            sectionTitle(NSLocalizedString("task.details.progress", comment: ""))
             switch subject {
             case .download(let item):
                 HStack {
-                    Text("\(formatBytes(item.downloadedBytes)) / \(item.totalBytes.map(formatBytes) ?? String(localized: "common.unknown"))")
+                    Text("\(formatBytes(item.downloadedBytes)) / \(item.totalBytes.map(formatBytes) ?? NSLocalizedString("common.unknown", comment: ""))")
                     Spacer()
                     Text("\(Int((item.progress * 100).rounded()))%")
                         .fontWeight(.bold)
@@ -152,9 +152,9 @@ struct TaskDetailsSheet: View {
                 .font(.subheadline)
                 SegmentedProgressBar(segments: item.segments)
                 HStack(spacing: 8) {
-                    Text("\(String(localized: "downloads.speed")): \(formatSpeed(item.speedBytesPerSec))")
+                    Text("\(NSLocalizedString("downloads.speed", comment: "")): \(formatSpeed(item.speedBytesPerSec))")
                     Text("•")
-                    Text("\(String(localized: "downloads.eta")): \(formatETA(item.etaSeconds))")
+                    Text("\(NSLocalizedString("downloads.eta", comment: "")): \(formatETA(item.etaSeconds))")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -168,9 +168,9 @@ struct TaskDetailsSheet: View {
                 .font(.subheadline)
                 NeoLinearBar(progress: item.progress, fill: Neo.purple)
                 HStack(spacing: 8) {
-                    Text("\(String(localized: "torrents.seeds")): \(item.numSeeders)")
-                    Text("\(String(localized: "torrents.peers")): \(item.peers)")
-                    Text("\(String(localized: "torrents.ratio")): \(String(format: "%.2f", item.ratio))")
+                    Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(item.numSeeders)")
+                    Text("\(NSLocalizedString("torrents.peers", comment: "")): \(item.peers)")
+                    Text("\(NSLocalizedString("torrents.ratio", comment: "")): \(String(format: "%.2f", item.ratio))")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -187,7 +187,7 @@ struct TaskDetailsSheet: View {
     @ViewBuilder
     private var sourceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle(String(localized: "task.details.source"))
+            sectionTitle(NSLocalizedString("task.details.source", comment: ""))
             switch subject {
             case .download(let item):
                 linkRow(item.url.absoluteString)
@@ -202,7 +202,7 @@ struct TaskDetailsSheet: View {
                 }
                 if let hash = item.infoHash, !hash.isEmpty {
                     detailRow(
-                        label: String(localized: "task.details.infoHash"),
+                        label: NSLocalizedString("task.details.infoHash", comment: ""),
                         value: hash,
                         copy: hash)
                 }
@@ -223,8 +223,8 @@ struct TaskDetailsSheet: View {
                 Image(systemName: "doc.on.doc")
             }
             .buttonStyle(NeoIconButtonStyle(bg: Neo.purple))
-            .help(String(localized: "task.action.copyLink"))
-            .accessibilityLabel(String(localized: "task.action.copyLink"))
+            .help(NSLocalizedString("task.action.copyLink", comment: ""))
+            .accessibilityLabel(NSLocalizedString("task.action.copyLink", comment: ""))
         }
     }
 
@@ -244,8 +244,8 @@ struct TaskDetailsSheet: View {
                     Image(systemName: "doc.on.doc")
                 }
                 .buttonStyle(NeoIconButtonStyle(bg: Neo.purple))
-                .help(String(localized: "task.action.copyLink"))
-                .accessibilityLabel(String(localized: "task.action.copyLink"))
+                .help(NSLocalizedString("task.action.copyLink", comment: ""))
+                .accessibilityLabel(NSLocalizedString("task.action.copyLink", comment: ""))
             }
         }
     }
@@ -261,7 +261,7 @@ struct TaskDetailsSheet: View {
 
     private func errorSection(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle(String(localized: "task.details.error"))
+            sectionTitle(NSLocalizedString("task.details.error", comment: ""))
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(Neo.red)
@@ -278,7 +278,7 @@ struct TaskDetailsSheet: View {
                 // Preserves the old "Cancel" capability: stop, drop the
                 // partial data, and reset so it can start fresh.
                 if item.state != .completed {
-                    Button(String(localized: "task.details.restart")) {
+                    Button(NSLocalizedString("task.details.restart", comment: "")) {
                         downloads.cancel(item.id)
                         dismiss()
                     }
@@ -286,17 +286,17 @@ struct TaskDetailsSheet: View {
                 }
             case .torrent:
                 // Preserves the old FILES / SEEDING buttons.
-                Button(String(localized: "torrents.files")) {
+                Button(NSLocalizedString("torrents.files", comment: "")) {
                     showingFiles = true
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
-                Button(String(localized: "torrents.seeding")) {
+                Button(NSLocalizedString("torrents.seeding", comment: "")) {
                     showingSeeding = true
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.purple, compact: true))
             }
             Spacer()
-            Button(String(localized: "common.close")) {
+            Button(NSLocalizedString("common.close", comment: "")) {
                 dismiss()
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))

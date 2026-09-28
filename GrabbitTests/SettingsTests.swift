@@ -1,5 +1,4 @@
 import XCTest
-import ObjectiveC
 @testable import Grabbit
 
 final class SettingsTests: XCTestCase {
@@ -29,30 +28,30 @@ final class SettingsTests: XCTestCase {
         // The swizzle must never break lookup, even when the .lproj is
         // absent (e.g. unit-test host): unknown keys fall back to the key.
         BundleLocalization.apply(.system)
-        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        XCTAssertFalse(NSLocalizedString("definitely.not.a.real.key", comment: "").isEmpty)
         BundleLocalization.apply(.my)
-        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        XCTAssertFalse(NSLocalizedString("definitely.not.a.real.key", comment: "").isEmpty)
         BundleLocalization.apply(.en)
-        XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
+        XCTAssertFalse(NSLocalizedString("definitely.not.a.real.key", comment: "").isEmpty)
         BundleLocalization.apply(.system)
     }
 
-    func testDiagnoseLocalizationPaths() {
-        // Diagnostic: which lookup paths does the swizzle intercept?
-        // The log lines below show exactly where String(localized:) resolves.
+    func testInstantLanguageSwitchServesMyanmar() {
+        // Regression: Swift's String(localized:) resolves BELOW
+        // -[NSBundle localizedStringForKey:value:table:], so the
+        // BundleLocalization override never sees it (proven by CI
+        // diagnostic 2026-09-28: direct=ဆက်တင်များ, String(localized:)=Settings).
+        // App code must use NSLocalizedString — this test pins the
+        // supported path end-to-end.
         BundleLocalization.apply(.my)
-        let direct = Bundle.main.localizedString(
-            forKey: "settings.title", value: nil, table: nil)
-        let viaMacro = NSLocalizedString("settings.title", comment: "")
-        let viaInit = String(localized: "settings.title")
-        print("DIAG direct=\(direct)")
-        print("DIAG NSLocalizedString=\(viaMacro)")
-        print("DIAG String(localized:)=\(viaInit)")
-        print("DIAG mainBundleClass=\(object_getClass(Bundle.main))")
-        print("DIAG my.lproj=\(Bundle.main.path(forResource: "my", ofType: "lproj") ?? "nil")")
-        XCTAssertEqual(direct, "ဆက်တင်များ")
-        XCTAssertEqual(viaMacro, "ဆက်တင်များ")
-        XCTAssertEqual(viaInit, "ဆက်တင်များ")
+        XCTAssertEqual(
+            Bundle.main.localizedString(forKey: "settings.title", value: nil, table: nil),
+            "ဆက်တင်များ")
+        XCTAssertEqual(
+            NSLocalizedString("settings.title", comment: ""), "ဆက်တင်များ")
+        BundleLocalization.apply(.en)
+        XCTAssertEqual(
+            NSLocalizedString("settings.title", comment: ""), "Settings")
         BundleLocalization.apply(.system)
     }
 }

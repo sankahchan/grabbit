@@ -41,7 +41,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
             .padding(16)
         }
-        .navigationTitle(String(localized: "settings.title"))
+        .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .onAppear { refreshMagnetHandler() }
         .onChange(of: store.settings.theme) { _, _ in store.save() }
         .onChange(of: store.settings.language, handleLanguageChange)
@@ -80,11 +80,11 @@ struct SettingsView: View {
 
     private func appearanceCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.appearance"))
-            Picker(String(localized: "settings.theme"), selection: settings.theme) {
-                Text(String(localized: "settings.theme.system")).tag(ThemeMode.system)
-                Text(String(localized: "settings.theme.light")).tag(ThemeMode.light)
-                Text(String(localized: "settings.theme.dark")).tag(ThemeMode.dark)
+            sectionHeader(NSLocalizedString("settings.section.appearance", comment: ""))
+            Picker(NSLocalizedString("settings.theme", comment: ""), selection: settings.theme) {
+                Text(NSLocalizedString("settings.theme.system", comment: "")).tag(ThemeMode.system)
+                Text(NSLocalizedString("settings.theme.light", comment: "")).tag(ThemeMode.light)
+                Text(NSLocalizedString("settings.theme.dark", comment: "")).tag(ThemeMode.dark)
             }
             .pickerStyle(.segmented)
         }
@@ -93,15 +93,15 @@ struct SettingsView: View {
 
     private func languageCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.language"))
+            sectionHeader(NSLocalizedString("settings.section.language", comment: ""))
             // Autonyms are shown in their own language by convention.
-            Picker(String(localized: "settings.section.language"), selection: settings.language) {
-                Text(String(localized: "settings.language.system")).tag(AppLanguage.system)
+            Picker(NSLocalizedString("settings.section.language", comment: ""), selection: settings.language) {
+                Text(NSLocalizedString("settings.language.system", comment: "")).tag(AppLanguage.system)
                 Text("English").tag(AppLanguage.en)
                 Text("မြန်မာ").tag(AppLanguage.my)
             }
             .pickerStyle(.segmented)
-            Text(String(localized: "settings.language.note"))
+            Text(NSLocalizedString("settings.language.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -110,16 +110,16 @@ struct SettingsView: View {
 
     private func downloadsCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.downloads"))
+            sectionHeader(NSLocalizedString("settings.section.downloads", comment: ""))
             ForEach(DownloadCategory.allCases, id: \.self) { category in
                 folderRow(for: category, settings: settings)
             }
             Divider()
             speedLimitRow(settings: settings)
-            Toggle(String(localized: "settings.clipboard"), isOn: settings.clipboardMonitorEnabled)
-            Toggle(String(localized: "settings.autoResume"), isOn: settings.autoResumeOnLaunch)
-            Toggle(String(localized: "settings.autoClear"), isOn: settings.autoClearFinished)
-            Text(String(localized: "settings.autoClear.note"))
+            Toggle(NSLocalizedString("settings.clipboard", comment: ""), isOn: settings.clipboardMonitorEnabled)
+            Toggle(NSLocalizedString("settings.autoResume", comment: ""), isOn: settings.autoResumeOnLaunch)
+            Toggle(NSLocalizedString("settings.autoClear", comment: ""), isOn: settings.autoClearFinished)
+            Text(NSLocalizedString("settings.autoClear.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -128,19 +128,19 @@ struct SettingsView: View {
 
     private func torrentsCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.torrents"))
-            Toggle(String(localized: "settings.vpnKillSwitch"), isOn: settings.vpnKillSwitchEnabled)
-            Text(String(localized: "settings.vpnKillSwitch.note"))
+            sectionHeader(NSLocalizedString("settings.section.torrents", comment: ""))
+            Toggle(NSLocalizedString("settings.vpnKillSwitch", comment: ""), isOn: settings.vpnKillSwitchEnabled)
+            Text(NSLocalizedString("settings.vpnKillSwitch.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
-                Text(String(localized: "settings.vpnInterface"))
+                Text(NSLocalizedString("settings.vpnInterface", comment: ""))
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 TextField(
                     "utun3",
                     text: settings.vpnInterfaceName,
-                    prompt: Text(String(localized: "settings.vpnInterface")))
+                    prompt: Text(NSLocalizedString("settings.vpnInterface", comment: "")))
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 160)
                     .disabled(!settings.wrappedValue.vpnKillSwitchEnabled)
@@ -150,10 +150,10 @@ struct SettingsView: View {
             seedTimeRow(settings: settings)
             Divider()
             Toggle(
-                String(localized: "settings.trackers.autoUpdate"),
+                NSLocalizedString("settings.trackers.autoUpdate", comment: ""),
                 isOn: settings.autoUpdateTrackers
             )
-            Text(String(localized: "settings.trackers.autoUpdate.note"))
+            Text(NSLocalizedString("settings.trackers.autoUpdate.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Divider()
@@ -170,14 +170,14 @@ struct SettingsView: View {
     private func magnetHandlerRow() -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "settings.magnetHandler"))
+                Text(NSLocalizedString("settings.magnetHandler", comment: ""))
                     .font(.subheadline.weight(.semibold))
                 Text(magnetHandlerNote)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button(String(localized: "settings.magnetHandler.setDefault")) {
+            Button(NSLocalizedString("settings.magnetHandler.setDefault", comment: "")) {
                 setGrabbitAsMagnetHandler()
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
@@ -191,13 +191,13 @@ struct SettingsView: View {
 
     private var magnetHandlerNote: String {
         if isGrabbitMagnetHandler {
-            return String(localized: "settings.magnetHandler.current")
+            return NSLocalizedString("settings.magnetHandler.current", comment: "")
         }
         let current = magnetAppName.isEmpty
-            ? String(localized: "settings.magnetHandler.none")
+            ? NSLocalizedString("settings.magnetHandler.none", comment: "")
             : magnetAppName
         return String(
-            format: String(localized: "settings.magnetHandler.note"), current)
+            format: NSLocalizedString("settings.magnetHandler.note", comment: ""), current)
     }
 
     private func refreshMagnetHandler() {
@@ -230,12 +230,12 @@ struct SettingsView: View {
             }
         )
         return HStack {
-            Text(String(localized: "settings.seedRatio"))
+            Text(NSLocalizedString("settings.seedRatio", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Stepper(value: ratio, in: 0...10, step: 0.5) {
                 Text(ratio.wrappedValue == 0
-                     ? String(localized: "settings.unlimited")
+                     ? NSLocalizedString("settings.unlimited", comment: "")
                      : String(format: "%.1f", ratio.wrappedValue))
                     .font(.subheadline)
             }
@@ -251,12 +251,12 @@ struct SettingsView: View {
             }
         )
         return HStack {
-            Text(String(localized: "settings.seedTime"))
+            Text(NSLocalizedString("settings.seedTime", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Stepper(value: minutes, in: 0...10080, step: 30) {
                 Text(minutes.wrappedValue == 0
-                     ? String(localized: "settings.unlimited")
+                     ? NSLocalizedString("settings.unlimited", comment: "")
                      : "\(minutes.wrappedValue)")
                     .font(.subheadline)
             }
@@ -265,9 +265,9 @@ struct SettingsView: View {
 
     private func updatesCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.updates"))
-            Toggle(String(localized: "settings.autoUpdate"), isOn: settings.autoUpdateEnabled)
-            Button(String(localized: "settings.checkNow")) {
+            sectionHeader(NSLocalizedString("settings.section.updates", comment: ""))
+            Toggle(NSLocalizedString("settings.autoUpdate", comment: ""), isOn: settings.autoUpdateEnabled)
+            Button(NSLocalizedString("settings.checkNow", comment: "")) {
                 checkForUpdates()
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
@@ -277,8 +277,8 @@ struct SettingsView: View {
 
     private func generalCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(String(localized: "settings.section.general"))
-            Toggle(String(localized: "settings.notifications"), isOn: settings.notificationsEnabled)
+            sectionHeader(NSLocalizedString("settings.section.general", comment: ""))
+            Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
         }
         .neoCard()
     }
@@ -295,7 +295,7 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Button(String(localized: "add.destination.choose")) {
+            Button(NSLocalizedString("add.destination.choose", comment: "")) {
                 if let url = chooseDirectory(initial: URL(fileURLWithPath: currentFolderPath(for: category, settings: settings))) {
                     settings.wrappedValue.folders[category] = url.path
                     store.save()
@@ -318,12 +318,12 @@ struct SettingsView: View {
             }
         )
         return HStack {
-            Text(String(localized: "settings.speedLimit"))
+            Text(NSLocalizedString("settings.speedLimit", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Stepper(value: mb, in: 0...2000) {
                 Text(mb.wrappedValue == 0
-                     ? String(localized: "settings.speedLimit.unlimited")
+                     ? NSLocalizedString("settings.speedLimit.unlimited", comment: "")
                      : "\(mb.wrappedValue) MB/s")
                     .font(.subheadline)
             }

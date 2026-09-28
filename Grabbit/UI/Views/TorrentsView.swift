@@ -28,7 +28,7 @@ struct TorrentsView: View {
             } else {
                 HStack {
                     Spacer()
-                    Button(String(localized: "torrents.add")) {
+                    Button(NSLocalizedString("torrents.add", comment: "")) {
                         showingAdd = true
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
@@ -44,7 +44,7 @@ struct TorrentsView: View {
             }
         }
         .padding(12)
-        .navigationTitle(String(localized: "torrents.title"))
+        .navigationTitle(NSLocalizedString("torrents.title", comment: ""))
         .task {
             // Lazily boot the daemon when the tab first appears.
             try? await torrentEngine.ensureStarted()
@@ -78,7 +78,7 @@ struct TorrentsView: View {
             Spacer()
             switch torrentEngine.daemonState {
             case .failed, .stopped:
-                Button(String(localized: "torrents.retry")) {
+                Button(NSLocalizedString("torrents.retry", comment: "")) {
                     Task { try? await torrentEngine.ensureStarted() }
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
@@ -103,7 +103,7 @@ struct TorrentsView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.shield.fill")
                 .foregroundStyle(Neo.red)
-            Text(String(localized: "torrents.vpn.suspended"))
+            Text(NSLocalizedString("torrents.vpn.suspended", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
         }
@@ -117,11 +117,11 @@ struct TorrentsView: View {
             Image(systemName: "magnet")
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
-            Text(String(localized: "torrents.empty"))
+            Text(NSLocalizedString("torrents.empty", comment: ""))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(String(localized: "torrents.add")) {
+            Button(NSLocalizedString("torrents.add", comment: "")) {
                 showingAdd = true
             }
             .neoButton(bg: Neo.yellow)
@@ -154,9 +154,9 @@ struct TorrentsView: View {
             NeoLinearBar(progress: item.progress, fill: Neo.purple)
 
             HStack(spacing: 12) {
-                Text("\(String(localized: "torrents.seeds")): \(item.numSeeders)")
-                Text("\(String(localized: "torrents.peers")): \(item.peers)")
-                Text("\(String(localized: "torrents.ratio")): \(String(format: "%.2f", item.ratio))")
+                Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(item.numSeeders)")
+                Text("\(NSLocalizedString("torrents.peers", comment: "")): \(item.peers)")
+                Text("\(NSLocalizedString("torrents.ratio", comment: "")): \(String(format: "%.2f", item.ratio))")
                 Spacer()
                 Text("\(formatBytes(item.downloadedBytes)) / \(formatBytes(item.totalBytes))")
             }
@@ -209,11 +209,11 @@ struct TorrentsView: View {
 private extension TorrentEngine.DaemonState {
     var localizedName: String {
         switch self {
-        case .stopped: String(localized: "torrents.daemon.stopped")
-        case .starting: String(localized: "torrents.daemon.starting")
-        case .running: String(localized: "torrents.daemon.running")
-        case .suspendedVPN: String(localized: "torrents.daemon.suspended")
-        case .failed: String(localized: "torrents.daemon.failed")
+        case .stopped: NSLocalizedString("torrents.daemon.stopped", comment: "")
+        case .starting: NSLocalizedString("torrents.daemon.starting", comment: "")
+        case .running: NSLocalizedString("torrents.daemon.running", comment: "")
+        case .suspendedVPN: NSLocalizedString("torrents.daemon.suspended", comment: "")
+        case .failed: NSLocalizedString("torrents.daemon.failed", comment: "")
         }
     }
 }
@@ -238,28 +238,28 @@ struct TorrentAddSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "torrents.add"))
+            Text(NSLocalizedString("torrents.add", comment: ""))
                 .font(.title2.weight(.heavy))
 
             Picker("", selection: $mode) {
-                Text(String(localized: "torrents.add.linkTab")).tag(0)
-                Text(String(localized: "torrents.add.fileTab")).tag(1)
+                Text(NSLocalizedString("torrents.add.linkTab", comment: "")).tag(0)
+                Text(NSLocalizedString("torrents.add.fileTab", comment: "")).tag(1)
             }
             .pickerStyle(.segmented)
 
             if mode == 0 {
                 HStack(spacing: 8) {
                     TextField(
-                        String(localized: "torrents.add"),
+                        NSLocalizedString("torrents.add", comment: ""),
                         text: $input,
-                        prompt: Text(String(localized: "torrents.add.placeholder"))
+                        prompt: Text(NSLocalizedString("torrents.add.placeholder", comment: ""))
                     )
                     .textFieldStyle(.roundedBorder)
-                    Button(String(localized: "common.paste")) { pasteInput() }
+                    Button(NSLocalizedString("common.paste", comment: "")) { pasteInput() }
                         .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 }
             } else {
-                Button(String(localized: "torrents.add.chooseFile")) {
+                Button(NSLocalizedString("torrents.add.chooseFile", comment: "")) {
                     showingPicker = true
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
@@ -279,19 +279,19 @@ struct TorrentAddSheet: View {
 
             // MARK: Rename (optional)
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "torrents.add.rename"))
+                Text(NSLocalizedString("torrents.add.rename", comment: ""))
                     .font(.headline)
                 TextField(
-                    String(localized: "torrents.add.rename"),
+                    NSLocalizedString("torrents.add.rename", comment: ""),
                     text: $rename,
-                    prompt: Text(String(localized: "torrents.add.rename.placeholder"))
+                    prompt: Text(NSLocalizedString("torrents.add.rename.placeholder", comment: ""))
                 )
                 .textFieldStyle(.roundedBorder)
             }
 
             // MARK: Save folder (optional override)
             HStack {
-                Text(String(localized: "add.destination"))
+                Text(NSLocalizedString("add.destination", comment: ""))
                     .font(.headline)
                 Spacer()
                 Text(destinationURL.path)
@@ -299,7 +299,7 @@ struct TorrentAddSheet: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Button(String(localized: "add.destination.choose")) {
+                Button(NSLocalizedString("add.destination.choose", comment: "")) {
                     if let url = chooseDirectory(initial: destinationURL) {
                         destinationOverride = url
                     }
@@ -308,12 +308,12 @@ struct TorrentAddSheet: View {
             }
 
             HStack {
-                Button(String(localized: "common.cancel")) {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "torrents.add")) {
+                Button(NSLocalizedString("torrents.add", comment: "")) {
                     addTorrent()
                 }
                 .neoButton(bg: Neo.green)
@@ -399,7 +399,7 @@ struct TorrentFilesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "torrents.files.title"))
+            Text(NSLocalizedString("torrents.files.title", comment: ""))
                 .font(.title2.weight(.heavy))
             Text(item.name)
                 .font(.caption)
@@ -436,12 +436,12 @@ struct TorrentFilesSheet: View {
             }
 
             HStack {
-                Button(String(localized: "common.cancel")) {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "torrents.files.apply")) {
+                Button(NSLocalizedString("torrents.files.apply", comment: "")) {
                     apply()
                 }
                 .neoButton(bg: Neo.green)
@@ -505,7 +505,7 @@ struct TorrentSeedingSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "torrents.seeding.title"))
+            Text(NSLocalizedString("torrents.seeding.title", comment: ""))
                 .font(.title2.weight(.heavy))
             Text(item.name)
                 .font(.caption)
@@ -513,26 +513,26 @@ struct TorrentSeedingSheet: View {
                 .lineLimit(1)
 
             seedingRow(
-                title: String(localized: "torrents.seeding.ratio"),
+                title: NSLocalizedString("torrents.seeding.ratio", comment: ""),
                 value: ratio < 0
-                    ? String(localized: "torrents.seeding.useGlobal")
+                    ? NSLocalizedString("torrents.seeding.useGlobal", comment: "")
                     : ratio == 0
-                        ? String(localized: "torrents.seeding.unlimited")
+                        ? NSLocalizedString("torrents.seeding.unlimited", comment: "")
                         : String(format: "%.1f", ratio),
                 decrease: { ratio = max(-1, ratio - 0.5) },
                 increase: { ratio = min(100, ratio + 0.5) })
 
             seedingRow(
-                title: String(localized: "torrents.seeding.time"),
+                title: NSLocalizedString("torrents.seeding.time", comment: ""),
                 value: timeMinutes < 0
-                    ? String(localized: "torrents.seeding.useGlobal")
+                    ? NSLocalizedString("torrents.seeding.useGlobal", comment: "")
                     : timeMinutes == 0
-                        ? String(localized: "torrents.seeding.unlimited")
+                        ? NSLocalizedString("torrents.seeding.unlimited", comment: "")
                         : "\(timeMinutes)",
                 decrease: { timeMinutes = max(-1, timeMinutes - 30) },
                 increase: { timeMinutes = min(10080, timeMinutes + 30) })
 
-            Text(String(localized: "torrents.seeding.note"))
+            Text(NSLocalizedString("torrents.seeding.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -543,12 +543,12 @@ struct TorrentSeedingSheet: View {
             }
 
             HStack {
-                Button(String(localized: "common.cancel")) {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "torrents.files.apply")) {
+                Button(NSLocalizedString("torrents.files.apply", comment: "")) {
                     apply()
                 }
                 .neoButton(bg: Neo.green)
@@ -612,22 +612,22 @@ struct TorrentRemoveSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "torrents.remove.title"))
+            Text(NSLocalizedString("torrents.remove.title", comment: ""))
                 .font(.title2.weight(.heavy))
             Text(item.name)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 
-            Toggle(String(localized: "torrents.remove.deleteData"), isOn: $deleteData)
+            Toggle(NSLocalizedString("torrents.remove.deleteData", comment: ""), isOn: $deleteData)
 
             HStack {
-                Button(String(localized: "common.cancel")) {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "torrents.remove.remove")) {
+                Button(NSLocalizedString("torrents.remove.remove", comment: "")) {
                     torrentEngine.remove(item.id, deleteData: deleteData)
                     dismiss()
                 }

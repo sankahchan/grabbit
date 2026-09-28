@@ -23,13 +23,13 @@ public enum TorrentError: Error, LocalizedError {
         case .noBinary(let hint):
             return hint
         case .vpnBlocked(let interface):
-            return String(format: String(localized: "torrents.error.vpnBlocked"), interface)
+            return String(format: NSLocalizedString("torrents.error.vpnBlocked", comment: ""), interface)
         case .daemonFailed(let message):
-            return String(format: String(localized: "torrents.error.daemonFailed"), message)
+            return String(format: NSLocalizedString("torrents.error.daemonFailed", comment: ""), message)
         case .rpcFailed(let message):
-            return String(format: String(localized: "torrents.error.rpcFailed"), message)
+            return String(format: NSLocalizedString("torrents.error.rpcFailed", comment: ""), message)
         case .invalidInput:
-            return String(localized: "torrents.error.invalidInput")
+            return NSLocalizedString("torrents.error.invalidInput", comment: "")
         }
     }
 }

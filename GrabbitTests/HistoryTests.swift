@@ -176,7 +176,7 @@ final class HistoryTests: XCTestCase {
         let entry = HistoryEntry.from(torrent: item, status: .completed)
         XCTAssertEqual(entry.kind, .torrent)
         XCTAssertEqual(entry.sourceURL, "magnet:?xt=urn:btih:abc")
-        XCTAssertEqual(entry.sourceHost, String(localized: "history.source.magnet"))
+        XCTAssertEqual(entry.sourceHost, NSLocalizedString("history.source.magnet", comment: ""))
         XCTAssertNil(entry.errorMessage)
     }
 

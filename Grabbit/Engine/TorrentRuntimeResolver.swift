@@ -20,7 +20,7 @@ public enum TorrentRuntimeResolver {
 
     public struct ResolutionError: Error, LocalizedError {
         public var errorDescription: String? {
-            String(localized: "torrents.runtime.hint")
+            NSLocalizedString("torrents.runtime.hint", comment: "")
         }
     }
 

@@ -19,9 +19,9 @@ public enum HistoryKind: String, Codable, CaseIterable, Sendable {
     /// `DownloadState.localizedName`).
     public var filterLabel: String {
         switch self {
-        case .download: String(localized: "history.filter.downloads")
-        case .torrent: String(localized: "history.filter.torrents")
-        case .media: String(localized: "history.filter.media")
+        case .download: NSLocalizedString("history.filter.downloads", comment: "")
+        case .torrent: NSLocalizedString("history.filter.torrents", comment: "")
+        case .media: NSLocalizedString("history.filter.media", comment: "")
         }
     }
 }
@@ -36,8 +36,8 @@ public enum HistoryStatus: String, Codable, Sendable {
     /// the task cards.
     public var localizedName: String {
         switch self {
-        case .completed: String(localized: "state.completed")
-        case .failed: String(localized: "state.failed")
+        case .completed: NSLocalizedString("state.completed", comment: "")
+        case .failed: NSLocalizedString("state.failed", comment: "")
         }
     }
 }
@@ -87,7 +87,7 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
     /// for magnets, the raw string otherwise.
     public var sourceHost: String {
         if sourceURL.hasPrefix("magnet:") {
-            return String(localized: "history.source.magnet")
+            return NSLocalizedString("history.source.magnet", comment: "")
         }
         if let host = URL(string: sourceURL)?.host, !host.isEmpty {
             return host

@@ -38,7 +38,7 @@ struct MediaView: View {
             }
             .padding(16)
         }
-        .navigationTitle(String(localized: "media.title"))
+        .navigationTitle(NSLocalizedString("media.title", comment: ""))
         .onAppear(perform: refreshRuntime)
     }
 
@@ -46,7 +46,7 @@ struct MediaView: View {
 
     private var runtimeCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "media.runtime.title"))
+            Text(NSLocalizedString("media.runtime.title", comment: ""))
                 .font(.headline.weight(.heavy))
                 .textCase(.uppercase)
             ForEach(runtime, id: \.0) { component, found in
@@ -69,7 +69,7 @@ struct MediaView: View {
                 Button {
                     Task { await checkForUpdate() }
                 } label: {
-                    Label(String(localized: "media.runtime.checkUpdate"),
+                    Label(NSLocalizedString("media.runtime.checkUpdate", comment: ""),
                           systemImage: "arrow.triangle.2.circlepath")
                 }
                 .neoButton(bg: Neo.paper(scheme))
@@ -93,9 +93,9 @@ struct MediaView: View {
         defer { checkingUpdate = false }
         do {
             try await MediaComponentUpdater.updateYtDlp()
-            updateNote = String(localized: "media.runtime.updated")
+            updateNote = NSLocalizedString("media.runtime.updated", comment: "")
         } catch MediaComponentUpdater.UpdateError.upToDate {
-            updateNote = String(localized: "media.runtime.upToDate")
+            updateNote = NSLocalizedString("media.runtime.upToDate", comment: "")
         } catch {
             updateNote = error.localizedDescription
         }
@@ -106,20 +106,20 @@ struct MediaView: View {
 
     private var urlCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "media.url.title"))
+            Text(NSLocalizedString("media.url.title", comment: ""))
                 .font(.headline.weight(.heavy))
                 .textCase(.uppercase)
             HStack(spacing: 10) {
-                TextField(String(localized: "media.url.placeholder"), text: $urlText)
+                TextField(NSLocalizedString("media.url.placeholder", comment: ""), text: $urlText)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { probe() }
-                Button(String(localized: "common.paste")) { pasteURL() }
+                Button(NSLocalizedString("common.paste", comment: "")) { pasteURL() }
                     .neoButton(bg: Neo.paper(scheme))
-                Button(String(localized: "media.url.probe")) { probe() }
+                Button(NSLocalizedString("media.url.probe", comment: "")) { probe() }
                     .neoButton(bg: Neo.yellow)
                     .disabled(!canProbe)
             }
-            Text(String(localized: "media.url.hint"))
+            Text(NSLocalizedString("media.url.hint", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -147,7 +147,7 @@ struct MediaView: View {
     private var probingCard: some View {
         HStack(spacing: 10) {
             ProgressView()
-            Text(String(localized: "media.probing"))
+            Text(NSLocalizedString("media.probing", comment: ""))
                 .font(.subheadline.weight(.bold))
         }
         .neoCard()
@@ -163,17 +163,17 @@ struct MediaView: View {
                 Text(Self.formatDuration(duration))
                     .font(.caption)
             }
-            Picker(String(localized: "media.quality"), selection: $selectedPresetID) {
+            Picker(NSLocalizedString("media.quality", comment: ""), selection: $selectedPresetID) {
                 ForEach(probed.presets) { preset in
                     Text(presetLabel(preset)).tag(preset.id)
                 }
             }
             .pickerStyle(.menu)
             HStack(spacing: 10) {
-                Button(String(localized: "media.download")) { startDownload() }
+                Button(NSLocalizedString("media.download", comment: "")) { startDownload() }
                     .neoButton(bg: Neo.green)
                     .disabled(selectedPreset == nil)
-                Button(String(localized: "media.clear")) {
+                Button(NSLocalizedString("media.clear", comment: "")) {
                     Task { await media.reset() }
                 }
                 .neoButton(bg: Neo.paper(scheme))
@@ -215,7 +215,7 @@ struct MediaView: View {
                 Text("\(Int(media.progress * 100))%")
                     .font(.subheadline.weight(.bold))
                 Spacer()
-                Button(String(localized: "media.cancel")) {
+                Button(NSLocalizedString("media.cancel", comment: "")) {
                     Task { await media.cancel() }
                 }
                 .neoButton(bg: Neo.red)
@@ -234,12 +234,12 @@ struct MediaView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                Text(String(localized: "media.completed"))
+                Text(NSLocalizedString("media.completed", comment: ""))
                     .lineLimit(1)
             }
             .font(.headline.weight(.heavy))
             .foregroundStyle(Neo.ink(scheme))
-            Button(String(localized: "media.new")) {
+            Button(NSLocalizedString("media.new", comment: "")) {
                 urlText = ""
                 Task { await media.reset() }
             }
@@ -250,12 +250,12 @@ struct MediaView: View {
 
     private func errorCard(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(String(localized: "media.failed"), systemImage: "exclamationmark.triangle.fill")
+            Label(NSLocalizedString("media.failed", comment: ""), systemImage: "exclamationmark.triangle.fill")
                 .font(.headline.weight(.heavy))
                 .foregroundStyle(Neo.ink(scheme))
             Text(message)
                 .font(.subheadline)
-            Button(String(localized: "media.retry")) { probe() }
+            Button(NSLocalizedString("media.retry", comment: "")) { probe() }
                 .neoButton(bg: Neo.yellow)
         }
         .neoCard(bg: Neo.red.opacity(0.2))

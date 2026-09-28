@@ -17,13 +17,13 @@ enum SidebarSelection: String, Hashable, CaseIterable {
 
     var localizedTitle: String {
         switch self {
-        case .downloads: String(localized: "nav.downloads")
-        case .torrents: String(localized: "nav.torrents")
-        case .media: String(localized: "nav.media")
-        case .grabber: String(localized: "nav.grabber")
-        case .history: String(localized: "nav.history")
-        case .scheduler: String(localized: "nav.scheduler")
-        case .settings: String(localized: "nav.settings")
+        case .downloads: NSLocalizedString("nav.downloads", comment: "")
+        case .torrents: NSLocalizedString("nav.torrents", comment: "")
+        case .media: NSLocalizedString("nav.media", comment: "")
+        case .grabber: NSLocalizedString("nav.grabber", comment: "")
+        case .history: NSLocalizedString("nav.history", comment: "")
+        case .scheduler: NSLocalizedString("nav.scheduler", comment: "")
+        case .settings: NSLocalizedString("nav.settings", comment: "")
         }
     }
 }

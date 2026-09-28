@@ -125,7 +125,7 @@ public enum MediaProbe {
         // Best: highest video + best audio merged.
         if let v = videos.compactMap(\.filesize).max() {
             presets.append(MediaPreset(
-                id: "best", label: String(localized: "media.preset.best"),
+                id: "best", label: NSLocalizedString("media.preset.best", comment: ""),
                 formatSpec: "bv*+ba/b",
                 estimatedSize: v + (bestAudioSize ?? 0)))
         }
@@ -134,12 +134,12 @@ public enum MediaProbe {
         // lower cap), so 4K/1440p appear only when available and lower rows
         // never duplicate a higher one.
         let rows: [(id: String, label: String, lower: Int, cap: Int)] = [
-            ("2160p", String(localized: "media.preset.2160p"), 1440, 2160),
-            ("1440p", String(localized: "media.preset.1440p"), 1080, 1440),
-            ("1080p", String(localized: "media.preset.1080p"), 720, 1080),
-            ("720p", String(localized: "media.preset.720p"), 480, 720),
-            ("480p", String(localized: "media.preset.480p"), 360, 480),
-            ("360p", String(localized: "media.preset.360p"), 0, 360),
+            ("2160p", NSLocalizedString("media.preset.2160p", comment: ""), 1440, 2160),
+            ("1440p", NSLocalizedString("media.preset.1440p", comment: ""), 1080, 1440),
+            ("1080p", NSLocalizedString("media.preset.1080p", comment: ""), 720, 1080),
+            ("720p", NSLocalizedString("media.preset.720p", comment: ""), 480, 720),
+            ("480p", NSLocalizedString("media.preset.480p", comment: ""), 360, 480),
+            ("360p", NSLocalizedString("media.preset.360p", comment: ""), 0, 360),
         ]
         for (id, label, lower, cap) in rows {
             if let size = sizeFor(bucket: (lower, cap)) {
@@ -151,7 +151,7 @@ public enum MediaProbe {
         }
         if !audios.isEmpty {
             presets.append(MediaPreset(
-                id: "audio", label: String(localized: "media.preset.audio"),
+                id: "audio", label: NSLocalizedString("media.preset.audio", comment: ""),
                 formatSpec: "bestaudio",
                 isAudioOnly: true,
                 estimatedSize: bestAudioSize))

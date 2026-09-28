@@ -24,7 +24,7 @@ struct DownloadsView: View {
             } else {
                 HStack {
                     Spacer()
-                    Button(String(localized: "downloads.add")) {
+                    Button(NSLocalizedString("downloads.add", comment: "")) {
                         showingAdd = true
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
@@ -40,7 +40,7 @@ struct DownloadsView: View {
             }
         }
         .padding(12)
-        .navigationTitle(String(localized: "downloads.title"))
+        .navigationTitle(NSLocalizedString("downloads.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddDownloadSheet()
         }
@@ -48,14 +48,14 @@ struct DownloadsView: View {
             // engine.remove drops the record and deletes the partial
             // (.grabbit-part) file; a finished file on disk is kept.
             Alert(
-                title: Text(String(localized: "downloads.remove.title")),
+                title: Text(NSLocalizedString("downloads.remove.title", comment: "")),
                 message: Text(item.state == .completed
-                    ? String(localized: "downloads.remove.keepFile")
-                    : String(localized: "downloads.remove.deletePartial")),
-                primaryButton: .destructive(Text(String(localized: "common.delete"))) {
+                    ? NSLocalizedString("downloads.remove.keepFile", comment: "")
+                    : NSLocalizedString("downloads.remove.deletePartial", comment: "")),
+                primaryButton: .destructive(Text(NSLocalizedString("common.delete", comment: ""))) {
                     engine.remove(item.id)
                 },
-                secondaryButton: .cancel(Text(String(localized: "common.cancel")))
+                secondaryButton: .cancel(Text(NSLocalizedString("common.cancel", comment: "")))
             )
         }
         .sheet(item: $detailsSubject) { subject in
@@ -67,14 +67,14 @@ struct DownloadsView: View {
 
     private var recoveryBanner: some View {
         HStack(spacing: 10) {
-            Text("\(String(localized: "downloads.recovered.title")): \(engine.recoveredCount)")
+            Text("\(NSLocalizedString("downloads.recovered.title", comment: "")): \(engine.recoveredCount)")
                 .font(.headline.weight(.bold))
             Spacer()
-            Button(String(localized: "downloads.resumeAll")) {
+            Button(NSLocalizedString("downloads.resumeAll", comment: "")) {
                 engine.resumeAllInterrupted()
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-            Button(String(localized: "common.close")) {
+            Button(NSLocalizedString("common.close", comment: "")) {
                 engine.dismissRecovery()
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
@@ -90,13 +90,13 @@ struct DownloadsView: View {
             Image(systemName: "tray.and.arrow.down")
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
-            Text(String(localized: "downloads.empty.title"))
+            Text(NSLocalizedString("downloads.empty.title", comment: ""))
                 .font(.title2.weight(.heavy))
-            Text(String(localized: "downloads.empty.hint"))
+            Text(NSLocalizedString("downloads.empty.hint", comment: ""))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(String(localized: "downloads.add")) {
+            Button(NSLocalizedString("downloads.add", comment: "")) {
                 showingAdd = true
             }
             .neoButton(bg: Neo.yellow)
@@ -136,19 +136,19 @@ struct DownloadsView: View {
                     .lineLimit(2)
             }
 
-            Text(String(localized: "downloads.segments"))
+            Text(NSLocalizedString("downloads.segments", comment: ""))
                 .font(.caption2.weight(.bold))
                 .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             SegmentedProgressBar(segments: item.segments)
 
             HStack {
-                Text("\(String(localized: "downloads.speed")): \(formatSpeed(item.speedBytesPerSec))")
+                Text("\(NSLocalizedString("downloads.speed", comment: "")): \(formatSpeed(item.speedBytesPerSec))")
                 Text("•")
-                Text("\(String(localized: "downloads.eta")): \(formatETA(item.etaSeconds))")
+                Text("\(NSLocalizedString("downloads.eta", comment: "")): \(formatETA(item.etaSeconds))")
                 if item.state == .downloading {
                     Text("•")
-                    Text("\(item.segments.count) \(String(localized: "downloads.connections"))")
+                    Text("\(item.segments.count) \(NSLocalizedString("downloads.connections", comment: ""))")
                 }
                 Spacer()
                 Text("\(Int((item.progress * 100).rounded()))%")

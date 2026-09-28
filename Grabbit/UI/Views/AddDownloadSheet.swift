@@ -34,21 +34,21 @@ struct AddDownloadSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(localized: "add.title"))
+            Text(NSLocalizedString("add.title", comment: ""))
                 .font(.title2.weight(.heavy))
 
             // MARK: URL
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "add.url.label"))
+                Text(NSLocalizedString("add.url.label", comment: ""))
                     .font(.headline)
                 HStack(spacing: 8) {
                     TextField(
-                        String(localized: "add.url.label"),
+                        NSLocalizedString("add.url.label", comment: ""),
                         text: $urlString,
-                        prompt: Text(String(localized: "add.url.placeholder"))
+                        prompt: Text(NSLocalizedString("add.url.placeholder", comment: ""))
                     )
                     .textFieldStyle(.roundedBorder)
-                    Button(String(localized: "common.paste")) { pasteURL() }
+                    Button(NSLocalizedString("common.paste", comment: "")) { pasteURL() }
                         .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 }
                 siteBadge
@@ -56,19 +56,19 @@ struct AddDownloadSheet: View {
 
             // MARK: Filename (optional rename)
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "add.filename.label"))
+                Text(NSLocalizedString("add.filename.label", comment: ""))
                     .font(.headline)
                 TextField(
-                    String(localized: "add.filename.label"),
+                    NSLocalizedString("add.filename.label", comment: ""),
                     text: $customFilename,
-                    prompt: Text(String(localized: "add.filename.placeholder"))
+                    prompt: Text(NSLocalizedString("add.filename.placeholder", comment: ""))
                 )
                 .textFieldStyle(.roundedBorder)
             }
 
             // MARK: Quality chips
             VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "add.quality"))
+                Text(NSLocalizedString("add.quality", comment: ""))
                     .font(.headline)
                 HStack(spacing: 8) {
                     ForEach(qualities, id: \.self) { q in
@@ -84,14 +84,14 @@ struct AddDownloadSheet: View {
             }
 
             // MARK: Format
-            Picker(String(localized: "add.format"), selection: $format) {
-                Text(String(localized: "add.format.video")).tag(MediaFormat.video)
-                Text(String(localized: "add.format.audio")).tag(MediaFormat.audio)
+            Picker(NSLocalizedString("add.format", comment: ""), selection: $format) {
+                Text(NSLocalizedString("add.format.video", comment: "")).tag(MediaFormat.video)
+                Text(NSLocalizedString("add.format.audio", comment: "")).tag(MediaFormat.audio)
             }
             .pickerStyle(.segmented)
 
             // MARK: Category
-            Picker(String(localized: "add.category"), selection: $category) {
+            Picker(NSLocalizedString("add.category", comment: ""), selection: $category) {
                 ForEach(DownloadCategory.allCases, id: \.self) { c in
                     Text(c.localizedName).tag(c)
                 }
@@ -100,7 +100,7 @@ struct AddDownloadSheet: View {
 
             // MARK: Destination
             HStack {
-                Text(String(localized: "add.destination"))
+                Text(NSLocalizedString("add.destination", comment: ""))
                     .font(.headline)
                 Spacer()
                 Text(destinationURL.path)
@@ -108,7 +108,7 @@ struct AddDownloadSheet: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Button(String(localized: "add.destination.choose")) {
+                Button(NSLocalizedString("add.destination.choose", comment: "")) {
                     if let url = chooseDirectory(initial: destinationURL) {
                         // Per-download override; the category default in Settings is untouched.
                         destinationOverride = url
@@ -131,13 +131,13 @@ struct AddDownloadSheet: View {
             // MARK: Request headers (optional)
             // For downloads behind a login: the browser extension captures
             // these automatically, but a manual add can supply them here.
-            DisclosureGroup(String(localized: "add.headers.title")) {
+            DisclosureGroup(NSLocalizedString("add.headers.title", comment: "")) {
                 VStack(spacing: 8) {
                     headerField(label: "Referer", text: $referer)
                     headerField(label: "Cookie", text: $cookie)
                     headerField(label: "Authorization", text: $authorization)
                     headerField(label: "User-Agent", text: $userAgent)
-                    Text(String(localized: "add.headers.note"))
+                    Text(NSLocalizedString("add.headers.note", comment: ""))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -149,12 +149,12 @@ struct AddDownloadSheet: View {
 
             // MARK: Actions
             HStack {
-                Button(String(localized: "add.cancel")) {
+                Button(NSLocalizedString("add.cancel", comment: "")) {
                     dismiss()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                Button(String(localized: "add.start")) {
+                Button(NSLocalizedString("add.start", comment: "")) {
                     startDownload()
                 }
                 .neoButton(bg: Neo.green)
@@ -184,11 +184,11 @@ struct AddDownloadSheet: View {
     private var siteBadge: some View {
         Group {
             if urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(String(localized: "add.site.unknown"))
+                Text(NSLocalizedString("add.site.unknown", comment: ""))
                     .neoBadge(bg: Neo.paper(scheme))
             } else {
                 HStack(spacing: 6) {
-                    Text(String(format: String(localized: "add.site.detected"), detectedSite.rawValue.capitalized))
+                    Text(String(format: NSLocalizedString("add.site.detected", comment: ""), detectedSite.rawValue.capitalized))
                         .font(.caption.weight(.bold))
                     SourceBadge(site: detectedSite)
                 }
@@ -197,7 +197,7 @@ struct AddDownloadSheet: View {
     }
 
     private func qualityLabel(for q: String) -> String {
-        q == "best" ? String(localized: "add.quality.best") : q
+        q == "best" ? NSLocalizedString("add.quality.best", comment: "") : q
     }
 
     private func headerField(label: String, text: Binding<String>) -> some View {
@@ -233,7 +233,7 @@ struct AddDownloadSheet: View {
         isAdding = true
         let lastComponent = url.lastPathComponent
         let serverName = (lastComponent.isEmpty || lastComponent == "/")
-            ? String(localized: "common.unknown")
+            ? NSLocalizedString("common.unknown", comment: "")
             : lastComponent
         let custom = customFilename.trimmingCharacters(in: .whitespacesAndNewlines)
         let filename = custom.isEmpty ? serverName : custom

@@ -43,17 +43,17 @@ struct HistoryView: View {
             }
         }
         .padding(12)
-        .navigationTitle(String(localized: "history.title"))
+        .navigationTitle(NSLocalizedString("history.title", comment: ""))
         .alert(
-            String(localized: "history.clear.confirm.title"),
+            NSLocalizedString("history.clear.confirm.title", comment: ""),
             isPresented: $showingClearConfirm
         ) {
-            Button(String(localized: "history.clear.confirm.delete"), role: .destructive) {
+            Button(NSLocalizedString("history.clear.confirm.delete", comment: ""), role: .destructive) {
                 history.clear()
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {}
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
         } message: {
-            Text(String(localized: "history.clear.confirm.message"))
+            Text(NSLocalizedString("history.clear.confirm.message", comment: ""))
         }
     }
 
@@ -65,11 +65,11 @@ struct HistoryView: View {
 
     private var header: some View {
         HStack {
-            Text(String(localized: "history.title"))
+            Text(NSLocalizedString("history.title", comment: ""))
                 .font(.title2.weight(.heavy))
             Spacer()
             if !history.entries.isEmpty {
-                Button(String(localized: "history.clear")) {
+                Button(NSLocalizedString("history.clear", comment: "")) {
                     showingClearConfirm = true
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
@@ -81,7 +81,7 @@ struct HistoryView: View {
 
     private var filterChips: some View {
         HStack(spacing: 8) {
-            filterChip(label: String(localized: "history.filter.all"),
+            filterChip(label: NSLocalizedString("history.filter.all", comment: ""),
                        count: history.count(for: nil),
                        selected: filter == nil) {
                 filter = nil
@@ -134,9 +134,9 @@ struct HistoryView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
-            Text(String(localized: "history.empty.title"))
+            Text(NSLocalizedString("history.empty.title", comment: ""))
                 .font(.title2.weight(.heavy))
-            Text(String(localized: "history.empty.hint"))
+            Text(NSLocalizedString("history.empty.hint", comment: ""))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -201,8 +201,8 @@ struct HistoryView: View {
                 Image(systemName: "folder")
             }
             .neoIconButton(bg: Neo.blue)
-            .help(String(localized: "task.action.openFolder"))
-            .accessibilityLabel(String(localized: "task.action.openFolder"))
+            .help(NSLocalizedString("task.action.openFolder", comment: ""))
+            .accessibilityLabel(NSLocalizedString("task.action.openFolder", comment: ""))
         }
         // Copy source link
         if !entry.sourceURL.isEmpty {
@@ -212,8 +212,8 @@ struct HistoryView: View {
                 Image(systemName: "link")
             }
             .neoIconButton(bg: Neo.purple)
-            .help(String(localized: "task.action.copyLink"))
-            .accessibilityLabel(String(localized: "task.action.copyLink"))
+            .help(NSLocalizedString("task.action.copyLink", comment: ""))
+            .accessibilityLabel(NSLocalizedString("task.action.copyLink", comment: ""))
         }
         // Re-download
         if canRedownload(entry) {
@@ -223,8 +223,8 @@ struct HistoryView: View {
                 Image(systemName: "arrow.clockwise")
             }
             .neoIconButton(bg: Neo.green)
-            .help(String(localized: "history.redownload"))
-            .accessibilityLabel(String(localized: "history.redownload"))
+            .help(NSLocalizedString("history.redownload", comment: ""))
+            .accessibilityLabel(NSLocalizedString("history.redownload", comment: ""))
         }
         // Delete entry
         Button {
@@ -233,8 +233,8 @@ struct HistoryView: View {
             Image(systemName: "trash")
         }
         .neoIconButton(bg: Neo.red)
-        .help(String(localized: "common.delete"))
-        .accessibilityLabel(String(localized: "common.delete"))
+        .help(NSLocalizedString("common.delete", comment: ""))
+        .accessibilityLabel(NSLocalizedString("common.delete", comment: ""))
     }
 
     // MARK: - Row helpers (pure)

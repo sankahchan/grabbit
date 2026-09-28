@@ -8,17 +8,17 @@ public enum DownloadState: String, Codable, CaseIterable {
     case failed
     case interrupted
 
-    /// Static-key lookup. NOTE: `String(localized: "state.\(rawValue)")`
+    /// Static-key lookup. NOTE: `NSLocalizedString("state.\(rawValue)", comment: "")`
     /// does NOT work — interpolation builds the key "state.%@" which never
     /// matches the catalog, so the raw key leaks into the UI.
     public var localizedName: String {
         switch self {
-        case .queued: String(localized: "state.queued")
-        case .downloading: String(localized: "state.downloading")
-        case .paused: String(localized: "state.paused")
-        case .completed: String(localized: "state.completed")
-        case .failed: String(localized: "state.failed")
-        case .interrupted: String(localized: "state.interrupted")
+        case .queued: NSLocalizedString("state.queued", comment: "")
+        case .downloading: NSLocalizedString("state.downloading", comment: "")
+        case .paused: NSLocalizedString("state.paused", comment: "")
+        case .completed: NSLocalizedString("state.completed", comment: "")
+        case .failed: NSLocalizedString("state.failed", comment: "")
+        case .interrupted: NSLocalizedString("state.interrupted", comment: "")
         }
     }
 }
@@ -32,20 +32,20 @@ public enum DownloadCategory: String, Codable, CaseIterable {
     /// See DownloadState.localizedName — same interpolation pitfall.
     public var localizedName: String {
         switch self {
-        case .video: String(localized: "category.video")
-        case .audio: String(localized: "category.audio")
-        case .document: String(localized: "category.document")
-        case .other: String(localized: "category.other")
+        case .video: NSLocalizedString("category.video", comment: "")
+        case .audio: NSLocalizedString("category.audio", comment: "")
+        case .document: NSLocalizedString("category.document", comment: "")
+        case .other: NSLocalizedString("category.other", comment: "")
         }
     }
 
     /// "settings.folders.video" etc. for the Settings folder rows.
     public var settingsFolderName: String {
         switch self {
-        case .video: String(localized: "settings.folders.video")
-        case .audio: String(localized: "settings.folders.audio")
-        case .document: String(localized: "settings.folders.document")
-        case .other: String(localized: "settings.folders.other")
+        case .video: NSLocalizedString("settings.folders.video", comment: "")
+        case .audio: NSLocalizedString("settings.folders.audio", comment: "")
+        case .document: NSLocalizedString("settings.folders.document", comment: "")
+        case .other: NSLocalizedString("settings.folders.other", comment: "")
         }
     }
 }

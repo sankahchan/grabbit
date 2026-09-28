@@ -3,14 +3,17 @@ import ObjectiveC
 
 /// Instant in-app language switching.
 ///
-/// `String(localized:)` resolves against the main bundle's preferred
-/// localization, which only follows the `AppleLanguages` default at launch
-/// (hence the old "restart required" note — and the confusion when tapping
-/// မြန်မာ appeared to do nothing). By re-pointing the main bundle at a tiny
-/// subclass that serves `localizedString(forKey:)` from the chosen language's
-/// compiled `.lproj`, the whole UI re-localizes the moment the setting
-/// changes. `AppleLanguages` is kept in sync so a relaunch lands on the
-/// same language, and a missing `.lproj` falls back to the default lookup.
+/// The main bundle's `localizedString(forKey:value:table:)` is re-pointed at
+/// a tiny subclass that serves the chosen language's compiled `.lproj`, so
+/// the whole UI re-localizes the moment the setting changes.
+/// `AppleLanguages` is kept in sync so a relaunch lands on the same
+/// language, and a missing `.lproj` falls back to the default lookup.
+///
+/// CRITICAL: app code must use `NSLocalizedString` (or call
+/// `localizedString(forKey:value:table:)` directly). Swift's
+/// `String(localized:)` resolves BELOW the swizzled method and will NOT
+/// follow the in-app language — proven by CI diagnostic 2026-09-28
+/// (direct call → ဆက်တင်များ, String(localized:) → Settings).
 public enum BundleLocalization {
     /// Applies the language immediately. Main-actor only (called from UI).
     public static func apply(_ language: AppLanguage) {
