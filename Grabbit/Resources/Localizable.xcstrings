@@ -3604,6 +3604,125 @@
           }
         }
       }
+    },
+    "settings.runAs": {
+      "comment": "Run As dropdown label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run as"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်ပုံစံ"
+          }
+        }
+      }
+    },
+    "settings.runAs.standard": {
+      "comment": "Run As option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard application"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံမှန် အပလီကေးရှင်း"
+          }
+        }
+      }
+    },
+    "settings.runAs.tray": {
+      "comment": "Run As option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tray application"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tray အပလီကေးရှင်း"
+          }
+        }
+      }
+    },
+    "settings.runAs.hidden": {
+      "comment": "Run As option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide tray application"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tray ဝှက်ထားသော အပလီကေးရှင်း"
+          }
+        }
+      }
+    },
+    "settings.runAs.hiddenNote": {
+      "comment": "Run As hidden mode note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Dock icon or menu bar icon. The window opens at launch — reopen the app to show it again."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock icon နှင့် menu bar icon မပြပါ။ App စဖွင့်ချိန်တွင် window ပွင့်လာမည် — ပြန်ကြည့်လိုလျှင် app ကို ပြန်ဖွင့်ပါ။"
+          }
+        }
+      }
+    },
+    "tray.open": {
+      "comment": "Tray menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ဖွင့်မည်"
+          }
+        }
+      }
+    },
+    "tray.quit": {
+      "comment": "Tray menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ပိတ်မည်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

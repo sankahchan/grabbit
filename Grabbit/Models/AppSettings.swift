@@ -13,6 +13,14 @@ public enum ThemeMode: String, Codable, CaseIterable {
     case dark
 }
 
+/// How Grabbit presents itself: a normal Dock app, a menu-bar (tray)
+/// app with live speed, or fully hidden (no Dock, no menu bar icon).
+public enum RunMode: String, Codable, CaseIterable {
+    case standard
+    case tray
+    case hidden
+}
+
 public struct AppSettings: Codable {
     public var language: AppLanguage = .system
     public var theme: ThemeMode = .system
@@ -43,6 +51,8 @@ public struct AppSettings: Codable {
     /// Max simultaneously downloading tasks (downloads engine queue +
     /// aria2 max-concurrent-downloads). At least 1.
     public var maxActiveTasks: Int = 5
+    /// Standard (Dock), tray (menu bar, no Dock), or hidden (neither).
+    public var runMode: RunMode = .standard
 
     public static var `default`: AppSettings {
         AppSettings(folders: [
@@ -66,6 +76,7 @@ extension AppSettings {
         case autoUpdateTrackers
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
+        case runMode
     }
 
     public init(from decoder: Decoder) throws {
@@ -88,6 +99,7 @@ extension AppSettings {
         openAtLogin = try c.decodeIfPresent(Bool.self, forKey: .openAtLogin) ?? false
         keepWindowFrame = try c.decodeIfPresent(Bool.self, forKey: .keepWindowFrame) ?? false
         maxActiveTasks = try c.decodeIfPresent(Int.self, forKey: .maxActiveTasks) ?? 5
+        runMode = try c.decodeIfPresent(RunMode.self, forKey: .runMode) ?? .standard
     }
 }
 

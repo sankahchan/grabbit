@@ -102,12 +102,14 @@ struct TorrentsView: View {
     private var vpnWarningCard: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.shield.fill")
-                .foregroundStyle(Neo.red)
             Text(NSLocalizedString("torrents.vpn.suspended", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
         }
-        .neoCard(bg: Neo.red.opacity(0.15))
+        // Solid fill + onAccent: the old translucent fill composited to a
+        // dark tone with dark text on it (unreadable).
+        .foregroundStyle(Neo.onAccent(Neo.red, scheme: scheme))
+        .neoCard(bg: Neo.red)
     }
 
     // MARK: - Empty state

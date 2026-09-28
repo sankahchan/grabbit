@@ -67,6 +67,7 @@ struct SettingsView: View {
             downloadEngine.kickQueue()
             Task { await torrentEngine.applyMaxActiveTasks() }
         }
+        .onChange(of: store.settings.runMode) { _, _ in store.save() }
     }
 
     // MARK: - Language
@@ -135,6 +136,7 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
             Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
             .toggleStyle(NeoToggleStyle())
+            runAsRow(settings: settings)
             Divider()
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
@@ -222,6 +224,32 @@ struct SettingsView: View {
             magnetHandlerRow()
         }
         .neoCard()
+    }
+
+    // MARK: - Run As (tray mode)
+
+    /// Standard / tray / hidden dropdown. The mode itself is applied in
+    /// GrabbitApp (activation policy + menu bar extra).
+    private func runAsRow(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(NSLocalizedString("settings.runAs", comment: ""))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Picker("", selection: settings.runMode) {
+                    Text(NSLocalizedString("settings.runAs.standard", comment: "")).tag(RunMode.standard)
+                    Text(NSLocalizedString("settings.runAs.tray", comment: "")).tag(RunMode.tray)
+                    Text(NSLocalizedString("settings.runAs.hidden", comment: "")).tag(RunMode.hidden)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+            }
+            if settings.wrappedValue.runMode == .hidden {
+                Text(NSLocalizedString("settings.runAs.hiddenNote", comment: ""))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // MARK: - Startup

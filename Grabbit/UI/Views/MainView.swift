@@ -12,6 +12,8 @@ private struct WindowFrameSaver: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async { [weak view, enabled, name] in
             guard let window = view?.window else { return }
+            // Tray mode needs a handle to show the window from the menu.
+            MainWindowHolder.window = window
             if enabled {
                 window.setFrameUsingName(name)
                 window.setFrameAutosaveName(name)

@@ -238,27 +238,31 @@ struct MediaView: View {
                     .lineLimit(1)
             }
             .font(.headline.weight(.heavy))
-            .foregroundStyle(Neo.ink(scheme))
             Button(NSLocalizedString("media.new", comment: "")) {
                 urlText = ""
                 Task { await media.reset() }
             }
             .neoButton(bg: Neo.paper(scheme))
         }
-        .neoCard(bg: Neo.green.opacity(0.25))
+        // Solid fill + onAccent: the old translucent fill composited to a
+        // dark tone with dark text on it (unreadable).
+        .foregroundStyle(Neo.onAccent(Neo.green, scheme: scheme))
+        .neoCard(bg: Neo.green)
     }
 
     private func errorCard(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(NSLocalizedString("media.failed", comment: ""), systemImage: "exclamationmark.triangle.fill")
                 .font(.headline.weight(.heavy))
-                .foregroundStyle(Neo.ink(scheme))
             Text(message)
                 .font(.subheadline)
             Button(NSLocalizedString("media.retry", comment: "")) { probe() }
                 .neoButton(bg: Neo.yellow)
         }
-        .neoCard(bg: Neo.red.opacity(0.2))
+        // Solid fill + onAccent: the old translucent fill composited to a
+        // dark tone with dark text on it (unreadable).
+        .foregroundStyle(Neo.onAccent(Neo.red, scheme: scheme))
+        .neoCard(bg: Neo.red)
     }
 
     // MARK: - Formatting

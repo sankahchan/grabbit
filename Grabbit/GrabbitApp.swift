@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import Sparkle
 import Observation
 
@@ -80,6 +81,12 @@ struct GrabbitApp: App {
                 .environment(historyStore)
                 .environment(settings)
                 .onOpenURL { url in
+                    // In tray mode the window is hidden — a link click
+                    // should bring it forward so the new task is visible.
+                    if settings.settings.runMode == .tray {
+                        MainWindowHolder.window?.makeKeyAndOrderFront(nil)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
                     // magnet:?xt=… — handed to the torrent engine (clicking a
                     // magnet link anywhere opens Grabbit).
                     if url.scheme?.lowercased() == "magnet" {
@@ -102,6 +109,7 @@ struct GrabbitApp: App {
                     }
                 }
                 .onAppear {
+                    applyRunMode(initial: true)
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
                     if CommandLine.arguments.contains("--native-messaging") {
@@ -123,6 +131,44 @@ struct GrabbitApp: App {
                         nativeMessagingHost = host
                     }
                 }
+                .onChange(of: settings.settings.runMode) { _, _ in
+                    applyRunMode(initial: false)
+                }
+        }
+        // Tray mode: menu bar extra with live speed. Inserted/removed when
+        // the Run As setting changes — no relaunch needed.
+        if settings.settings.runMode == .tray {
+            MenuBarExtra {
+                TrayMenuView()
+                    .environment(downloadEngine)
+                    .environment(torrentEngine)
+            } label: {
+                TrayLabelView()
+                    .environment(downloadEngine)
+                    .environment(torrentEngine)
+            }
+        }
+    }
+
+    // MARK: - Run As (tray mode)
+
+    private static var initialRunModeApplied = false
+
+    /// Tray/hidden drop the Dock icon (activation policy .accessory).
+    /// Tray mode also starts with the main window hidden — the app lives
+    /// in the menu bar until opened from the menu or a link click.
+    private func applyRunMode(initial: Bool) {
+        let mode = settings.settings.runMode
+        NSApp.setActivationPolicy(mode == .standard ? .regular : .accessory)
+        if initial, !Self.initialRunModeApplied {
+            Self.initialRunModeApplied = true
+            if mode == .tray {
+                // WindowFrameSaver captures the window on the next
+                // main-loop turn; hide after that so capture wins.
+                DispatchQueue.main.async {
+                    MainWindowHolder.window?.orderOut(nil)
+                }
+            }
         }
     }
 }
