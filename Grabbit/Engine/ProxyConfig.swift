@@ -6,14 +6,14 @@ import Foundation
 /// through the proxy) and to torrents (aria2 `--http-proxy/--https-proxy`
 /// / `--all-proxy` options). `.none` means direct connection; the
 /// URLSession-based size probe still honors the *system* proxy on its own.
-struct ProxyConfig: Equatable {
-    var mode: ProxyMode = .none
-    var host: String = ""
-    var port: Int = 8080
-    var username: String = ""
-    var password: String = ""
+public struct ProxyConfig: Equatable {
+    public var mode: ProxyMode = .none
+    public var host: String = ""
+    public var port: Int = 8080
+    public var username: String = ""
+    public var password: String = ""
 
-    init(mode: ProxyMode = .none, host: String = "", port: Int = 8080,
+    public init(mode: ProxyMode = .none, host: String = "", port: Int = 8080,
          username: String = "", password: String = "")
     {
         self.mode = mode
@@ -23,7 +23,7 @@ struct ProxyConfig: Equatable {
         self.password = password
     }
 
-    init(settings: AppSettings) {
+    public init(settings: AppSettings) {
         self.init(
             mode: settings.proxyMode, host: settings.proxyHost,
             port: settings.proxyPort, username: settings.proxyUsername,
@@ -31,12 +31,12 @@ struct ProxyConfig: Equatable {
     }
 
     /// A proxy is only used when a mode is selected AND a host is set.
-    var isEnabled: Bool { mode != .none && !host.isEmpty }
+    public var isEnabled: Bool { mode != .none && !host.isEmpty }
 
-    var hasCredentials: Bool { !username.isEmpty || !password.isEmpty }
+    public var hasCredentials: Bool { !username.isEmpty || !password.isEmpty }
 
     /// Value for the `Proxy-Authorization` header on an HTTP CONNECT.
-    func proxyAuthorizationValue() -> String? {
+    public func proxyAuthorizationValue() -> String? {
         guard hasCredentials else { return nil }
         let raw = "\(username):\(password)"
         guard let data = raw.data(using: .utf8) else { return nil }
@@ -45,7 +45,7 @@ struct ProxyConfig: Equatable {
 
     /// aria2 command-line proxy options for a fresh daemon spawn.
     /// Credentials are percent-encoded so `user:pass@` never breaks the URL.
-    func aria2Arguments() -> [String] {
+    public func aria2Arguments() -> [String] {
         guard isEnabled else { return [] }
         switch mode {
         case .none:
@@ -62,7 +62,7 @@ struct ProxyConfig: Equatable {
     /// daemons that were spawned before the proxy existed). When the proxy
     /// is disabled, empty strings are pushed — aria2 treats "" as
     /// "override with no proxy", so a previously-set proxy is cleared.
-    func aria2GlobalOptions() -> [String: String] {
+    public func aria2GlobalOptions() -> [String: String] {
         switch mode {
         case .none:
             return ["http-proxy": "", "https-proxy": "", "all-proxy": ""]
@@ -94,7 +94,7 @@ struct ProxyConfig: Equatable {
     /// Authenticated proxies are not supported on the probe path (URLSession
     /// needs an auth challenge handler); the probe just degrades to
     /// unknown-size while the actual download still authenticates.
-    func urlSessionProxyDictionary() -> [AnyHashable: Any]? {
+    public func urlSessionProxyDictionary() -> [AnyHashable: Any]? {
         guard isEnabled else { return nil }
         switch mode {
         case .none:
@@ -120,11 +120,11 @@ struct ProxyConfig: Equatable {
 
 /// Pure HTTP CONNECT / SOCKS5 handshake message builders and parsers.
 /// Kept free of I/O so the wire format is unit-testable byte-for-byte.
-enum ProxyHandshake {
+public enum ProxyHandshake {
     // MARK: - HTTP CONNECT
 
     /// `CONNECT target:port HTTP/1.1` request (+ optional auth).
-    static func connectRequest(targetHost: String, targetPort: Int,
+connectRequest(targetHost: String, targetPort: Int,
                                proxy: ProxyConfig) -> Data
     {
         var lines = [
@@ -152,7 +152,7 @@ enum ProxyHandshake {
 
     // MARK: - SOCKS5 (RFC 1928 / RFC 1929)
 
-    enum Socks5Method: UInt8 {
+    public enum Socks5Method: UInt8 {
         case noAuth = 0x00
         case userPass = 0x02
     }
