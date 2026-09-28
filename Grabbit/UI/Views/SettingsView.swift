@@ -250,6 +250,8 @@ struct SettingsView: View {
             Divider()
             subHeader(NSLocalizedString("settings.section.taskManagement", comment: ""))
             maxActiveTasksRow(settings: settings)
+            Divider()
+            completionSection(settings: settings)
         }
         .neoCard()
     }
@@ -303,8 +305,6 @@ struct SettingsView: View {
             Divider()
             watchSection()
             Divider()
-            completionSection(settings: settings)
-            Divider()
             proxySection(settings: settings)
         }
         .neoCard()
@@ -312,7 +312,7 @@ struct SettingsView: View {
 
     // MARK: - Backlog #9: after-downloads-finish actions
 
-    /// Renders inside the Downloads card (not as a standalone card).
+    /// Renders inside the Basic card (not as a standalone card).
     private func completionSection(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             subHeader(NSLocalizedString("settings.completion.title", comment: ""))
