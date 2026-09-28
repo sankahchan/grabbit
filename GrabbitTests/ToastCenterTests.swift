@@ -44,6 +44,9 @@ final class ToastCenterTests: XCTestCase {
         XCTAssertEqual(center.toasts.count, 1)
     }
 
+    /// Async test methods run off-main by default; @MainActor keeps
+    /// push/dismiss synchronous so the assertions are deterministic.
+    @MainActor
     func testAutoDismiss() async throws {
         let center = ToastCenter(dismissAfter: 0.05)
         center.push(makeToast())
@@ -52,6 +55,7 @@ final class ToastCenterTests: XCTestCase {
         XCTAssertTrue(center.toasts.isEmpty)
     }
 
+    @MainActor
     func testManualDismissCancelsAutoDismiss() async throws {
         let center = ToastCenter(dismissAfter: 0.05)
         let toast = makeToast()
@@ -65,7 +69,8 @@ final class ToastCenterTests: XCTestCase {
     /// toast without tripping @Observable's main-thread expectation.
     func testPushFromBackgroundThread() async throws {
         let center = ToastCenter()
-        await Task.detached { center.push(self.makeToast()) }.value
+        let toast = makeToast()
+        await Task.detached { center.push(toast) }.value
         try await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertEqual(center.toasts.count, 1)
     }
