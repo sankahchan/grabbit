@@ -27,6 +27,11 @@ final class CompletionActionCenterTests: XCTestCase {
             settings: settings,
             activeTaskCount: { active },
             executor: { fired.append(($0, $1)) })
+        // One task still running: settling the other must not fire.
+        center.taskDidSettle()
+        XCTAssertTrue(fired.isEmpty)
+        // The last task settles (active now excludes it): fires once.
+        active = 0
         center.taskDidSettle()
         XCTAssertEqual(fired.count, 1)
         XCTAssertEqual(fired[0].0, .sleep)

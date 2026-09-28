@@ -556,7 +556,6 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.completionSoundEnabled {
                             ToastCenter.playSound(for: .completed)
                         }
-                        completionCenter?.taskDidSettle()
                         if settings.settings.autoClearFinished {
                             toPurge.append((item.id, st.gid))
                         }
@@ -580,10 +579,14 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.completionSoundEnabled {
                             ToastCenter.playSound(for: .failed)
                         }
-                        completionCenter?.taskDidSettle()
                     }
                     item.state = newState
                     changed = true
+                    // Backlog #9: after the state flip, so the settling
+                    // torrent no longer counts as active.
+                    if newState == .completed || newState == .failed {
+                        completionCenter?.taskDidSettle()
+                    }
                 }
                 if st.status == "error" {
                     let message = st.errorDisplay
