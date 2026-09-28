@@ -258,7 +258,7 @@ public final class Aria2Daemon {
         if !FileManager.default.fileExists(atPath: sessionPath) {
             FileManager.default.createFile(atPath: sessionPath, contents: nil)
         }
-        var args = [
+        var args: [String] = [
             "--enable-rpc",
             "--rpc-listen-all=false",
             "--rpc-secret=\(secret)",
@@ -274,7 +274,10 @@ public final class Aria2Daemon {
             "--dht-file-path6=\(state)/dht6.dat",
             "--enable-dht=true",
             "--bt-enable-lpd=true",
-        ] + Self.dhtArgs() + Self.btTrackerArgs() + [
+        ]
+        args += Self.dhtArgs()
+        args += Self.btTrackerArgs()
+        args += [
             "--file-allocation=none",
             "--allow-overwrite=true",
             "--log-level=warn",
@@ -282,7 +285,11 @@ public final class Aria2Daemon {
             "--seed-ratio=\(String(format: "%.1f", seedRatio))",
             "--seed-time=\(seedTimeMinutes)",
             "--max-concurrent-downloads=\(max(1, maxConcurrentDownloads))",
-        ] + performanceProfile.launchArgs + proxy.aria2Arguments()
+        ]
+        // Performance profile (balanced/high/maximum): separate appends keep
+        // the type-checker fast — one long `+` chain times it out.
+        args += performanceProfile.launchArgs
+        args += proxy.aria2Arguments()
         if let interfaceName, !interfaceName.isEmpty {
             // VPN kill-switch: bind every socket to the VPN interface.
             args.append("--interface=\(interfaceName)")
