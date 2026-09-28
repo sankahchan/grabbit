@@ -704,27 +704,33 @@ final class TrackerProberTests: XCTestCase {
         let txID: UInt32 = 0x12345678
         let req = TrackerProber.connectRequest(transactionID: txID)
         XCTAssertEqual(req.count, 16)
-        let proto = req.withUnsafeBytes { $0.load(as: UInt64.self).bigEndian }
-        XCTAssertEqual(proto, 0x41727101980)
-        let action = req.withUnsafeBytes { $0.load(fromByteOffset: 8, as: UInt32.self).bigEndian }
-        XCTAssertEqual(action, 0)
-        let echo = req.withUnsafeBytes { $0.load(fromByteOffset: 12, as: UInt32.self).bigEndian }
-        XCTAssertEqual(echo, txID)
+        // Byte-wise decode — no unsafe aligned loads.
+        let bytes = Array(req)
+        func u64(_ r: Range<Int>) -> UInt64 {
+            r.reduce(UInt64(0)) { $0 << 8 | UInt64(bytes[$1]) }
+        }
+        func u32(_ r: Range<Int>) -> UInt32 {
+            r.reduce(UInt32(0)) { $0 << 8 | UInt32(bytes[$1]) }
+        }
+        XCTAssertEqual(u64(0..<8), 0x41727101980)
+        XCTAssertEqual(u32(8..<12), 0)
+        XCTAssertEqual(u32(12..<16), txID)
     }
 
     func testParseConnectResponse() {
         let txID: UInt32 = 0xAABBCCDD
-        var resp = Data(count: 16)
-        resp.withUnsafeMutableBytes { raw in
-            raw.storeBytes(of: UInt32(0).bigEndian, as: UInt32.self)
-            raw.storeBytes(of: txID.bigEndian, as: UInt32.self, at: 4)
-            raw.storeBytes(of: UInt64(0x1234).bigEndian, as: UInt64.self, at: 8)
-        }
+        // Byte-wise packet construction — no unsafe aligned loads, so this
+        // is safe regardless of Data's buffer alignment.
+        var bytes: [UInt8] = []
+        bytes += [0, 0, 0, 0]                       // action = 0 (connect)
+        bytes += [0xAA, 0xBB, 0xCC, 0xDD]           // transaction id
+        bytes += [0, 0, 0, 0, 0, 0, 0x12, 0x34]     // connection id
+        let resp = Data(bytes)
         XCTAssertEqual(TrackerProber.parseConnectResponse(resp), txID)
         // Wrong action.
-        var bad = resp
-        bad.withUnsafeMutableBytes { $0.storeBytes(of: UInt32(3).bigEndian, as: UInt32.self) }
-        XCTAssertNil(TrackerProber.parseConnectResponse(bad))
+        var badBytes = bytes
+        badBytes[3] = 3
+        XCTAssertNil(TrackerProber.parseConnectResponse(Data(badBytes)))
         // Truncated.
         XCTAssertNil(TrackerProber.parseConnectResponse(Data(count: 8)))
     }

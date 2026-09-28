@@ -56,7 +56,7 @@ public struct AppSettings: Codable {
     /// Shell command for the `.runCommand` completion action.
     public var completionCommand = ""
     public var defaultConnections = 16
-    public var folders: [DownloadCategory: String]
+    public var folders: [DownloadCategory: String] = [:]
     // Torrents (Phase 4).
     public var vpnKillSwitchEnabled = false
     /// Interface torrents are bound to when the kill-switch is on (e.g. "utun3").
