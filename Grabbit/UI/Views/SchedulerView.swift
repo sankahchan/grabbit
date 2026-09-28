@@ -12,7 +12,7 @@ enum ScheduleAction: String, CaseIterable, Codable {
 }
 
 public struct ScheduleEntry: Identifiable, Codable {
-    var id: UUID = UUID()
+    public var id: UUID = UUID()
     var time: Date
     var action: ScheduleAction
     var isEnabled: Bool = true
