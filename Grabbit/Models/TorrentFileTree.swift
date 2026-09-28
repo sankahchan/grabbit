@@ -128,7 +128,10 @@ public enum TorrentFileTree {
                 name: name,
                 size: size,
                 fileIndex: fileIndex,
-                children: children.values.map { $0.node() })
+                // Sort children (dirs first, then name): Dictionary order
+                // is unspecified, and the tree must render deterministically.
+                children: children.values.map { $0.node() }
+                    .sorted(by: TorrentFileTree.sort))
         }
     }
 
