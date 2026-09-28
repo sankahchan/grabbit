@@ -133,7 +133,7 @@ final class FinalizeJournalTests: XCTestCase {
     /// reconcile retry must keep the journal when extraction fails, so the
     /// NEXT launch retries again — never silently dropping the retry.
     @MainActor
-    func testReconcileKeepsJournalWhenExtractRetryFails() throws {
+    func testReconcileKeepsJournalWhenExtractRetryFails() async throws {
         let dir = tmp()
         defer { try? FileManager.default.removeItem(at: dir) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -159,18 +159,15 @@ final class FinalizeJournalTests: XCTestCase {
 
         engine.reconcileFinalizeJournals()
 
-        // Give the detached retry a moment to attempt (and fail).
-        let deadline = Date().addingTimeInterval(10)
-        while Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.2)
-        }
+        // Await the detached retry deterministically instead of polling.
+        await engine.awaitJournalRetries()
         // The failed retry must NOT have consumed the journal.
         XCTAssertEqual(FinalizeJournal(resumeDirectory: dir).allRecords().count, 1)
     }
 
     /// ...and must consume the journal once the retry succeeds.
     @MainActor
-    func testReconcileDeletesJournalAfterSuccessfulExtractRetry() throws {
+    func testReconcileDeletesJournalAfterSuccessfulExtractRetry() async throws {
         let dir = tmp()
         defer { try? FileManager.default.removeItem(at: dir) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -204,13 +201,10 @@ final class FinalizeJournalTests: XCTestCase {
         engine.reconcileFinalizeJournals()
 
         // The detached retry should extract and then consume the journal.
-        let deadline = Date().addingTimeInterval(15)
-        var journalEmpty = false
-        while Date() < deadline, !journalEmpty {
-            Thread.sleep(forTimeInterval: 0.2)
-            journalEmpty = FinalizeJournal(resumeDirectory: dir).allRecords().isEmpty
-        }
-        XCTAssertTrue(journalEmpty, "journal should be consumed after a successful extract retry")
+        await engine.awaitJournalRetries()
+        XCTAssertTrue(
+            FinalizeJournal(resumeDirectory: dir).allRecords().isEmpty,
+            "journal should be consumed after a successful extract retry")
         XCTAssertTrue(FileManager.default.fileExists(
             atPath: dir.appendingPathComponent("f/a.txt").path))
     }

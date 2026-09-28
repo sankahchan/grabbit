@@ -49,7 +49,8 @@ struct ToastCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(
-                    toast.kind == .completed ? Neo.green : Neo.red,
+                    toast.kind == .completed ? Neo.green
+                        : toast.kind == .failed ? Neo.red : Neo.blue,
                     lineWidth: 3)
         )
     }
@@ -63,6 +64,9 @@ struct ToastCard: View {
             case .failed:
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(Neo.red)
+            case .info:
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(Neo.blue)
             }
         }
         .font(.title2)
@@ -115,6 +119,8 @@ struct ToastCard: View {
                 }
                 toastCenter.dismiss(id: toast.id)
             }]
+        case .info:
+            return []
         }
     }
 }

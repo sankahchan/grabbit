@@ -11,6 +11,9 @@ public enum ToastSource: Sendable {
 public enum ToastKind: Sendable {
     case completed
     case failed
+    /// Neutral informational card (e.g. "re-download started").
+    /// No action buttons, no sound.
+    case info
 }
 
 /// An in-app completion/failure card (bottom-right overlay). Unlike the
@@ -104,11 +107,12 @@ public final class ToastCenter {
             DispatchQueue.main.async { playSound(for: kind) }
             return
         }
-        let name: String
+        let name: String?
         switch kind {
         case .completed: name = "Glass"
         case .failed: name = "Basso"
+        case .info: name = nil
         }
-        NSSound(named: name)?.play()
+        if let name { NSSound(named: name)?.play() }
     }
 }

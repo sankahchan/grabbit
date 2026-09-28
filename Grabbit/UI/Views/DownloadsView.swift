@@ -17,6 +17,10 @@ struct DownloadsView: View {
     /// Backlog #7: the card currently being dragged (for drop-reorder).
     @State private var draggedItemID: UUID?
     @State private var lastDropTargetID: UUID?
+    /// Drag-session generation + torn-drag flag for the deferred
+    /// cancel check in the drop delegates (see below).
+    @State private var dragGeneration = 0
+    @State private var dropExitedWithoutEnter = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -55,6 +59,9 @@ struct DownloadsView: View {
                                 // Backlog #7: drag a card onto another to
                                 // reorder the queue.
                                 .onDrag {
+                                    engine.beginDragReorder()
+                                    dragGeneration += 1
+                                    dropExitedWithoutEnter = false
                                     draggedItemID = item.id
                                     lastDropTargetID = nil
                                     return NSItemProvider(
@@ -64,11 +71,22 @@ struct DownloadsView: View {
                                     target: item,
                                     draggedID: $draggedItemID,
                                     lastTargetID: $lastDropTargetID,
+                                    generation: $dragGeneration,
+                                    exitedWithoutEnter: $dropExitedWithoutEnter,
                                     engine: engine))
                         }
                     }
                     .padding(8)
                 }
+                // Empty list area is a drop target too: releasing a card
+                // outside any card reverts the hover preview (see the
+                // background delegate) instead of leaving a dirty order.
+                .onDrop(of: [.text], delegate: DownloadListBackgroundDropDelegate(
+                    draggedID: $draggedItemID,
+                    lastTargetID: $lastDropTargetID,
+                    generation: $dragGeneration,
+                    exitedWithoutEnter: $dropExitedWithoutEnter,
+                    engine: engine))
             }
         }
         .padding(12)
@@ -237,18 +255,38 @@ struct DownloadsView: View {
 /// follows the drag; the ranks are persisted and the queue re-kicked once
 /// in performDrop. `lastTargetID` suppresses spurious repeat fires for the
 /// same target while the rows animate under a stationary cursor.
+///
+/// A torn-down drag (Escape, or released over empty space / outside the
+/// app) never reaches performDrop, which would leave the in-memory order
+/// dirty — hover-reordered but unpersisted, with no commit coming. The
+/// engine snapshots the pre-drag order on beginDragReorder; dropExited
+/// schedules a deferred check that reverts via cancelDragReorder when no
+/// dropEntered followed (a move to another target always enters it in the
+/// same event turn, clearing the flag before the check runs).
 private struct DownloadDropDelegate: DropDelegate {
     let target: DownloadItem
     @Binding var draggedID: UUID?
     @Binding var lastTargetID: UUID?
+    @Binding var generation: Int
+    @Binding var exitedWithoutEnter: Bool
     let engine: DownloadEngine
 
     func dropEntered(info: DropInfo) {
+        exitedWithoutEnter = false
         guard let draggedID, draggedID != target.id,
               target.id != lastTargetID
         else { return }
         lastTargetID = target.id
         engine.moveItem(draggedID: draggedID, to: target.id)
+    }
+
+    func dropExited(info: DropInfo) {
+        scheduleTornDragCheck(
+            generation: $generation,
+            exitedWithoutEnter: $exitedWithoutEnter,
+            draggedID: $draggedID,
+            lastTargetID: $lastTargetID,
+            engine: engine)
     }
 
     func performDrop(info: DropInfo) -> Bool {
@@ -260,5 +298,64 @@ private struct DownloadDropDelegate: DropDelegate {
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
+    }
+}
+
+/// Drop target for the empty list area: releasing a dragged card outside
+/// any card reverts the hover preview instead of leaving it dirty.
+private struct DownloadListBackgroundDropDelegate: DropDelegate {
+    @Binding var draggedID: UUID?
+    @Binding var lastTargetID: UUID?
+    @Binding var generation: Int
+    @Binding var exitedWithoutEnter: Bool
+    let engine: DownloadEngine
+
+    func dropEntered(info: DropInfo) {
+        exitedWithoutEnter = false
+    }
+
+    func dropExited(info: DropInfo) {
+        scheduleTornDragCheck(
+            generation: $generation,
+            exitedWithoutEnter: $exitedWithoutEnter,
+            draggedID: $draggedID,
+            lastTargetID: $lastTargetID,
+            engine: engine)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        engine.cancelDragReorder()
+        draggedID = nil
+        lastTargetID = nil
+        return true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+}
+
+/// Deferred torn-drag check shared by the downloads drop delegates.
+/// See DownloadDropDelegate for the rationale.
+private func scheduleTornDragCheck(
+    generation: Binding<Int>,
+    exitedWithoutEnter: Binding<Bool>,
+    draggedID: Binding<UUID?>,
+    lastTargetID: Binding<UUID?>,
+    engine: DownloadEngine
+) {
+    let gen = generation.wrappedValue
+    exitedWithoutEnter.wrappedValue = true
+    Task { @MainActor in
+        // A card-to-card move enters the next target within the same event
+        // turn; the delay only needs to outlast that, not the gesture.
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        guard gen == generation.wrappedValue,
+              exitedWithoutEnter.wrappedValue,
+              draggedID.wrappedValue != nil
+        else { return }
+        engine.cancelDragReorder()
+        draggedID.wrappedValue = nil
+        lastTargetID.wrappedValue = nil
     }
 }

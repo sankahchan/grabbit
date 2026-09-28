@@ -93,10 +93,10 @@ public final class LinkGrabberStore {
     /// `packageName` must be non-empty (callers localize the default).
     public func stage(urls: [URL], packageName: String, sourcePageURL: URL? = nil) {
         guard !urls.isEmpty, let package = createPackage(name: packageName) else { return }
-        var seen = Set(links.map { $0.url.absoluteString })
-        let engineURLs = Set((downloadEngine?.items ?? []).map { $0.url.absoluteString })
+        var seen = Set(links.map { $0.url.dedupKey })
+        let engineURLs = Set((downloadEngine?.items ?? []).map { $0.url.dedupKey })
         for url in urls {
-            let key = url.absoluteString
+            let key = url.dedupKey
             if seen.contains(key) || engineURLs.contains(key) {
                 links.append(StagedLink(
                     url: url,

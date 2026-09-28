@@ -207,4 +207,79 @@ final class HistoryTests: XCTestCase {
         let bad = HistoryEntry.from(download: downloadItem(state: .failed), status: .failed)
         XCTAssertEqual(bad.errorMessage, "boom")
     }
+
+    // MARK: - Retry feedback (HistoryRetry)
+
+    private func retryEntry(kind: HistoryKind, sourceURL: String, name: String = "vid.mp4") -> HistoryEntry {
+        HistoryEntry(
+            name: name, kind: kind, status: .completed,
+            sourceURL: sourceURL)
+    }
+
+    private struct BoomError: LocalizedError {
+        var errorDescription: String? { "daemon is down" }
+    }
+
+    func testRetryBuildsTorrentRequest() {
+        let folder = URL(fileURLWithPath: "/tmp/torrents")
+        let req = HistoryRetry.request(
+            for: retryEntry(kind: .torrent, sourceURL: "magnet:?xt=urn:btih:abc"),
+            torrentSaveFolder: folder)
+        XCTAssertNotNil(req)
+        XCTAssertEqual(req?.kind, .torrent)
+        XCTAssertEqual(req?.sourceURL, "magnet:?xt=urn:btih:abc")
+        XCTAssertEqual(req?.name, "vid.mp4")
+        XCTAssertEqual(req?.torrentSaveFolder, folder)
+    }
+
+    func testRetryBuildsDownloadRequest() {
+        let req = HistoryRetry.request(
+            for: retryEntry(kind: .download, sourceURL: "https://example.com/f.zip"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp"))
+        XCTAssertNotNil(req)
+        XCTAssertEqual(req?.kind, .download)
+        XCTAssertNil(req?.torrentSaveFolder)
+    }
+
+    func testRetryRejectsEmptyTorrentSource() {
+        XCTAssertNil(HistoryRetry.request(
+            for: retryEntry(kind: .torrent, sourceURL: ""),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp")))
+    }
+
+    func testRetryRejectsNonHttpDownloadSource() {
+        XCTAssertNil(HistoryRetry.request(
+            for: retryEntry(kind: .download, sourceURL: "ftp://example.com/f.zip"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp")))
+    }
+
+    func testRetryLeavesMediaToTheMediaTab() {
+        // Media re-download copies the URL and jumps tabs instead.
+        XCTAssertNil(HistoryRetry.request(
+            for: retryEntry(kind: .media, sourceURL: "https://example.com/v"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp")))
+    }
+
+    func testRetryStartedToastIsSilentInfo() {
+        let req = HistoryRetry.request(
+            for: retryEntry(kind: .torrent, sourceURL: "magnet:?xt=urn:btih:abc"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp"))!
+        let toast = HistoryRetry.startedToast(for: req)
+        XCTAssertEqual(toast.kind, .info)
+        XCTAssertEqual(toast.source, .torrent)
+        XCTAssertEqual(toast.message, "vid.mp4")
+        XCTAssertFalse(toast.title.isEmpty)
+        XCTAssertNil(toast.taskID)
+    }
+
+    func testRetryFailedToastNamesEntryAndError() {
+        let req = HistoryRetry.request(
+            for: retryEntry(kind: .torrent, sourceURL: "magnet:?xt=urn:btih:abc"),
+            torrentSaveFolder: URL(fileURLWithPath: "/tmp"))!
+        let toast = HistoryRetry.failedToast(for: req, error: BoomError())
+        XCTAssertEqual(toast.kind, .failed)
+        XCTAssertEqual(toast.source, .torrent)
+        XCTAssertTrue(toast.message.contains("vid.mp4"))
+        XCTAssertTrue(toast.message.contains("daemon is down"))
+    }
 }

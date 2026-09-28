@@ -55,4 +55,47 @@ final class BatchAddTests: XCTestCase {
         XCTAssertTrue(BatchLinkParser.parse("").isEmpty)
         XCTAssertTrue(BatchLinkParser.parse("   \n  \n").isEmpty)
     }
+
+    // MARK: - Canonical dedup (URL+Canonical)
+
+    func testDedupKeyNormalizesSchemeAndHostCase() {
+        let a = URL(string: "HTTPS://EXAMPLE.COM/a.zip")!
+        let b = URL(string: "https://example.com/a.zip")!
+        XCTAssertEqual(a.dedupKey, b.dedupKey)
+    }
+
+    func testDedupKeyDropsDefaultPorts() {
+        let a = URL(string: "https://example.com:443/a.zip")!
+        let b = URL(string: "https://example.com/a.zip")!
+        let c = URL(string: "http://example.com:8080/a.zip")!
+        XCTAssertEqual(a.dedupKey, b.dedupKey)
+        XCTAssertNotEqual(c.dedupKey, b.dedupKey)
+    }
+
+    func testDedupKeyDropsFragmentAndEmptyQuery() {
+        let base = URL(string: "https://example.com/a.zip")!
+        let frag = URL(string: "https://example.com/a.zip#section")!
+        let emptyQ = URL(string: "https://example.com/a.zip?")!
+        let realQ = URL(string: "https://example.com/a.zip?dl=1")!
+        XCTAssertEqual(frag.dedupKey, base.dedupKey)
+        XCTAssertEqual(emptyQ.dedupKey, base.dedupKey)
+        XCTAssertNotEqual(realQ.dedupKey, base.dedupKey)
+    }
+
+    func testDedupKeyPreservesPathCase() {
+        let a = URL(string: "https://example.com/A.zip")!
+        let b = URL(string: "https://example.com/a.zip")!
+        XCTAssertNotEqual(a.dedupKey, b.dedupKey)
+    }
+
+    func testBatchParserDedupsCanonicalVariants() {
+        let text = """
+        HTTPS://EXAMPLE.COM/a.zip
+        https://example.com:443/a.zip
+        https://example.com/a.zip#dl
+        https://example.com/b.zip
+        """
+        let urls = BatchLinkParser.parse(text)
+        XCTAssertEqual(urls.count, 2)
+    }
 }

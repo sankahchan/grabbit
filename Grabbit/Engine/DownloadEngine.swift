@@ -37,6 +37,10 @@ public final class DownloadEngine {
     /// Durable-finalize journal: closes the crash window between "file
     /// moved into place" and "completion persisted/recorded".
     private let finalizeJournal: FinalizeJournal
+    /// Extract-retry tasks spawned by the last `reconcileFinalizeJournals()`
+    /// call. Tracked so tests can await them deterministically instead of
+    /// polling with sleeps.
+    private var journalRetryTasks: [Task<Void, Never>] = []
     /// Phase 5 named queues: per-queue concurrency limits. The global
     /// `maxActiveTasks` stays the overall ceiling across all queues.
     public let queues: QueueStore
@@ -200,9 +204,11 @@ public final class DownloadEngine {
     }
 
     /// LinkGrabber dedup: is this URL already a download (or queued)?
+    /// Compares canonical keys so textually-different spellings of the
+    /// same resource (case, default ports, fragments) still match.
     public func hasItem(with url: URL) -> Bool {
-        let key = url.absoluteString
-        return items.contains { $0.url.absoluteString == key }
+        let key = url.dedupKey
+        return items.contains { $0.url.dedupKey == key }
     }
 
     /// Sniffs the first bytes of a finished file for an HTML signature.
@@ -617,8 +623,15 @@ public final class DownloadEngine {
     /// task's position and renumbers the in-memory ranks. Persistence and
     /// the queue re-kick are deferred to `commitItemOrder()` (called on
     /// drop) so hovering across N cards doesn't do N full disk persists.
+    ///
+    /// Hovering implicitly opens a drag session (`beginDragReorder`
+    /// snapshots the pre-drag order); a torn-down drag (Escape, release
+    /// over empty space) must call `cancelDragReorder` so the in-memory
+    /// order is never left dirty — unpersisted ranks with `orderDirty`
+    /// set and no commit coming.
     @MainActor
     public func moveItem(draggedID: UUID, to targetID: UUID) {
+        beginDragReorder()
         guard draggedID != targetID,
               let from = items.firstIndex(where: { $0.id == draggedID }),
               let to = items.firstIndex(where: { $0.id == targetID })
@@ -640,6 +653,7 @@ public final class DownloadEngine {
     /// per drop; a no-op when nothing was reordered.
     @MainActor
     public func commitItemOrder() {
+        dragSnapshot = nil
         guard orderDirty else { return }
         orderDirty = false
         for item in items {
@@ -650,6 +664,37 @@ public final class DownloadEngine {
 
     /// Tracks whether `moveItem` reordered since the last commit.
     private var orderDirty = false
+
+    /// Pre-drag item order for `cancelDragReorder`. Set by
+    /// `beginDragReorder`, cleared by `commitItemOrder`/`cancelDragReorder`.
+    private var dragSnapshot: [UUID]? = nil
+
+    /// Opens a drag-reorder session, snapshotting the current order.
+    /// Idempotent: a mid-drag call keeps the ORIGINAL pre-drag order.
+    @MainActor
+    public func beginDragReorder() {
+        guard dragSnapshot == nil else { return }
+        dragSnapshot = items.map(\.id)
+    }
+
+    /// Reverts a torn-down drag (cancelled, or dropped outside any card)
+    /// to the pre-drag order and clears the dirty flag. No-op when no
+    /// drag session is active. Items added mid-drag (not in the snapshot)
+    /// are kept, appended after the restored order.
+    @MainActor
+    public func cancelDragReorder() {
+        guard let snapshot = dragSnapshot else { return }
+        dragSnapshot = nil
+        orderDirty = false
+        let byID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        let snapshotSet = Set(snapshot)
+        let restored = snapshot.compactMap { byID[$0] }
+        let addedMidDrag = items.filter { !snapshotSet.contains($0.id) }
+        items = restored + addedMidDrag
+        for (rank, index) in items.indices.enumerated() {
+            items[index].sortRank = rank
+        }
+    }
 
     /// Backlog #7: per-task priority (-5...5). Higher starts sooner when a
     /// queue slot frees up.
@@ -772,6 +817,7 @@ public final class DownloadEngine {
     /// handles the item. Pending archive extraction is retried.
     @MainActor
     public func reconcileFinalizeJournals() {
+        journalRetryTasks.removeAll()
         for record in finalizeJournal.allRecords() {
             let destURL = URL(fileURLWithPath: record.destinationPath)
             guard FileManager.default.fileExists(atPath: record.destinationPath) else {
@@ -811,7 +857,7 @@ public final class DownloadEngine {
                 let journal = finalizeJournal
                 let itemID = record.itemID
                 journal.write(record)
-                Task.detached(priority: .utility) {
+                journalRetryTasks.append(Task.detached(priority: .utility) {
                     do {
                         try ArchiveExtractor.extract(archiveURL: destURL)
                         // Success — the journal has served.
@@ -820,11 +866,21 @@ public final class DownloadEngine {
                         // The journal survives with extractDone false — the
                         // next launch retries again; the archive is safe.
                     }
-                }
+                })
             } else {
                 finalizeJournal.delete(record.itemID)
             }
         }
+    }
+
+    /// Test seam: awaits the extract-retry tasks spawned by the last
+    /// `reconcileFinalizeJournals()` call, so journal-lifecycle tests are
+    /// deterministic instead of polling with `Thread.sleep`.
+    @MainActor
+    public func awaitJournalRetries() async {
+        let tasks = journalRetryTasks
+        journalRetryTasks.removeAll()
+        for task in tasks { await task.value }
     }
 
     /// Dismisses the recovery banner; interrupted items stay `.interrupted`

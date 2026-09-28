@@ -277,25 +277,27 @@ struct HistoryView: View {
     private func redownload(_ entry: HistoryEntry) {
         switch entry.kind {
         case .download:
-            guard let url = URL(string: entry.sourceURL) else { return }
+            guard let request = HistoryRetry.request(
+                for: entry,
+                torrentSaveFolder: settings.folderURL(for: .other)
+            ), let url = URL(string: request.sourceURL) else { return }
             Task { @MainActor in
-                await downloadEngine.add(url: url, filename: entry.name)
+                await downloadEngine.add(url: url, filename: request.name)
+                toastCenter.push(HistoryRetry.startedToast(for: request))
             }
         case .torrent:
-            let dir = settings.folderURL(for: .other)
+            guard let request = HistoryRetry.request(
+                for: entry,
+                torrentSaveFolder: settings.folderURL(for: .other)
+            ) else { return }
             Task { @MainActor in
                 do {
                     try await torrentEngine.add(
-                        magnetOrURL: entry.sourceURL, savePath: dir)
+                        magnetOrURL: request.sourceURL,
+                        savePath: request.torrentSaveFolder ?? settings.folderURL(for: .other))
+                    toastCenter.push(HistoryRetry.startedToast(for: request))
                 } catch {
-                    // Surface the failure instead of swallowing it —
-                    // bad magnets / a down daemon otherwise fail silently.
-                    toastCenter.push(AppToast(
-                        kind: .failed,
-                        source: .torrent,
-                        title: NSLocalizedString("toast.failed.title", comment: ""),
-                        message: entry.name + " — " + error.localizedDescription,
-                        taskID: nil))
+                    toastCenter.push(HistoryRetry.failedToast(for: request, error: error))
                 }
             }
         case .media:

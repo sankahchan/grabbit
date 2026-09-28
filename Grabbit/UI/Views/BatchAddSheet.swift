@@ -15,11 +15,12 @@ enum BatchLinkParser {
                   let scheme = url.scheme?.lowercased(),
                   scheme == "http" || scheme == "https",
                   url.host != nil,
-                  // De-duplicate on the normalized URL: distinct raw lines
-                  // (e.g. host case differences) can share one absoluteString,
-                  // and per-link customizations are keyed by absoluteString —
-                  // raw-line dedup would create two rows sharing one entry.
-                  seen.insert(url.absoluteString).inserted
+                  // De-duplicate on the canonical URL: distinct raw lines
+                  // (e.g. host case differences, default ports, fragments)
+                  // can share one resource, and per-link customizations are
+                  // keyed by canonical URL — raw-line dedup would create
+                  // two rows sharing one entry.
+                  seen.insert(url.dedupKey).inserted
             else { continue }
             out.append(url)
         }
