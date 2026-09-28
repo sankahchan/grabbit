@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// A piece of media the browser extension has spotted on a page.
 struct DetectedMedia: Identifiable {
@@ -15,17 +16,20 @@ struct DetectedMedia: Identifiable {
 /// Grabber tab: browser-extension connection status, detected media list,
 /// and an install hint.
 ///
-/// Real data flow (future work): browser extension -> native-messaging host ->
-/// app publishes detected media into this list. "Grab" enqueues the media URL
-/// via `DownloadEngine.add(...)`. The `@State` flags below are placeholders
-/// until `NativeMessagingHost` lands.
+/// The native-messaging host runs as a separate `--native-messaging`
+/// process (the browser launches it), so the main app can't observe a live
+/// handshake. Instead the status card reflects whether the host manifest is
+/// installed for any supported browser (what `install-host.sh` sets up) —
+/// a truthful "the extension can reach Grabbit" signal. "Grab" enqueues
+/// the media URL via `DownloadEngine.add(...)`.
 struct GrabberView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
-    // TODO: set to true once NativeMessagingHost completes its hello handshake
-    // with the browser extension.
+    /// True when the native-host manifest is installed for at least one
+    /// supported browser. Refreshed whenever the tab appears / the app
+    /// becomes active (the user installs the host outside the app).
     @State private var extensionConnected = false
 
     // Populated by the native-messaging host once it exists; empty for now.
@@ -41,6 +45,33 @@ struct GrabberView: View {
             .padding(16)
         }
         .navigationTitle(NSLocalizedString("grabber.title", comment: ""))
+        .onAppear { refreshConnectionStatus() }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: NSApplication.didBecomeActiveNotification)
+        ) { _ in refreshConnectionStatus() }
+    }
+
+    private func refreshConnectionStatus() {
+        extensionConnected = Self.hostManifestInstalled()
+    }
+
+    /// The browser can reach Grabbit iff `install-host.sh` has placed our
+    /// native-messaging manifest in one of the known browser dirs.
+    private static func hostManifestInstalled() -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let dirs = [
+            "Library/Application Support/Google/Chrome/NativeMessagingHosts",
+            "Library/Application Support/Chromium/NativeMessagingHosts",
+            "Library/Application Support/Microsoft Edge/NativeMessagingHosts",
+            "Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts",
+            "Library/Application Support/Mozilla/NativeMessagingHosts",
+        ]
+        return dirs.contains { dir in
+            FileManager.default.fileExists(atPath:
+                home.appendingPathComponent(
+                    dir + "/com.sankahchan.grabbit.json").path)
+        }
     }
 
     // MARK: - Status

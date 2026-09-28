@@ -30,9 +30,11 @@ public final class CompletionActionCenter {
     private let settings: SettingsStore
     private var activeTaskCount: @MainActor () -> Int
     private let executor: (CompletionAction, String) -> Void
-    /// Terminal settles since the last firing. Guards against firing on
-    /// a fresh launch (no settles yet) or twice for one drain.
-    private var settledSinceIdle = 0
+    /// True once the action fired for the current drain. Reset when new
+    /// activity starts, so each drain fires exactly once — a second settle
+    /// while nothing is active (e.g. a queued task failing right after the
+    /// drain) must not fire again.
+    private var firedForCurrentDrain = false
 
     public init(
         settings: SettingsStore,
@@ -68,13 +70,17 @@ public final class CompletionActionCenter {
 
     @MainActor
     private func settleOnMain() {
-        settledSinceIdle += 1
         let action = settings.settings.completionAction
         guard action != .none else { return }
-        // Only fire on a real drain: something settled AND nothing is
-        // still running. Reset so one drain fires exactly once.
-        guard activeTaskCount() == 0 else { return }
-        settledSinceIdle = 0
+        // New activity while settling: the next drain may fire again.
+        guard activeTaskCount() == 0 else {
+            firedForCurrentDrain = false
+            return
+        }
+        // Fire on a real drain (something settled, nothing still running),
+        // exactly once per drain.
+        guard !firedForCurrentDrain else { return }
+        firedForCurrentDrain = true
         executor(action, settings.settings.completionCommand)
     }
 

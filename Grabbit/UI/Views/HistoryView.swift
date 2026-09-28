@@ -8,6 +8,7 @@ struct HistoryView: View {
     @Environment(DownloadEngine.self) private var downloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine
     @Environment(SettingsStore.self) private var settings
+    @Environment(ToastCenter.self) private var toastCenter
     @Environment(\.colorScheme) private var scheme
 
     /// Lets media re-downloads jump to the Media tab (URL is copied; the
@@ -283,8 +284,19 @@ struct HistoryView: View {
         case .torrent:
             let dir = settings.folderURL(for: .other)
             Task { @MainActor in
-                try? await torrentEngine.add(
-                    magnetOrURL: entry.sourceURL, savePath: dir)
+                do {
+                    try await torrentEngine.add(
+                        magnetOrURL: entry.sourceURL, savePath: dir)
+                } catch {
+                    // Surface the failure instead of swallowing it —
+                    // bad magnets / a down daemon otherwise fail silently.
+                    toastCenter.push(AppToast(
+                        kind: .failed,
+                        source: .torrent,
+                        title: NSLocalizedString("toast.failed.title", comment: ""),
+                        message: entry.name + " — " + error.localizedDescription,
+                        taskID: nil))
+                }
             }
         case .media:
             // Media re-download goes through the Media tab's probe flow;

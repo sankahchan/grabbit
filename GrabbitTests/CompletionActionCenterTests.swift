@@ -57,8 +57,24 @@ final class CompletionActionCenterTests: XCTestCase {
         XCTAssertEqual(fired, 2)
     }
 
-    func testRunCommandPassesCommandThrough() {
+    func testDoesNotFireTwiceForOneDrain() {
+        let active = 0
         let settings = SettingsStore()
+        settings.settings.completionAction = .sleep
+        var fired = 0
+        let center = CompletionActionCenter(
+            settings: settings,
+            activeTaskCount: { active },
+            executor: { _, _ in fired += 1 })
+        center.taskDidSettle()
+        XCTAssertEqual(fired, 1)
+        // A second settle while still idle (e.g. a queued task failing
+        // right after the drain) must not fire again.
+        center.taskDidSettle()
+        XCTAssertEqual(fired, 1)
+    }
+
+    func testRunCommandPassesCommandThrough() {        let settings = SettingsStore()
         settings.settings.completionAction = .runCommand
         settings.settings.completionCommand = "echo hi"
         var received: [(CompletionAction, String)] = []

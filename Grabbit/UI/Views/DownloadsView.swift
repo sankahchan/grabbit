@@ -16,6 +16,7 @@ struct DownloadsView: View {
     @State private var detailsSubject: TaskDetailsSheet.Subject?
     /// Backlog #7: the card currently being dragged (for drop-reorder).
     @State private var draggedItemID: UUID?
+    @State private var lastDropTargetID: UUID?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -55,12 +56,14 @@ struct DownloadsView: View {
                                 // reorder the queue.
                                 .onDrag {
                                     draggedItemID = item.id
+                                    lastDropTargetID = nil
                                     return NSItemProvider(
                                         object: item.id.uuidString as NSString)
                                 }
                                 .onDrop(of: [.text], delegate: DownloadDropDelegate(
                                     target: item,
                                     draggedID: $draggedItemID,
+                                    lastTargetID: $lastDropTargetID,
                                     engine: engine))
                         }
                     }
@@ -231,19 +234,27 @@ struct DownloadsView: View {
 
 /// Backlog #7: drag-reorder for the downloads list. Reorders live as the
 /// dragged card hovers over a target (dropEntered), so the list visibly
-/// follows the drag; performDrop just clears the drag state.
+/// follows the drag; the ranks are persisted and the queue re-kicked once
+/// in performDrop. `lastTargetID` suppresses spurious repeat fires for the
+/// same target while the rows animate under a stationary cursor.
 private struct DownloadDropDelegate: DropDelegate {
     let target: DownloadItem
     @Binding var draggedID: UUID?
+    @Binding var lastTargetID: UUID?
     let engine: DownloadEngine
 
     func dropEntered(info: DropInfo) {
-        guard let draggedID, draggedID != target.id else { return }
+        guard let draggedID, draggedID != target.id,
+              target.id != lastTargetID
+        else { return }
+        lastTargetID = target.id
         engine.moveItem(draggedID: draggedID, to: target.id)
     }
 
     func performDrop(info: DropInfo) -> Bool {
+        engine.commitItemOrder()
         draggedID = nil
+        lastTargetID = nil
         return true
     }
 

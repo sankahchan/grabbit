@@ -599,8 +599,9 @@ public final class DownloadEngine {
     }
 
     /// Backlog #7: drag-reorder. Moves the dragged task to the target
-    /// task's position, renumbers the persisted ranks, and re-kicks the
-    /// queue (list order is the queue's start order for equal priority).
+    /// task's position and renumbers the in-memory ranks. Persistence and
+    /// the queue re-kick are deferred to `commitItemOrder()` (called on
+    /// drop) so hovering across N cards doesn't do N full disk persists.
     @MainActor
     public func moveItem(draggedID: UUID, to targetID: UUID) {
         guard draggedID != targetID,
@@ -615,10 +616,25 @@ public final class DownloadEngine {
         items.insert(moving, at: to)
         for (rank, index) in items.indices.enumerated() {
             items[index].sortRank = rank
-            persistItem(id: items[index].id)
+        }
+        orderDirty = true
+    }
+
+    /// Persists the drag-reordered ranks and re-kicks the queue (list
+    /// order is the queue's start order for equal priority). Called once
+    /// per drop; a no-op when nothing was reordered.
+    @MainActor
+    public func commitItemOrder() {
+        guard orderDirty else { return }
+        orderDirty = false
+        for item in items {
+            persistItem(id: item.id)
         }
         kickQueue()
     }
+
+    /// Tracks whether `moveItem` reordered since the last commit.
+    private var orderDirty = false
 
     /// Backlog #7: per-task priority (-5...5). Higher starts sooner when a
     /// queue slot frees up.

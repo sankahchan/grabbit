@@ -112,7 +112,8 @@ final class QueuePriorityTests: XCTestCase {
         XCTAssertEqual(engine.items.map(\.id), [ids[2], ids[1], ids[0]])
         XCTAssertEqual(engine.items.map(\.sortRank), [0, 1, 2])
 
-        // Order survives a reload.
+        // Order survives a reload (persisted once on drop).
+        engine.commitItemOrder()
         let reloaded = DownloadEngine(resumeStore: ResumeStore(directory: dir))
         XCTAssertEqual(reloaded.items.map(\.id), [ids[2], ids[1], ids[0]])
     }

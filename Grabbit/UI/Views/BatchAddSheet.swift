@@ -10,11 +10,16 @@ enum BatchLinkParser {
         var out: [URL] = []
         for rawLine in text.components(separatedBy: .newlines) {
             let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !line.isEmpty, seen.insert(line).inserted,
+            guard !line.isEmpty,
                   let url = URL(string: line),
                   let scheme = url.scheme?.lowercased(),
                   scheme == "http" || scheme == "https",
-                  url.host != nil
+                  url.host != nil,
+                  // De-duplicate on the normalized URL: distinct raw lines
+                  // (e.g. host case differences) can share one absoluteString,
+                  // and per-link customizations are keyed by absoluteString —
+                  // raw-line dedup would create two rows sharing one entry.
+                  seen.insert(url.absoluteString).inserted
             else { continue }
             out.append(url)
         }
@@ -283,6 +288,7 @@ private struct BatchItemRow: View {
     let url: URL
     let sharedConnections: Int
     @Binding var custom: BatchCustom
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -307,10 +313,20 @@ private struct BatchItemRow: View {
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: 130)
-                NeoStepper(value: Binding(
-                    get: { custom.connections ?? sharedConnections },
-                    set: { custom.connections = $0 }
-                ), in: 1...16, step: 1) { v in "\(v)" }
+                HStack(spacing: 4) {
+                    NeoStepper(value: Binding(
+                        get: { custom.connections ?? sharedConnections },
+                        set: { custom.connections = $0 }
+                    ), in: 1...16, step: 1) { v in "\(v)" }
+                    // Once touched the row stays custom; offer a way back
+                    // to inheriting the shared value.
+                    if custom.connections != nil {
+                        Button(NSLocalizedString("batch.sharedValue", comment: "")) {
+                            custom.connections = nil
+                        }
+                        .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                    }
+                }
             }
         }
         .padding(6)
