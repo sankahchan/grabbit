@@ -5713,11 +5713,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "Sync interval"
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "ထပ်မံ sync လုပ်မည့်ကြားကာလ"
           }
         }
@@ -5727,11 +5729,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "Performance profile"
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "စွမ်းဆောင်ရည် ပရိုဖိုင်"
           }
         }
@@ -5741,11 +5745,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "Connection count and disk cache used by the torrent engine."
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "တော်ရန့်အင်ဂျင် အသုံးပြုမည့် ချိတ်ဆက်မှုအရေအတွက်နှင့် disk cache။"
           }
         }
@@ -5755,11 +5761,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "Balanced"
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "မျှတ"
           }
         }
@@ -5769,11 +5777,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "High"
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "မြင့်"
           }
         }
@@ -5783,11 +5793,13 @@
       "localizations": {
         "en": {
           "stringUnit": {
+            "state": "translated",
             "value": "Maximum"
           }
         },
         "my": {
           "stringUnit": {
+            "state": "translated",
             "value": "အမြင့်ဆုံး"
           }
         }
