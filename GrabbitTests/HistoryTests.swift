@@ -290,7 +290,7 @@ final class HistoryTests: XCTestCase {
         let req = HistoryRetry.request(
             for: entry,
             torrentSaveFolder: URL(fileURLWithPath: "/tmp"))!
-        XCTAssertEqual(req.proxy?.scope, .none)
+        XCTAssertEqual(req.proxy?.scope, TaskProxy.Scope.none)
     }
 
     func testRetryHasNilProxyForGlobalTasks() {
@@ -306,7 +306,7 @@ final class HistoryTests: XCTestCase {
         entry.proxy = TaskProxy(scope: .none)
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(HistoryEntry.self, from: data)
-        XCTAssertEqual(decoded.proxy?.scope, .none)
+        XCTAssertEqual(decoded.proxy?.scope, TaskProxy.Scope.none)
     }
 
     func testHistoryEntryDecodesWithoutProxy() throws {
