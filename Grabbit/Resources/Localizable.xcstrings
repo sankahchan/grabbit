@@ -708,6 +708,22 @@
         }
       }
     },
+    "download.error.htmlPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The link opened a web page, not a file — this share page isn't supported yet."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်က ဖိုင်အစား ဝဘ်စာမျက်နှာ ဖွင့်လိုက်ပါတယ် — ဒီ share page ကို မထောက်ပံ့သေးပါ။"
+          }
+        }
+      }
+    },
     "downloads.add": {
       "comment": "Toolbar button",
       "localizations": {

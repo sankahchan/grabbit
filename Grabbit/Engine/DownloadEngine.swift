@@ -159,6 +159,11 @@ public final class DownloadEngine {
     /// add path uses, exposed for staging so links can be checked before
     /// they are committed as downloads.
     public func probeLink(_ url: URL) async -> LinkProbe {
+        // Resolve share links first (MediaFire pages need a page fetch to
+        // find the real file) so staged links show the true size/name.
+        let url = await MediaFireResolver.resolve(
+            ShareURLRewriter.rewrite(url),
+            proxyDictionary: proxyDictionary())
         if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
            (200...299).contains(status)
         {
@@ -189,6 +194,39 @@ public final class DownloadEngine {
         return items.contains { $0.url.absoluteString == key }
     }
 
+    /// Sniffs the first bytes of a finished file for an HTML signature.
+    /// Catches share pages that slipped past the probe-time guard (e.g.
+    /// via replaceURL, which restarts without probing).
+    static func fileLooksLikeHTML(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard !["html", "htm", "mhtml", "mht", "xhtml", "shtml"].contains(ext)
+        else { return false }
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? handle.close() }
+        guard let data = try? handle.read(upToCount: 256), !data.isEmpty else { return false }
+        var text = (String(data: data, encoding: .utf8) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        if text.hasPrefix("\u{feff}") { text = String(text.dropFirst()) }
+        return ["<!doctype", "<html", "<head"].contains { text.hasPrefix($0) }
+    }
+
+    private func proxyDictionary() -> [AnyHashable: Any]? {
+        ProxyConfig(settings: settings.settings).urlSessionProxyDictionary()
+    }
+
+    /// True when the probe says HTML but the filename isn't a web page —
+    /// i.e. the link opened a share/info page instead of the file.
+    static func isHTMLPage(contentType: String?, filename: String) -> Bool {
+        guard let contentType = contentType?.lowercased(),
+              contentType.contains("text/html")
+                || contentType.contains("application/xhtml")
+        else { return false }
+        let ext = (filename as NSString).pathExtension.lowercased()
+        return !["html", "htm", "mhtml", "mht", "xhtml", "shtml"]
+            .contains(ext)
+    }
+
     private func fetchHeaders(
         _ url: URL, method: String, range: String? = nil
     ) async -> (status: Int, headers: [String: String])? {
@@ -208,7 +246,7 @@ public final class DownloadEngine {
         // unknown-size here — the real download still authenticates via
         // HTTP1Transport.
         let session: URLSession
-        if let proxyDict = ProxyConfig(settings: settings.settings).urlSessionProxyDictionary() {
+        if let proxyDict = proxyDictionary() {
             let config = URLSessionConfiguration.ephemeral
             config.connectionProxyDictionary = proxyDict
             session = URLSession(configuration: config)
@@ -324,6 +362,10 @@ public final class DownloadEngine {
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
         let url = ShareURLRewriter.rewrite(url)
+        // MediaFire share pages serve HTML, not the file — resolve to the
+        // direct download*.mediafire.com URL via the share page.
+        let url = await MediaFireResolver.resolve(
+            url, proxyDictionary: proxyDictionary())
 
         // Probe the server for total size. We deliberately do NOT gate
         // multi-connection on the HEAD's Accept-Ranges header: many
@@ -410,6 +452,15 @@ public final class DownloadEngine {
 
         items.append(item)
         persistItem(id: item.id)
+        // Share-page guard: the probe answered with a web page, not a file
+        // (an unhandled share host). Downloading it would produce a bogus
+        // "complete" file, so fail fast with a clear message instead.
+        if Self.isHTMLPage(contentType: probe.contentType, filename: name) {
+            fail(
+                id: item.id,
+                message: NSLocalizedString("download.error.htmlPage", comment: ""))
+            return
+        }
         start(item.id)
     }
 
@@ -1080,6 +1131,18 @@ public final class DownloadEngine {
             try FileManager.default.moveItem(at: partialURL, to: item.destinationURL)
         } catch {
             fail(id: item.id, message: "Couldn't move finished file into place: \(error.localizedDescription)")
+            return
+        }
+        // Content backstop: the finished bytes are a web page, not the
+        // file (e.g. a share page that slipped past the probe guard via
+        // replaceURL or resume). Remove the bogus file and fail instead
+        // of reporting "complete".
+        if Self.fileLooksLikeHTML(items[itemIndex].destinationURL) {
+            try? FileManager.default.removeItem(
+                at: items[itemIndex].destinationURL)
+            fail(
+                id: item.id,
+                message: NSLocalizedString("download.error.htmlPage", comment: ""))
             return
         }
         items[itemIndex].state = .completed

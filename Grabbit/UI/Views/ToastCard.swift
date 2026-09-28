@@ -1,27 +1,19 @@
 import AppKit
 import SwiftUI
 
-/// Bottom-right in-app toast cards for download completion / failure.
-/// Unlike the system notification these carry action buttons (Open File /
-/// Open Folder / Try Again) and appear even when Grabbit is frontmost.
-struct ToastOverlay: View {
+/// In-app completion/failure card, rendered inline at the top of the
+/// Downloads / Torrents tab (inside the tab's own card, not as a floating
+/// overlay). Unlike the system notification it carries action buttons
+/// (Open File / Open Folder / Try Again) and appears even when Grabbit is
+/// frontmost.
+struct ToastCard: View {
+    let toast: AppToast
     @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 10) {
-            ForEach(toastCenter.toasts) { toast in
-                toastCard(toast)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
-        }
-        .padding(16)
-        .animation(.spring(response: 0.35), value: toastCenter.toasts.map(\.id))
-    }
-
-    private func toastCard(_ toast: AppToast) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 statusIcon(for: toast.kind)
@@ -51,7 +43,7 @@ struct ToastOverlay: View {
             }
         }
         .padding(12)
-        .frame(width: 340, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard()
         // Bright Neo border accent per kind, readable in both modes.
         .overlay(

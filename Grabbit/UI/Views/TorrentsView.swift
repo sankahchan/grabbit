@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 /// and seeding limits. Driven by the aria2-next daemon via `TorrentEngine`.
 struct TorrentsView: View {
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+    @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(\.colorScheme) private var scheme
 
     @State private var showingAdd = false
@@ -20,6 +21,16 @@ struct TorrentsView: View {
             if torrentEngine.vpnHolding {
                 vpnWarningCard
             }
+
+            // Completion/failure cards live inside the Torrents card —
+            // not as a floating overlay.
+            ForEach(toastCenter.toasts.filter { $0.source == .torrent }) { toast in
+                ToastCard(toast: toast)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            .animation(
+                .spring(response: 0.35),
+                value: toastCenter.toasts.map(\.id))
 
             if torrentEngine.torrents.isEmpty {
                 Spacer()

@@ -49,9 +49,9 @@ struct MainView: View {
             detailView
         }
         .navigationTitle("Grabbit")
-        // In-app completion/failure toast cards (bottom-right), with
-        // Open File / Open Folder / Try Again actions.
-        .overlay(alignment: .bottomTrailing) { ToastOverlay() }
+        // Completion/failure cards now render inline at the top of the
+        // Downloads / Torrents tabs (inside each tab's own card) instead
+        // of a floating overlay.
         // The Appearance setting drives the UI at the AppKit level.
         // preferredColorScheme did NOT reliably clear a concrete override
         // when going back to System (Dark -> System left the UI dark), so

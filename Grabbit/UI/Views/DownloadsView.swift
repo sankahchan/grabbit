@@ -7,6 +7,7 @@ import SwiftUI
 /// also offers an Add button.
 struct DownloadsView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
+    @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
     @State private var showingBatch = false
@@ -18,6 +19,15 @@ struct DownloadsView: View {
             if engine.recoveredCount > 0 {
                 recoveryBanner
             }
+            // Completion/failure cards live inside the Downloads card —
+            // not as a floating overlay.
+            ForEach(toastCenter.toasts.filter { $0.source == .download }) { toast in
+                ToastCard(toast: toast)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            .animation(
+                .spring(response: 0.35),
+                value: toastCenter.toasts.map(\.id))
             if engine.items.isEmpty {
                 Spacer()
                 emptyState
