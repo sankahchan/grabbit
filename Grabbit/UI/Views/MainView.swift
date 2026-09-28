@@ -25,7 +25,7 @@ struct MainView: View {
         // and works around preferredColorScheme not reliably applying
         // when going from a concrete theme back to System (which left a
         // mixed light-sidebar / dark-content state).
-        .id((store.settings.language, store.settings.theme))
+        .id(store.settings.language.rawValue + "/" + store.settings.theme.rawValue)
     }
 
     /// Maps the saved theme to a SwiftUI override; nil means "follow system".
