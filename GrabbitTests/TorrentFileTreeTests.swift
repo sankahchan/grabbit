@@ -67,4 +67,36 @@ final class TorrentFileTreeTests: XCTestCase {
         XCTAssertEqual(SwarmHealth.of(seeders: 5), .healthy)
         XCTAssertEqual(SwarmHealth.of(seeders: 100), .healthy)
     }
+
+    func testVisibleNodesRespectsExpanded() {
+        let files = [
+            Aria2File(index: 1, path: "/dl/T/sub/a.mkv", length: 10, completedLength: 0, selected: true),
+            Aria2File(index: 2, path: "/dl/T/sub/b.mkv", length: 20, completedLength: 0, selected: true),
+            Aria2File(index: 3, path: "/dl/T/c.mkv", length: 30, completedLength: 0, selected: true),
+        ]
+        let roots = TorrentFileTree.build(from: files)
+        XCTAssertEqual(roots.count, 2)
+
+        let collapsed = TorrentFileTree.visibleNodes(roots: roots, expanded: [])
+        XCTAssertEqual(collapsed.map { $0.node.name }, ["sub", "c.mkv"])
+        XCTAssertEqual(collapsed.map { $0.depth }, [0, 0])
+
+        let dirID = roots.first(where: { $0.isDirectory })!.id
+        let expanded = TorrentFileTree.visibleNodes(
+            roots: roots, expanded: [dirID])
+        XCTAssertEqual(
+            expanded.map { $0.node.name }, ["sub", "a.mkv", "b.mkv", "c.mkv"])
+        XCTAssertEqual(expanded.map { $0.depth }, [0, 1, 1, 0])
+    }
+
+    func testAllDirectoryIDs() {
+        let files = [
+            Aria2File(index: 1, path: "/dl/T/sub/a.mkv", length: 10, completedLength: 0, selected: true),
+            Aria2File(index: 2, path: "/dl/T/c.mkv", length: 30, completedLength: 0, selected: true),
+        ]
+        let roots = TorrentFileTree.build(from: files)
+        let ids = Set(TorrentFileTree.allDirectoryIDs(in: roots))
+        XCTAssertEqual(ids.count, 1)
+        XCTAssertTrue(ids.contains(roots.first(where: { $0.isDirectory })!.id))
+    }
 }

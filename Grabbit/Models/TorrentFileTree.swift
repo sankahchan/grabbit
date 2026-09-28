@@ -40,6 +40,15 @@ public enum SwarmHealth: Equatable {
     }
 }
 
+/// A tree node paired with its visible depth, for flat (non-recursive)
+/// rendering. Recursive `some View` functions make opaque-type inference
+/// fragile across toolchains, so the sheet flattens first, then renders.
+public struct IndentedNode: Identifiable {
+    public let node: TorrentFileNode
+    public let depth: Int
+    public var id: String { node.id }
+}
+
 /// Pure file-tree builder over aria2's flat `getFiles` list.
 public enum TorrentFileTree {
     /// Builds forest roots from flat files. The common download-dir +
@@ -120,6 +129,32 @@ public enum TorrentFileTree {
                 size: size,
                 fileIndex: fileIndex,
                 children: children.values.map { $0.node() })
+        }
+    }
+
+    /// Flattens the visible portion of the tree: every node, plus the
+    /// children of expanded directories, in display order.
+    public static func visibleNodes(
+        roots: [TorrentFileNode], expanded: Set<String>
+    ) -> [IndentedNode] {
+        var out: [IndentedNode] = []
+        func visit(_ nodes: [TorrentFileNode], depth: Int) {
+            for node in nodes {
+                out.append(IndentedNode(node: node, depth: depth))
+                if node.isDirectory, expanded.contains(node.id) {
+                    visit(node.children, depth: depth + 1)
+                }
+            }
+        }
+        visit(roots, depth: 0)
+        return out
+    }
+
+    /// All directory ids in the tree (used to start fully expanded).
+    public static func allDirectoryIDs(in nodes: [TorrentFileNode]) -> [String] {
+        nodes.flatMap { node in
+            node.isDirectory
+                ? [node.id] + allDirectoryIDs(in: node.children) : []
         }
     }
 }

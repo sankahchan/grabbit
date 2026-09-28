@@ -448,8 +448,8 @@ struct TorrentFilesSheet: View {
                 }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 6) {
-                        ForEach(roots) { node in
-                            nodeRow(node, depth: 0)
+                        ForEach(visible) { item in
+                            nodeRow(item.node, depth: item.depth)
                         }
                     }
                 }
@@ -480,7 +480,8 @@ struct TorrentFilesSheet: View {
                 files = fetched
                 selected = Set(fetched.filter { $0.selected }.map { $0.index })
                 expanded = Set(
-                    allDirectoryIDs(in: TorrentFileTree.build(from: fetched)))
+                    TorrentFileTree.allDirectoryIDs(
+                        in: TorrentFileTree.build(from: fetched)))
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -493,58 +494,58 @@ struct TorrentFilesSheet: View {
         return TorrentFileTree.build(from: files)
     }
 
-    private func allDirectoryIDs(in nodes: [TorrentFileNode]) -> [String] {
-        nodes.flatMap { node in
-            node.isDirectory
-                ? [node.id] + allDirectoryIDs(in: node.children) : []
+    /// Flattened visible rows; avoids a recursive `some View` function,
+    /// which makes opaque-type inference fragile across toolchains.
+    private var visible: [IndentedNode] {
+        TorrentFileTree.visibleNodes(roots: roots, expanded: expanded)
+    }
+
+    private func toggleExpanded(_ id: String) {
+        if expanded.contains(id) {
+            expanded.remove(id)
+        } else {
+            expanded.insert(id)
         }
     }
 
+    /// One row of the tree; directories show an expand chevron plus a
+    /// tri-state folder checkbox, files show a normal toggle.
+    /// Non-recursive: the sheet renders `visible` (pre-flattened), so the
+    /// compiler never has to infer an opaque type through recursion.
     private func nodeRow(_ node: TorrentFileNode, depth: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                if node.isDirectory {
-                    Button {
-                        if expanded.contains(node.id) {
-                            expanded.remove(node.id)
-                        } else {
-                            expanded.insert(node.id)
-                        }
-                    } label: {
-                        Image(systemName: expanded.contains(node.id)
-                            ? "chevron.down" : "chevron.right")
-                            .font(.caption)
-                            .frame(width: 16)
-                    }
-                    .buttonStyle(.plain)
-                    folderCheckbox(for: node)
-                    Text(node.name)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                    Text(formatBytes(node.size))
+        HStack(spacing: 8) {
+            if node.isDirectory {
+                Button {
+                    toggleExpanded(node.id)
+                } label: {
+                    Image(systemName: expanded.contains(node.id)
+                        ? "chevron.down" : "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if let index = node.fileIndex {
-                    Toggle(isOn: binding(for: index)) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(node.name)
-                                .font(.subheadline)
-                                .lineLimit(1)
-                            Text(formatBytes(node.size))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        .frame(width: 16)
+                }
+                .buttonStyle(.plain)
+                folderCheckbox(for: node)
+                Text(node.name)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text(formatBytes(node.size))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if let index = node.fileIndex {
+                Toggle(isOn: binding(for: index)) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(node.name)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                        Text(formatBytes(node.size))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .toggleStyle(NeoToggleStyle())
                 }
-            }
-            .padding(.leading, CGFloat(depth) * 20)
-            if node.isDirectory, expanded.contains(node.id) {
-                ForEach(node.children) { child in
-                    nodeRow(child, depth: depth + 1)
-                }
+                .toggleStyle(NeoToggleStyle())
             }
         }
+        .padding(.leading, CGFloat(depth) * 20)
     }
 
     /// Tri-state folder checkbox: all / some / none of the files below
