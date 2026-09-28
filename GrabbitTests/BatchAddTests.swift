@@ -39,15 +39,16 @@ final class BatchAddTests: XCTestCase {
     }
 
     func testDeduplicatesNormalizedURLs() {
-        // Distinct raw lines normalizing to one absoluteString (host case)
-        // collapse to a single row, matching the per-link customization keys.
+        // Distinct raw lines normalizing to one absoluteString (a literal
+        // space is percent-encoded by Foundation) collapse to a single row,
+        // matching the per-link customization keys.
         let text = """
-        https://example.com/a.zip
-        HTTPS://EXAMPLE.COM/a.zip
+        https://example.com/a b.zip
+        https://example.com/a%20b.zip
         """
         let urls = BatchLinkParser.parse(text)
         XCTAssertEqual(urls.count, 1)
-        XCTAssertEqual(urls.first?.absoluteString, "https://example.com/a.zip")
+        XCTAssertEqual(urls.first?.absoluteString, "https://example.com/a%20b.zip")
     }
 
     func testEmptyText() {
