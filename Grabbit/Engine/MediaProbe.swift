@@ -9,13 +9,28 @@ public struct MediaPreset: Identifiable {
     public var formatSpec: String
     public var isAudioOnly: Bool
     public var estimatedSize: Int64?
+    /// Backlog #10: video-only rows (no audio track merged).
+    public var videoOnly: Bool
+    /// Backlog #10: audio extraction format ("mp3"); nil keeps the
+    /// original audio container.
+    public var audioConvertFormat: String?
 
-    public init(id: String, label: String, formatSpec: String, isAudioOnly: Bool = false, estimatedSize: Int64? = nil) {
+    public init(
+        id: String,
+        label: String,
+        formatSpec: String,
+        isAudioOnly: Bool = false,
+        estimatedSize: Int64? = nil,
+        videoOnly: Bool = false,
+        audioConvertFormat: String? = nil
+    ) {
         self.id = id
         self.label = label
         self.formatSpec = formatSpec
         self.isAudioOnly = isAudioOnly
         self.estimatedSize = estimatedSize
+        self.videoOnly = videoOnly
+        self.audioConvertFormat = audioConvertFormat
     }
 }
 
@@ -23,6 +38,8 @@ public struct ProbedMedia {
     public var title: String
     public var duration: Double?
     public var webpageURL: URL?
+    /// Backlog #10: `yt-dlp -J` "thumbnail" for the result card.
+    public var thumbnailURL: URL?
     public var presets: [MediaPreset]
 }
 
@@ -84,11 +101,13 @@ public enum MediaProbe {
             .nilIfEmpty ?? "media"
         let duration = json["duration"] as? Double
         let webpageURL = (json["webpage_url"] as? String).flatMap(URL.init(string:))
+        let thumbnailURL = (json["thumbnail"] as? String).flatMap(URL.init(string:))
         let formats = (json["formats"] as? [[String: Any]]) ?? []
         return ProbedMedia(
             title: title,
             duration: duration,
             webpageURL: webpageURL,
+            thumbnailURL: thumbnailURL,
             presets: buildPresets(from: formats))
     }
 
@@ -149,9 +168,25 @@ public enum MediaProbe {
                     estimatedSize: size))
             }
         }
+        if let v = videos.compactMap(\.filesize).max() {
+            // Backlog #10: video-only row — best video track, no audio.
+            presets.append(MediaPreset(
+                id: "videoOnly", label: NSLocalizedString("media.preset.videoOnly", comment: ""),
+                formatSpec: "bv*",
+                estimatedSize: v,
+                videoOnly: true))
+        }
         if !audios.isEmpty {
             presets.append(MediaPreset(
                 id: "audio", label: NSLocalizedString("media.preset.audio", comment: ""),
+                formatSpec: "bestaudio",
+                isAudioOnly: true,
+                estimatedSize: bestAudioSize,
+                audioConvertFormat: "mp3"))
+            // Backlog #10: audio-only keeping the original container
+            // (e.g. m4a/opus/webm) instead of forcing MP3.
+            presets.append(MediaPreset(
+                id: "audioOriginal", label: NSLocalizedString("media.preset.audioOriginal", comment: ""),
                 formatSpec: "bestaudio",
                 isAudioOnly: true,
                 estimatedSize: bestAudioSize))

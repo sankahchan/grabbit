@@ -111,6 +111,21 @@ final class SchedulerTests: XCTestCase {
         XCTAssertTrue(SchedulerStore(directory: dir).entries.isEmpty)
     }
 
+    // MARK: - Backlog #8: speed profiles
+
+    func testSpeedLimitEntryPersists() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = SchedulerStore(directory: dir)
+        var e = ScheduleEntry(time: Date(), action: .speedLimit)
+        e.speedLimitBytesPerSec = 512 * 1_024
+        store.add(e)
+        let reloaded = SchedulerStore(directory: dir)
+        XCTAssertEqual(reloaded.entries.count, 1)
+        XCTAssertEqual(reloaded.entries[0].action, .speedLimit)
+        XCTAssertEqual(reloaded.entries[0].speedLimitBytesPerSec, 512 * 1_024)
+    }
+
     func testCorruptFileFallsBackToEmpty() throws {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

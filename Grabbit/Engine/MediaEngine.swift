@@ -109,7 +109,11 @@ public final class MediaEngine {
             "-o", template,
         ]
         if preset.isAudioOnly {
-            args += ["-x", "--audio-format", "mp3"]
+            // Backlog #10: only convert when the preset names a target
+            // format (MP3); otherwise keep the original audio container.
+            if let fmt = preset.audioConvertFormat {
+                args += ["-x", "--audio-format", fmt]
+            }
         } else {
             // XDM's MKV fallback: if the mp4 remux fails, yt-dlp retries as mkv
             // instead of failing the download.

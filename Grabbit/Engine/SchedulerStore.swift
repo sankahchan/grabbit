@@ -47,12 +47,20 @@ public final class SchedulerStore {
 
     /// Starts the 1-minute timer; also checks immediately so an entry due
     /// in the launch minute isn't missed. Call once from the app layer.
-    public func start(downloadEngine: DownloadEngine, torrentEngine: TorrentEngine) {
+    public func start(
+        downloadEngine: DownloadEngine,
+        torrentEngine: TorrentEngine,
+        settings: SettingsStore
+    ) {
         stop()
-        fire(downloadEngine: downloadEngine, torrentEngine: torrentEngine, now: Date())
+        fire(
+            downloadEngine: downloadEngine, torrentEngine: torrentEngine,
+            settings: settings, now: Date())
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             guard let self else { return }
-            self.fire(downloadEngine: downloadEngine, torrentEngine: torrentEngine, now: Date())
+            self.fire(
+                downloadEngine: downloadEngine, torrentEngine: torrentEngine,
+                settings: settings, now: Date())
         }
     }
 
@@ -61,13 +69,19 @@ public final class SchedulerStore {
         timer = nil
     }
 
-    private func fire(downloadEngine: DownloadEngine, torrentEngine: TorrentEngine, now: Date) {
+    private func fire(
+        downloadEngine: DownloadEngine,
+        torrentEngine: TorrentEngine,
+        settings: SettingsStore,
+        now: Date
+    ) {
         var changed = false
         for i in entries.indices {
             guard Self.isDue(entries[i], now: now) else { continue }
             entries[i].lastFired = now
             changed = true
             let action = entries[i].action
+            let speedLimit = entries[i].speedLimitBytesPerSec
             Task { @MainActor in
                 switch action {
                 case .download:
@@ -76,6 +90,12 @@ public final class SchedulerStore {
                 case .stop:
                     downloadEngine.pauseAll()
                     torrentEngine.pauseAll()
+                case .speedLimit:
+                    // Backlog #8: off-peak profiles — push the cap into
+                    // Settings (persisted) and the live download bucket.
+                    settings.settings.speedLimitBytesPerSec = max(0, speedLimit)
+                    settings.save()
+                    downloadEngine.syncSpeedLimit()
                 }
             }
         }

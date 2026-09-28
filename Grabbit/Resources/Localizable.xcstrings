@@ -5623,6 +5623,74 @@
           }
         }
       }
+    },
+    "scheduler.action.speedLimit": {
+      "comment": "",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed limit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မြန်နှုန်းကန့်သတ်"
+          }
+        }
+      }
+    },
+    "scheduler.speedLimit": {
+      "comment": "",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed limit (KB/s)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မြန်နှုန်းကန့်သတ် (KB/s)"
+          }
+        }
+      }
+    },
+    "media.preset.videoOnly": {
+      "comment": "",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video only"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယိုသီးသန့်"
+          }
+        }
+      }
+    },
+    "media.preset.audioOriginal": {
+      "comment": "",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio (original)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံသီးသန့် (မူရင်း)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

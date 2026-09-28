@@ -173,7 +173,8 @@ struct GrabbitApp: App {
                     // firing timer driving both engines.
                     schedulerStore.start(
                         downloadEngine: downloadEngine,
-                        torrentEngine: torrentEngine)
+                        torrentEngine: torrentEngine,
+                        settings: sharedSettings)
                     // Phase 5 watch folders: poll watched dirs for .txt
                     // link files and feed new links to the engine.
                     watchMonitor.start(

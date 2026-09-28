@@ -30,7 +30,7 @@ final class MediaTests: XCTestCase {
         XCTAssertEqual(media.title, "Test Video")
         XCTAssertEqual(media.duration, 123.0)
         let ids = media.presets.map(\.id)
-        XCTAssertEqual(ids, ["best", "1080p", "720p", "480p", "audio"])
+        XCTAssertEqual(ids, ["best", "1080p", "720p", "480p", "videoOnly", "audio", "audioOriginal"])
         // 360p has no matching format — correctly omitted.
         XCTAssertFalse(ids.contains("360p"))
         let best = media.presets.first { $0.id == "best" }!
@@ -42,6 +42,16 @@ final class MediaTests: XCTestCase {
         let audio = media.presets.first { $0.id == "audio" }!
         XCTAssertTrue(audio.isAudioOnly)
         XCTAssertEqual(audio.formatSpec, "bestaudio")
+        XCTAssertEqual(audio.audioConvertFormat, "mp3")
+        // Backlog #10: video-only + original-audio rows.
+        let videoOnly = media.presets.first { $0.id == "videoOnly" }!
+        XCTAssertTrue(videoOnly.videoOnly)
+        XCTAssertFalse(videoOnly.isAudioOnly)
+        XCTAssertEqual(videoOnly.formatSpec, "bv*")
+        XCTAssertEqual(videoOnly.estimatedSize, 50_000_000) // video, no audio
+        let audioOrig = media.presets.first { $0.id == "audioOriginal" }!
+        XCTAssertTrue(audioOrig.isAudioOnly)
+        XCTAssertNil(audioOrig.audioConvertFormat)
     }
 
     func testProbeParseEmptyFormats() throws {
@@ -149,7 +159,7 @@ final class MediaTests: XCTestCase {
     func testProbeParseBuilds4KAnd1440pPresets() throws {
         let media = try MediaProbe.parse(uhdJSON())
         let ids = media.presets.map(\.id)
-        XCTAssertEqual(ids, ["best", "2160p", "1440p", "1080p", "audio"])
+        XCTAssertEqual(ids, ["best", "2160p", "1440p", "1080p", "videoOnly", "audio", "audioOriginal"])
         let p4k = media.presets.first { $0.id == "2160p" }!
         XCTAssertEqual(p4k.formatSpec, "bv*[height<=2160]+ba/b[height<=2160]")
         XCTAssertEqual(p4k.estimatedSize, 405_000_000) // 4K video + audio
@@ -164,5 +174,20 @@ final class MediaTests: XCTestCase {
         let ids = media.presets.map(\.id)
         XCTAssertFalse(ids.contains("2160p"))
         XCTAssertFalse(ids.contains("1440p"))
+    }
+
+    // MARK: - Backlog #10: thumbnail + separate A/V
+
+    func testProbeParseExtractsThumbnail() throws {
+        var dict = try JSONSerialization.jsonObject(with: sampleJSON()) as! [String: Any]
+        dict["thumbnail"] = "https://example.com/thumb.jpg"
+        let data = try JSONSerialization.data(withJSONObject: dict)
+        let media = try MediaProbe.parse(data)
+        XCTAssertEqual(media.thumbnailURL?.absoluteString, "https://example.com/thumb.jpg")
+    }
+
+    func testProbeParseNoThumbnailGivesNil() throws {
+        let media = try MediaProbe.parse(sampleJSON())
+        XCTAssertNil(media.thumbnailURL)
     }
 }

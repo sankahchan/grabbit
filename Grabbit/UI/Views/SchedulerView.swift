@@ -1,12 +1,13 @@
 import SwiftUI
 
 enum ScheduleAction: String, CaseIterable, Codable {
-    case download, stop
+    case download, stop, speedLimit
 
     var localizedTitle: String {
         switch self {
         case .download: NSLocalizedString("scheduler.action.download", comment: "")
         case .stop: NSLocalizedString("scheduler.action.stop", comment: "")
+        case .speedLimit: NSLocalizedString("scheduler.action.speedLimit", comment: "")
         }
     }
 }
@@ -21,6 +22,9 @@ public struct ScheduleEntry: Identifiable, Codable {
     var weekdays: Int = ScheduleEntry.allWeekdays
     /// Last fire date — an entry fires at most once per calendar day.
     var lastFired: Date? = nil
+    /// Backlog #8: speed profiles — used when action == .speedLimit.
+    /// Global cap in bytes/sec applied at fire time (0 = unlimited).
+    var speedLimitBytesPerSec: Int64 = 0
 
     static let allWeekdays = 0b1111111
 }
@@ -104,7 +108,7 @@ struct SchedulerView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.time.formatted(date: .omitted, time: .shortened))
                     .font(.headline.weight(.bold))
-                Text(entry.action.localizedTitle)
+                Text(actionSummary(for: entry))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(weekdaySummary(for: entry))
@@ -133,6 +137,17 @@ struct SchedulerView: View {
             .map { symbols[$0] }
             .joined(separator: ", ")
     }
+
+    /// Backlog #8: speed-limit entries show their cap in the row.
+    private func actionSummary(for entry: ScheduleEntry) -> String {
+        guard entry.action == .speedLimit else {
+            return entry.action.localizedTitle
+        }
+        let value = entry.speedLimitBytesPerSec <= 0
+            ? NSLocalizedString("settings.unlimited", comment: "")
+            : formatSpeed(Double(entry.speedLimitBytesPerSec))
+        return "\(entry.action.localizedTitle): \(value)"
+    }
 }
 
 // MARK: - Add entry sheet
@@ -144,6 +159,8 @@ private struct AddScheduleSheet: View {
     @State private var time = Date()
     @State private var action: ScheduleAction = .download
     @State private var weekdays: Int = ScheduleEntry.allWeekdays
+    /// Backlog #8: KB/s for the .speedLimit action (0 = unlimited).
+    @State private var speedKBps: Int = 500
 
     var onSave: (ScheduleEntry) -> Void
 
@@ -161,6 +178,20 @@ private struct AddScheduleSheet: View {
             NeoSegmented(selection: $action, titles: ScheduleAction.allCases.map {
                 ($0, $0.localizedTitle)
             })
+
+            // Backlog #8: speed-profile entries carry a KB/s cap.
+            if action == .speedLimit {
+                HStack {
+                    Text(NSLocalizedString("scheduler.speedLimit", comment: ""))
+                        .font(.headline)
+                    Spacer()
+                    NeoStepper(value: $speedKBps, in: 0...100_000, step: 50) { v in
+                        v == 0
+                            ? NSLocalizedString("settings.unlimited", comment: "")
+                            : "\(v) KB/s"
+                    }
+                }
+            }
 
             // Repeat on specific weekdays (system-localized short names).
             VStack(alignment: .leading, spacing: 6) {
@@ -190,7 +221,11 @@ private struct AddScheduleSheet: View {
                     // An entry with no weekdays would never fire; fall back
                     // to daily rather than saving a dead entry.
                     let days = weekdays == 0 ? ScheduleEntry.allWeekdays : weekdays
-                    onSave(ScheduleEntry(time: time, action: action, weekdays: days))
+                    var entry = ScheduleEntry(time: time, action: action, weekdays: days)
+                    if action == .speedLimit {
+                        entry.speedLimitBytesPerSec = Int64(speedKBps) * 1_024
+                    }
+                    onSave(entry)
                     dismiss()
                 }
                 .neoButton(bg: Neo.green)

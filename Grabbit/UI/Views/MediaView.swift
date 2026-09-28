@@ -157,6 +157,27 @@ struct MediaView: View {
 
     private func resultCard(_ probed: ProbedMedia) -> some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Backlog #10: video thumbnail on the probe result card.
+            if let thumb = probed.thumbnailURL {
+                AsyncImage(url: thumb) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    default:
+                        Neo.ink(scheme).opacity(0.15)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 170)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                )
+            }
             Text(probed.title)
                 .font(.headline.weight(.heavy))
             if let duration = probed.duration {
