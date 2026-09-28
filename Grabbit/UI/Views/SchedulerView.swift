@@ -28,6 +28,24 @@ public struct ScheduleEntry: Identifiable, Codable {
 
     static let allWeekdays = 0b1111111
 
+    public init(
+        id: UUID = UUID(),
+        time: Date,
+        action: ScheduleAction,
+        isEnabled: Bool = true,
+        weekdays: Int = ScheduleEntry.allWeekdays,
+        lastFired: Date? = nil,
+        speedLimitBytesPerSec: Int64 = 0
+    ) {
+        self.id = id
+        self.time = time
+        self.action = action
+        self.isEnabled = isEnabled
+        self.weekdays = weekdays
+        self.lastFired = lastFired
+        self.speedLimitBytesPerSec = speedLimitBytesPerSec
+    }
+
     // MARK: - Codable (backward compatible)
 
     // `speedLimitBytesPerSec` was added after entries were already being
