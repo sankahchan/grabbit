@@ -78,7 +78,10 @@ public final class ResumeStore {
                 else { return nil }
                 return item
             }
-            .sorted { $0.addedAt < $1.addedAt }
+            .sorted {
+                if $0.sortRank != $1.sortRank { return $0.sortRank < $1.sortRank }
+                return $0.addedAt < $1.addedAt
+            }
     }
 
     public func delete(_ id: UUID) {

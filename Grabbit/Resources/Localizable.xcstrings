@@ -423,6 +423,22 @@
         }
       }
     },
+    "batch.filenameAuto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto filename"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နာမည်အလိုအလျောက်"
+          }
+        }
+      }
+    },
     "batch.found": {
       "localizations": {
         "en": {
@@ -439,6 +455,22 @@
         }
       }
     },
+    "batch.import": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import .txt"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".txt ထည့်"
+          }
+        }
+      }
+    },
     "batch.links": {
       "localizations": {
         "en": {
@@ -451,6 +483,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "လင့်ခ်များ (တစ်ကြောင်းလျှင် တစ်ခု)"
+          }
+        }
+      }
+    },
+    "batch.perItem": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per-link settings"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်အလိုက် ပြင်ဆင်ချက်"
+          }
+        }
+      }
+    },
+    "batch.sharedValue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံးတူညီ"
           }
         }
       }
@@ -4518,6 +4582,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finder တွင်ဖွင့်ရန်"
+          }
+        }
+      }
+    },
+    "task.details.priority": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဦးစားပေး"
+          }
+        }
+      }
+    },
+    "task.details.priorityHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Higher starts sooner when a queue slot frees up."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်ဖိုးမြင့်လေ queue slot လွတ်တဲ့အခါ အရင်စလေ။"
           }
         }
       }

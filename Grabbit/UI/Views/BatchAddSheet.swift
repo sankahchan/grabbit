@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 /// Pure multi-link parser: one URL per line, http(s) only, de-duplicated.
 /// Kept free of UI so it's unit-testable.
@@ -30,6 +31,14 @@ enum BatchLinkParser {
     }
 }
 
+/// Backlog #5: per-link overrides in the batch-add sheet. Empty filename
+/// = auto, nil category/connections = the shared values above.
+private struct BatchCustom: Hashable {
+    var filename: String = ""
+    var category: DownloadCategory? = nil
+    var connections: Int? = nil
+}
+
 /// Where a batch goes: straight to Downloads, or into the LinkGrabber
 /// staging area for check-then-commit.
 private enum BatchDestination: Hashable {
@@ -53,6 +62,8 @@ struct BatchAddSheet: View {
     @State private var destination: BatchDestination = .downloads
     @State private var packageName = ""
     @State private var isAdding = false
+    /// Backlog #5: per-link overrides, keyed by URL string.
+    @State private var customs: [String: BatchCustom] = [:]
     /// The in-flight batch, so Cancel can stop it (the current probe
     /// finishes its timeout at the latest). Already-added links stay as
     /// real downloads; the rest are never added.
@@ -72,6 +83,10 @@ struct BatchAddSheet: View {
                     Text(NSLocalizedString("batch.links", comment: ""))
                         .font(.headline)
                     Spacer()
+                    Button(NSLocalizedString("batch.import", comment: "")) {
+                        importTextFile()
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.purple, compact: true))
                     Button(NSLocalizedString("common.paste", comment: "")) {
                         if let s = NSPasteboard.general.string(forType: .string) {
                             text = s
@@ -96,6 +111,25 @@ struct BatchAddSheet: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
+                }
+            }
+
+            // MARK: Backlog #5 — per-link customization
+            if !links.isEmpty && destination == .downloads {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(NSLocalizedString("batch.perItem", comment: ""))
+                        .font(.headline)
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(links, id: \.self) { url in
+                                BatchItemRow(
+                                    url: url,
+                                    sharedConnections: connections,
+                                    custom: customBinding(for: url))
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 180)
                 }
             }
 
@@ -182,15 +216,22 @@ struct BatchAddSheet: View {
         let category = category
         let queueID = queueID
         let connections = connections
+        let customs = customs
         let engine = engine
         isAdding = true
         addTask = Task {
             for url in urls {
                 if Task.isCancelled { break }
+                // Backlog #5: per-link overrides fall back to the shared
+                // values; an empty filename means "auto".
+                let custom = customs[url.absoluteString]
+                let filename = custom?.filename
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
                 await engine.add(
                     url: url,
-                    category: category,
-                    connections: connections,
+                    filename: filename?.isEmpty == false ? filename : nil,
+                    category: custom?.category ?? category,
+                    connections: custom?.connections ?? connections,
                     queueID: queueID)
             }
             isAdding = false
@@ -207,5 +248,72 @@ struct BatchAddSheet: View {
         addTask = nil
         isAdding = false
         dismiss()
+    }
+
+    /// Backlog #5: binding to a link's per-link overrides (created lazily).
+    private func customBinding(for url: URL) -> Binding<BatchCustom> {
+        let key = url.absoluteString
+        return Binding(
+            get: { customs[key] ?? BatchCustom() },
+            set: { customs[key] = $0 }
+        )
+    }
+
+    /// Backlog #5: appends a .txt file's contents (one link per line) to
+    /// the pasted links.
+    private func importTextFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK,
+              let url = panel.url,
+              let content = try? String(contentsOf: url, encoding: .utf8),
+              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? content
+            : text + "\n" + content
+    }
+}
+
+/// Backlog #5: one row per link — filename, category, and connection
+/// overrides. Untouched rows inherit the shared values above.
+private struct BatchItemRow: View {
+    let url: URL
+    let sharedConnections: Int
+    @Binding var custom: BatchCustom
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(url.absoluteString)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            HStack(spacing: 8) {
+                TextField(
+                    NSLocalizedString("batch.filenameAuto", comment: ""),
+                    text: $custom.filename
+                )
+                .textFieldStyle(.roundedBorder)
+                .frame(minWidth: 120)
+                Picker("", selection: $custom.category) {
+                    Text(NSLocalizedString("batch.sharedValue", comment: ""))
+                        .tag(nil as DownloadCategory?)
+                    ForEach(DownloadCategory.allCases, id: \.self) { c in
+                        Text(c.localizedName).tag(c as DownloadCategory?)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: 130)
+                NeoStepper(value: Binding(
+                    get: { custom.connections ?? sharedConnections },
+                    set: { custom.connections = $0 }
+                ), in: 1...16, step: 1) { v in "\(v)" }
+            }
+        }
+        .padding(6)
+        .neoCard()
     }
 }

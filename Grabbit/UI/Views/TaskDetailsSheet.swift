@@ -41,6 +41,7 @@ struct TaskDetailsSheet: View {
             header
             saveToSection
             progressSection
+            prioritySection
             sourceSection
             if let error = failureMessage {
                 errorSection(error)
@@ -94,6 +95,29 @@ struct TaskDetailsSheet: View {
             .font(.caption2.weight(.bold))
             .textCase(.uppercase)
             .foregroundStyle(.secondary)
+    }
+
+    /// Backlog #7: per-task priority stepper (downloads only). Reads the
+    /// live value from the engine — the sheet's `subject` is a snapshot.
+    @ViewBuilder
+    private var prioritySection: some View {
+        if case .download(let item) = subject {
+            VStack(alignment: .leading, spacing: 6) {
+                sectionTitle(NSLocalizedString("task.details.priority", comment: ""))
+                HStack(spacing: 10) {
+                    NeoStepper(value: Binding(
+                        get: {
+                            downloads.items.first(where: { $0.id == item.id })?.priority
+                                ?? item.priority
+                        },
+                        set: { downloads.setPriority(id: item.id, priority: $0) }
+                    ), in: -5...5, step: 1) { v in "\(v)" }
+                    Text(NSLocalizedString("task.details.priorityHint", comment: ""))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     private var saveDirectory: URL {

@@ -169,12 +169,20 @@ public struct DownloadItem: Identifiable, Codable {
     /// Phase 5 named queues: the queue this task belongs to. nil = the
     /// default queue (also the legacy value for pre-queue resume files).
     public var queueID: UUID? = nil
+    /// Backlog #7: per-task priority. Higher starts sooner when a queue
+    /// slot frees up (QueuePlanner sorts candidates by priority, then by
+    /// list position). Editable in the task details sheet.
+    public var priority: Int = 0
+    /// Backlog #7: persisted list position for drag-reorder. loadAll sorts
+    /// by (sortRank, addedAt); legacy saves have sortRank 0 everywhere so
+    /// their addedAt order is preserved.
+    public var sortRank: Int = 0
 
     private enum CodingKeys: String, CodingKey {
         case id, url, filename, totalBytes, downloadedBytes, segments, state,
              speedBytesPerSec, category, sourceSite, destinationURL, addedAt,
              errorMessage, sourcePageURL, eTag, lastModified, linkExpired,
-             speedLimitBytesPerSec, queueID
+             speedLimitBytesPerSec, queueID, priority, sortRank
         // requestHeaders intentionally absent: runtime-only secret.
     }
 
@@ -198,7 +206,9 @@ public struct DownloadItem: Identifiable, Codable {
         linkExpired: Bool = false,
         requestHeaders: [String: String]? = nil,
         speedLimitBytesPerSec: Int64 = 0,
-        queueID: UUID? = nil
+        queueID: UUID? = nil,
+        priority: Int = 0,
+        sortRank: Int = 0
     ) {
         self.id = id
         self.url = url
@@ -220,6 +230,8 @@ public struct DownloadItem: Identifiable, Codable {
         self.requestHeaders = requestHeaders
         self.speedLimitBytesPerSec = speedLimitBytesPerSec
         self.queueID = queueID
+        self.priority = priority
+        self.sortRank = sortRank
     }
 
     /// Custom decoder: `speedLimitBytesPerSec` (Phase 5) is absent from
@@ -248,6 +260,8 @@ public struct DownloadItem: Identifiable, Codable {
         linkExpired = try c.decodeIfPresent(Bool.self, forKey: .linkExpired) ?? false
         speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
         queueID = try c.decodeIfPresent(UUID.self, forKey: .queueID)
+        priority = try c.decodeIfPresent(Int.self, forKey: .priority) ?? 0
+        sortRank = try c.decodeIfPresent(Int.self, forKey: .sortRank) ?? 0
         // requestHeaders is runtime-only and never persisted.
         requestHeaders = nil
     }

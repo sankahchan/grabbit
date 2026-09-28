@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Downloads tab: recovery banner, then one neo card per download with a
 /// segmented per-connection progress bar and pause/resume/cancel/remove.
@@ -13,6 +14,8 @@ struct DownloadsView: View {
     @State private var showingBatch = false
     @State private var deletingItem: DownloadItem?
     @State private var detailsSubject: TaskDetailsSheet.Subject?
+    /// Backlog #7: the card currently being dragged (for drop-reorder).
+    @State private var draggedItemID: UUID?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -48,6 +51,17 @@ struct DownloadsView: View {
                     LazyVStack(spacing: 16) {
                         ForEach(engine.items) { item in
                             downloadCard(for: item)
+                                // Backlog #7: drag a card onto another to
+                                // reorder the queue.
+                                .onDrag {
+                                    draggedItemID = item.id
+                                    return NSItemProvider(
+                                        object: item.id.uuidString as NSString)
+                                }
+                                .onDrop(of: [.text], delegate: DownloadDropDelegate(
+                                    target: item,
+                                    draggedID: $draggedItemID,
+                                    engine: engine))
                         }
                     }
                     .padding(8)
@@ -138,6 +152,12 @@ struct DownloadsView: View {
                     .font(.headline.weight(.bold))
                     .lineLimit(1)
                 stateBadge(for: item.state)
+                // Backlog #7: per-task priority marker.
+                if item.priority != 0 {
+                    Text(item.priority > 0
+                        ? "↑\(item.priority)" : "↓\(-item.priority)")
+                        .neoBadge(bg: item.priority > 0 ? Neo.green : Neo.orange)
+                }
                 Spacer()
                 TaskActionBar(actions: TaskAction.actions(forDownload: item.state)) { action in
                     handleAction(action, for: item)
@@ -206,5 +226,28 @@ struct DownloadsView: View {
     private func stateBadge(for state: DownloadState) -> some View {
         Text(state.localizedName)
             .neoBadge(bg: badgeColor(for: state))
+    }
+}
+
+/// Backlog #7: drag-reorder for the downloads list. Reorders live as the
+/// dragged card hovers over a target (dropEntered), so the list visibly
+/// follows the drag; performDrop just clears the drag state.
+private struct DownloadDropDelegate: DropDelegate {
+    let target: DownloadItem
+    @Binding var draggedID: UUID?
+    let engine: DownloadEngine
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedID, draggedID != target.id else { return }
+        engine.moveItem(draggedID: draggedID, to: target.id)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedID = nil
+        return true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
     }
 }

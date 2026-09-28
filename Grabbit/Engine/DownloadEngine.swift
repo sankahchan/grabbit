@@ -475,7 +475,9 @@ public final class DownloadEngine {
             lastModified: probe.lastModified,
             requestHeaders: effectiveHeaders.isEmpty ? nil : effectiveHeaders,
             speedLimitBytesPerSec: speedLimitBytesPerSec,
-            queueID: queueID
+            queueID: queueID,
+            // Backlog #7: new tasks go last in the persisted list order.
+            sortRank: (items.map(\.sortRank).max() ?? -1) + 1
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -593,6 +595,36 @@ public final class DownloadEngine {
             items[index].queueID = nil
             persistItem(id: items[index].id)
         }
+        kickQueue()
+    }
+
+    /// Backlog #7: drag-reorder. Moves the dragged task to the target
+    /// task's position, renumbers the persisted ranks, and re-kicks the
+    /// queue (list order is the queue's start order for equal priority).
+    @MainActor
+    public func moveItem(draggedID: UUID, to targetID: UUID) {
+        guard draggedID != targetID,
+              let from = items.firstIndex(where: { $0.id == draggedID }),
+              let to = items.firstIndex(where: { $0.id == targetID })
+        else { return }
+        let moving = items.remove(at: from)
+        // Removing shifts the target left when it was after the source.
+        let insertAt = from < to ? to - 1 : to
+        items.insert(moving, at: insertAt)
+        for (rank, index) in items.indices.enumerated() {
+            items[index].sortRank = rank
+            persistItem(id: items[index].id)
+        }
+        kickQueue()
+    }
+
+    /// Backlog #7: per-task priority (-5...5). Higher starts sooner when a
+    /// queue slot frees up.
+    @MainActor
+    public func setPriority(id: UUID, priority: Int) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index].priority = max(-5, min(5, priority))
+        persistItem(id: id)
         kickQueue()
     }
 

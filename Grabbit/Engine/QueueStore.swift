@@ -94,8 +94,9 @@ public final class QueueStore {
 /// caps. Pure (no engine needed) so it's unit-testable; the engine applies
 /// the result via `start(_:)`.
 enum QueuePlanner {
-    /// - Returns: queued items that may start now, oldest-first per queue,
-    ///   cycling through queues in store order until the caps fill.
+    /// - Returns: queued items that may start now — per queue, highest
+    ///   priority first, then list position (drag-reorder) — cycling
+    ///   through queues in store order until the caps fill.
     static func startable(
         items: [DownloadItem],
         queues: [DownloadQueue],
@@ -127,13 +128,23 @@ enum QueuePlanner {
         var result: [DownloadItem] = []
         var startedIDs = Set<UUID>()
         var progressed = true
+        // Backlog #7: queue start order — priority first (higher starts
+        // sooner), then list position (drag-reorder defines it).
+        let orderedItems = items.enumerated()
+            .sorted {
+                if $0.element.priority != $1.element.priority {
+                    return $0.element.priority > $1.element.priority
+                }
+                return $0.offset < $1.offset
+            }
+            .map(\.element)
         while progressed && globalActive < globalMax {
             progressed = false
             for queue in orderedQueues {
                 guard globalActive < globalMax,
                       (activeByQueue[queue.id] ?? 0) < cap(for: queue.id)
                 else { continue }
-                if let next = items.first(where: {
+                if let next = orderedItems.first(where: {
                     $0.state == .queued
                         && !startedIDs.contains($0.id)
                         && effectiveID($0) == queue.id
