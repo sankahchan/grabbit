@@ -39,6 +39,9 @@ public struct AppSettings: Codable {
     /// Completed downloads/torrents leave their lists automatically
     /// (the History tab keeps the permanent record).
     public var autoClearFinished = true
+    /// Failed downloads/torrents also leave their lists automatically
+    /// (the History tab keeps the record, with retry).
+    public var autoClearFailed = true
     public var autoUpdateEnabled = true
     public var notificationsEnabled = true
     /// In-app toast cards (bottom-right) on download completion / failure,
@@ -105,7 +108,7 @@ public struct AppSettings: Codable {
 extension AppSettings {
     private enum CodingKeys: String, CodingKey {
         case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
-        case autoResumeOnLaunch, autoClearFinished, autoUpdateEnabled, notificationsEnabled
+        case autoResumeOnLaunch, autoClearFinished, autoClearFailed, autoUpdateEnabled, notificationsEnabled
         case showCompletionToast, showFailureToast, completionSoundEnabled
         case autoExtractArchives, deleteArchiveAfterExtract
         case completionAction, completionCommand
@@ -126,6 +129,7 @@ extension AppSettings {
         clipboardMonitorEnabled = try c.decodeIfPresent(Bool.self, forKey: .clipboardMonitorEnabled) ?? true
         autoResumeOnLaunch = try c.decodeIfPresent(Bool.self, forKey: .autoResumeOnLaunch) ?? false
         autoClearFinished = try c.decodeIfPresent(Bool.self, forKey: .autoClearFinished) ?? true
+        autoClearFailed = try c.decodeIfPresent(Bool.self, forKey: .autoClearFailed) ?? true
         autoUpdateEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateEnabled) ?? true
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
         showCompletionToast = try c.decodeIfPresent(Bool.self, forKey: .showCompletionToast) ?? true

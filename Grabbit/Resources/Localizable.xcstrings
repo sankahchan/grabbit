@@ -5902,6 +5902,23 @@
           }
         }
       }
+    },
+    "settings.autoClearFailed": {
+      "comment": "Settings: auto-clear failed downloads/torrents toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-clear failed tasks"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မအောင်မြင်သော ဒေါင်းလုဒ်နှင့် တောရန့်များ အလိုအလျောက်ရှင်းလင်းရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

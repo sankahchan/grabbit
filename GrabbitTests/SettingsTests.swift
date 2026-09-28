@@ -19,6 +19,31 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(decoded.autoClearFinished)
     }
 
+    func testAutoClearFailedDefaultsTrue() {
+        XCTAssertTrue(AppSettings.default.autoClearFailed)
+    }
+
+    func testAutoClearFailedDecodesLegacyJSON() throws {
+        // Settings saved before the key existed must decode with the default.
+        let data = #"{"language":"system"}"#.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertTrue(decoded.autoClearFailed)
+    }
+
+    func testAutoClearFailedRespectsExplicitFalse() throws {
+        let data = #"{"autoClearFailed":false}"#.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertFalse(decoded.autoClearFailed)
+    }
+
+    func testAutoClearFailedRoundTrips() throws {
+        var s = AppSettings.default
+        s.autoClearFailed = false
+        let data = try JSONEncoder().encode(s)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertFalse(decoded.autoClearFailed)
+    }
+
     func testBasicCardSettingsDecodeLegacyJSON() throws {
         // Settings saved before the Basic-card keys existed must decode
         // with safe defaults (no login item, no frame restore, 5 tasks,

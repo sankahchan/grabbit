@@ -1494,17 +1494,24 @@ public final class DownloadEngine {
                     message: message
                 )
             }
+            // When auto-clear-failed drops the row below, the toast carries
+            // no taskID: its Retry would target a removed item. Retry then
+            // lives in the History tab (which recorded the entry above).
+            let clearFailed = settings.settings.autoClearFailed
             if settings.settings.showFailureToast {
                 toastCenter?.push(AppToast(
                     kind: .failed,
                     source: .download,
                     title: NSLocalizedString("toast.failed.title", comment: ""),
                     message: items[itemIndex].filename + " — " + message,
-                    taskID: id
+                    taskID: clearFailed ? nil : id
                 ))
             }
             if settings.settings.completionSoundEnabled {
                 ToastCenter.playSound(for: .failed)
+            }
+            if clearFailed {
+                remove(id)
             }
         }
         speedSamples[id] = nil

@@ -70,6 +70,7 @@ struct SettingsView: View {
                 .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
+                .onChange(of: store.settings.autoClearFailed) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
                 .onChange(of: store.settings.trackerSyncHours) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
@@ -283,6 +284,8 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.clipboard", comment: ""), isOn: settings.clipboardMonitorEnabled)
             .toggleStyle(NeoToggleStyle())
             Toggle(NSLocalizedString("settings.autoClear", comment: ""), isOn: settings.autoClearFinished)
+            .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.autoClearFailed", comment: ""), isOn: settings.autoClearFailed)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.autoClear.note", comment: ""))
                 .font(.caption)

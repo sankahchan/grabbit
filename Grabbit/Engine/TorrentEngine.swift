@@ -603,17 +603,25 @@ public final class TorrentEngine: TorrentEngineProtocol {
                             failedItem.errorMessage = st.errorDisplay
                         }
                         history.record(.from(torrent: failedItem, status: .failed))
+                        // Mirror the download engine: when auto-clear-failed
+                        // drops the row, the toast carries no taskID (its
+                        // Retry would target a removed torrent); retry lives
+                        // in the History tab.
+                        let clearFailed = settings.settings.autoClearFailed
                         if settings.settings.showFailureToast {
                             toastCenter?.push(AppToast(
                                 kind: .failed,
                                 source: .torrent,
                                 title: NSLocalizedString("toast.failed.title", comment: ""),
                                 message: failedItem.name + " — " + (failedItem.errorMessage ?? ""),
-                                taskID: item.id
+                                taskID: clearFailed ? nil : item.id
                             ))
                         }
                         if settings.settings.completionSoundEnabled {
                             ToastCenter.playSound(for: .failed)
+                        }
+                        if clearFailed {
+                            toPurge.append((item.id, st.gid))
                         }
                     }
                     item.state = newState
