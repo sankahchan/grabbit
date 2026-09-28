@@ -136,6 +136,55 @@ public final class DownloadEngine {
         return result
     }
 
+    // MARK: - LinkGrabber probe (backlog #1)
+
+    /// Public probe result for the LinkGrabber staging area: is the link
+    /// alive, how big is it, and what does the server call it.
+    public struct LinkProbe: Sendable {
+        public var online: Bool
+        public var totalBytes: Int64?
+        public var filename: String?
+        public init(online: Bool, totalBytes: Int64? = nil, filename: String? = nil) {
+            self.online = online
+            self.totalBytes = totalBytes
+            self.filename = filename
+        }
+    }
+
+    /// HEAD, then GET Range bytes=0-0 on failure — the same discovery the
+    /// add path uses, exposed for staging so links can be checked before
+    /// they are committed as downloads.
+    public func probeLink(_ url: URL) async -> LinkProbe {
+        if let (status, headers) = await fetchHeaders(url, method: "HEAD"),
+           (200...299).contains(status)
+        {
+            var result = ProbeResult()
+            Self.applyProbeHeaders(&result, headers: headers)
+            return LinkProbe(online: true, totalBytes: result.totalBytes, filename: result.filename)
+        }
+        if let (status, headers) = await fetchHeaders(
+            url, method: "GET", range: "bytes=0-0"),
+           status == 206 || (200...299).contains(status)
+        {
+            var result = ProbeResult()
+            Self.applyProbeHeaders(&result, headers: headers)
+            if result.totalBytes == nil,
+               let range = headers["content-range"],
+               let total = DownloadItem.totalFromContentRange(range)
+            {
+                result.totalBytes = total
+            }
+            return LinkProbe(online: true, totalBytes: result.totalBytes, filename: result.filename)
+        }
+        return LinkProbe(online: false)
+    }
+
+    /// LinkGrabber dedup: is this URL already a download (or queued)?
+    public func hasItem(with url: URL) -> Bool {
+        let key = url.absoluteString
+        return items.contains { $0.url.absoluteString == key }
+    }
+
     private func fetchHeaders(
         _ url: URL, method: String, range: String? = nil
     ) async -> (status: Int, headers: [String: String])? {

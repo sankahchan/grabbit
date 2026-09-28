@@ -30,12 +30,19 @@ enum BatchLinkParser {
     }
 }
 
+/// Where a batch goes: straight to Downloads, or into the LinkGrabber
+/// staging area for check-then-commit.
+private enum BatchDestination: Hashable {
+    case downloads, linkGrabber
+}
+
 /// Phase 5 batch add: paste many links (one per line) and add them all at
 /// once with shared category / queue / connection settings. Per-item
 /// customization and text-file import arrive post-Phase-5 (backlog #5).
 struct BatchAddSheet: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(QueueStore.self) private var queueStore: QueueStore
+    @Environment(LinkGrabberStore.self) private var linkGrabberStore: LinkGrabberStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
 
@@ -43,6 +50,8 @@ struct BatchAddSheet: View {
     @State private var category: DownloadCategory = .other
     @State private var queueID: UUID? = nil
     @State private var connections: Int = 8
+    @State private var destination: BatchDestination = .downloads
+    @State private var packageName = ""
     @State private var isAdding = false
     /// The in-flight batch, so Cancel can stop it (the current probe
     /// finishes its timeout at the latest). Already-added links stay as
@@ -115,6 +124,23 @@ struct BatchAddSheet: View {
                 Spacer()
             }
 
+            // MARK: Destination
+            VStack(alignment: .leading, spacing: 6) {
+                Text(NSLocalizedString("batch.destination", comment: ""))
+                    .font(.headline)
+                NeoSegmented(selection: $destination, titles: [
+                    (.downloads, NSLocalizedString("batch.destination.downloads", comment: "")),
+                    (.linkgrabber, NSLocalizedString("batch.destination.linkgrabber", comment: "")),
+                ])
+                if destination == .linkgrabber {
+                    TextField(
+                        NSLocalizedString("linkgrabber.packageName", comment: ""),
+                        text: $packageName
+                    )
+                    .neoTextField()
+                }
+            }
+
             // MARK: Add
             HStack {
                 Button(NSLocalizedString("common.cancel", comment: "")) {
@@ -123,9 +149,9 @@ struct BatchAddSheet: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
                 if isAdding { ProgressView().controlSize(.small) }
-                Button(String(
-                    format: NSLocalizedString("batch.add", comment: ""),
-                    links.count)
+                Button(destination == .downloads
+                    ? String(format: NSLocalizedString("batch.add", comment: ""), links.count)
+                    : String(format: NSLocalizedString("batch.stage", comment: ""), links.count)
                 ) {
                     addAll()
                 }
@@ -139,6 +165,20 @@ struct BatchAddSheet: View {
 
     private func addAll() {
         let urls = links
+        // Staging needs no per-link probing here — the LinkGrabber store
+        // probes each link itself as it lands in the package.
+        if destination == .linkgrabber {
+            let name = packageName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let fallback = String(
+                format: NSLocalizedString("linkgrabber.package.defaultName", comment: ""),
+                DateFormatter.localizedString(
+                    from: Date(), dateStyle: .short, timeStyle: .short))
+            linkGrabberStore.stage(
+                urls: urls,
+                packageName: name.isEmpty ? fallback : name)
+            dismiss()
+            return
+        }
         let category = category
         let queueID = queueID
         let connections = connections

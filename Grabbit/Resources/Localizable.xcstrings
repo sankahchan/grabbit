@@ -4287,6 +4287,414 @@
           }
         }
       }
+    },
+    "nav.linkgrabber": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LinkGrabber"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်ကောက်စု"
+          }
+        }
+      }
+    },
+    "linkgrabber.subtitle": {
+      "comment": "LinkGrabber header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check links before downloading — online/offline status, size, rename, then commit."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်မလုပ်မီ လင့်ခ်များစစ်ဆေးရန် — အွန်လိုင်း/အော့ဖ်လိုင်းအခြေအနေ၊ အရွယ်အစား၊ အမည်ပြောင်းပြီးမှ ဒေါင်းလုဒ်လုပ်ပါ။"
+          }
+        }
+      }
+    },
+    "linkgrabber.empty.title": {
+      "comment": "LinkGrabber empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No staged links"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စုစည်းထားသော လင့်ခ်မရှိပါ"
+          }
+        }
+      }
+    },
+    "linkgrabber.empty.hint": {
+      "comment": "LinkGrabber empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste links with Batch Add and send them here to check them before downloading."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်မလုပ်မီ စစ်ဆေးရန် Batch Add ဖြင့် လင့်ခ်များဤနေရာသို့ ပို့ပါ။"
+          }
+        }
+      }
+    },
+    "linkgrabber.newPackage": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New package"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အထုပ်အသစ်"
+          }
+        }
+      }
+    },
+    "linkgrabber.packageName": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အထုပ်အမည်"
+          }
+        }
+      }
+    },
+    "linkgrabber.package.defaultName": {
+      "comment": "LinkGrabber default package name with date",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အထုပ် %@"
+          }
+        }
+      }
+    },
+    "linkgrabber.links.count": {
+      "comment": "LinkGrabber package link count",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d links"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ် %d ခု"
+          }
+        }
+      }
+    },
+    "linkgrabber.downloadPackage": {
+      "comment": "LinkGrabber commit whole package",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်"
+          }
+        }
+      }
+    },
+    "linkgrabber.downloadSelected": {
+      "comment": "LinkGrabber commit selected",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download selected (%d)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွေးထားသည်များကို ဒေါင်းလုဒ် (%d)"
+          }
+        }
+      }
+    },
+    "linkgrabber.removeSelected": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove selected"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွေးထားသည်များကို ဖယ်"
+          }
+        }
+      }
+    },
+    "linkgrabber.selectAll": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select all"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံးရွေး"
+          }
+        }
+      }
+    },
+    "linkgrabber.selectNone": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select none"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွေးချယ်မှုဖျက်"
+          }
+        }
+      }
+    },
+    "linkgrabber.filename": {
+      "comment": "LinkGrabber link filename field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်အမည်"
+          }
+        }
+      }
+    },
+    "linkgrabber.sizeUnknown": {
+      "comment": "LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "size unknown"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရွယ်အစားမသိ"
+          }
+        }
+      }
+    },
+    "linkgrabber.status.checking": {
+      "comment": "LinkGrabber link status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စစ်ဆေးနေသည်…"
+          }
+        }
+      }
+    },
+    "linkgrabber.status.online": {
+      "comment": "LinkGrabber link status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အွန်လိုင်း"
+          }
+        }
+      }
+    },
+    "linkgrabber.status.offline": {
+      "comment": "LinkGrabber link status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အော့ဖ်လိုင်း"
+          }
+        }
+      }
+    },
+    "linkgrabber.status.duplicate": {
+      "comment": "LinkGrabber link status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်နေ"
+          }
+        }
+      }
+    },
+    "batch.destination": {
+      "comment": "Batch add destination",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်မည့်နေရာ"
+          }
+        }
+      }
+    },
+    "batch.destination.downloads": {
+      "comment": "Batch add destination",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်များ"
+          }
+        }
+      }
+    },
+    "batch.destination.linkgrabber": {
+      "comment": "Batch add destination",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LinkGrabber"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်ကောက်စု"
+          }
+        }
+      }
+    },
+    "batch.stage": {
+      "comment": "Batch add to LinkGrabber",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stage %d links"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ် %d ခု စုစည်း"
+          }
+        }
+      }
+    },
+    "common.create": {
+      "comment": "Shared",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖန်တီး"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

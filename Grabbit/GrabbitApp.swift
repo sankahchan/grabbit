@@ -18,6 +18,7 @@ struct GrabbitApp: App {
     @State private var schedulerStore: SchedulerStore
     @State private var queueStore: QueueStore
     @State private var watchFolderStore: WatchFolderStore
+    @State private var linkGrabberStore: LinkGrabberStore
     /// Phase 5 watch folders: plain let — it owns no UI state itself.
     private let watchMonitor = WatchFolderMonitor()
     @State private var updater: SPUStandardUpdaterController?
@@ -42,6 +43,7 @@ struct GrabbitApp: App {
         let sharedQueues = QueueStore()
         _queueStore = State(initialValue: sharedQueues)
         _watchFolderStore = State(initialValue: WatchFolderStore())
+        _linkGrabberStore = State(initialValue: LinkGrabberStore())
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
@@ -50,6 +52,9 @@ struct GrabbitApp: App {
         _trayController.wrappedValue.configure(
             downloads: _downloadEngine.wrappedValue,
             torrents: _torrentEngine.wrappedValue)
+        // LinkGrabber staging: dedup + probe + commit through the engine.
+        _linkGrabberStore.wrappedValue.configure(
+            downloadEngine: _downloadEngine.wrappedValue)
         // One-time import of already-finished tasks so existing users don't
         // start with an empty history. Runs only when the store is empty.
         sharedHistory.backfillIfNeeded(
@@ -98,6 +103,7 @@ struct GrabbitApp: App {
                 .environment(schedulerStore)
                 .environment(queueStore)
                 .environment(watchFolderStore)
+                .environment(linkGrabberStore)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.

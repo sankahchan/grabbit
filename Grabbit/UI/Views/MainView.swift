@@ -83,6 +83,8 @@ struct MainView: View {
         switch selection {
         case .downloads:
             DownloadsView()
+        case .linkgrabber:
+            LinkGrabberView()
         case .torrents:
             TorrentsView()
         case .media:

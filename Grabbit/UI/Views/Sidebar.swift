@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, grabber, history, scheduler, settings
+    case downloads, linkgrabber, torrents, media, grabber, history, scheduler, settings
 
     var icon: String {
         switch self {
         case .downloads: "tray.and.arrow.down"
+        case .linkgrabber: "link"
         case .torrents: "arrow.triangle.2.circlepath" // "magnet" is not a real SF Symbol — renders blank
         case .media: "play.rectangle"
         case .grabber: "globe"
@@ -18,6 +19,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
     var localizedTitle: String {
         switch self {
         case .downloads: NSLocalizedString("nav.downloads", comment: "")
+        case .linkgrabber: NSLocalizedString("nav.linkgrabber", comment: "")
         case .torrents: NSLocalizedString("nav.torrents", comment: "")
         case .media: NSLocalizedString("nav.media", comment: "")
         case .grabber: NSLocalizedString("nav.grabber", comment: "")
@@ -34,6 +36,7 @@ struct Sidebar: View {
     @Binding var selection: SidebarSelection
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+    @Environment(LinkGrabberStore.self) private var linkGrabberStore: LinkGrabberStore
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
@@ -98,6 +101,7 @@ struct Sidebar: View {
     private func count(for item: SidebarSelection) -> Int? {
         switch item {
         case .downloads: engine.items.count
+        case .linkgrabber: linkGrabberStore.stagedCount
         case .torrents: torrentEngine.torrents.count
         case .grabber, .media, .history, .scheduler, .settings: nil
         }
