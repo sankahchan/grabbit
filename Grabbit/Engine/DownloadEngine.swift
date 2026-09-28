@@ -141,6 +141,11 @@ public final class DownloadEngine {
     ) async -> (status: Int, headers: [String: String])? {
         var request = URLRequest(url: url)
         request.httpMethod = method
+        // Probe timeout: a server that won't answer headers in 15s is
+        // effectively dead for discovery — fail fast instead of hanging
+        // the add sheet on the 60s default (x2 sequential probes). The
+        // real download has its own timeouts and surfaces a proper error.
+        request.timeoutInterval = 15
         if let range {
             request.setValue(range, forHTTPHeaderField: "Range")
         }

@@ -37,12 +37,17 @@ struct BatchAddSheet: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(QueueStore.self) private var queueStore: QueueStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
 
     @State private var text = ""
     @State private var category: DownloadCategory = .other
     @State private var queueID: UUID? = nil
     @State private var connections: Int = 8
     @State private var isAdding = false
+    /// The in-flight batch, so Cancel can stop it (the current probe
+    /// finishes its timeout at the latest). Already-added links stay as
+    /// real downloads; the rest are never added.
+    @State private var addTask: Task<Void, Never>?
 
     private var links: [URL] { BatchLinkParser.parse(text) }
     private var skipped: Int { BatchLinkParser.invalidCount(in: text, parsed: links) }
@@ -112,6 +117,10 @@ struct BatchAddSheet: View {
 
             // MARK: Add
             HStack {
+                Button(NSLocalizedString("common.cancel", comment: "")) {
+                    cancel()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
                 if isAdding { ProgressView().controlSize(.small) }
                 Button(String(
@@ -135,15 +144,28 @@ struct BatchAddSheet: View {
         let connections = connections
         let engine = engine
         isAdding = true
-        Task {
+        addTask = Task {
             for url in urls {
+                if Task.isCancelled { break }
                 await engine.add(
                     url: url,
                     category: category,
                     connections: connections,
                     queueID: queueID)
             }
+            isAdding = false
+            addTask = nil
             dismiss()
         }
+    }
+
+    /// Stops the in-flight batch (the current probe finishes its timeout
+    /// at the latest) and closes the sheet. Links already added stay as
+    /// real downloads.
+    private func cancel() {
+        addTask?.cancel()
+        addTask = nil
+        isAdding = false
+        dismiss()
     }
 }

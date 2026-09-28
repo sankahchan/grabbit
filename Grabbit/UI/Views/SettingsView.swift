@@ -190,7 +190,20 @@ struct SettingsView: View {
             subHeader(NSLocalizedString("settings.section.language", comment: ""))
             HStack {
                 // Autonyms are shown in their own language by convention.
-                NeoSegmented(selection: settings.language, titles: [
+                // The bundle MUST switch before the observable mutation:
+                // every body re-evaluated after this point (sidebar
+                // included) resolves NSLocalizedString in the new language.
+                // Doing it in .onChange instead left the sidebar baking
+                // stale strings one toggle behind — the .id() re-key ran
+                // before apply().
+                let language = Binding<AppLanguage>(
+                    get: { settings.wrappedValue.language },
+                    set: { new in
+                        BundleLocalization.apply(new)
+                        settings.wrappedValue.language = new
+                    }
+                )
+                NeoSegmented(selection: language, titles: [
                     (AppLanguage.system, NSLocalizedString("settings.language.system", comment: "")),
                     (AppLanguage.en, "English"),
                     (AppLanguage.my, "မြန်မာ"),
