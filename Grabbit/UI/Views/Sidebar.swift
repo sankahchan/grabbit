@@ -1,7 +1,14 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, linkgrabber, torrents, media, grabber, history, scheduler, settings
+    case downloads, torrents, media, grabber, linkgrabber, scheduler, history, settings
+
+    /// Main tabs, top-to-bottom order.
+    static let mainTabs: [SidebarSelection] = [
+        .downloads, .torrents, .media, .grabber, .linkgrabber, .scheduler,
+    ]
+    /// Utility buttons pinned to the sidebar bottom.
+    static let bottomTabs: [SidebarSelection] = [.history, .settings]
 
     var icon: String {
         switch self {
@@ -42,10 +49,14 @@ struct Sidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(SidebarSelection.allCases, id: \.self) { item in
+            ForEach(SidebarSelection.mainTabs, id: \.self) { item in
                 sidebarRow(for: item)
             }
             Spacer()
+            Divider()
+            ForEach(SidebarSelection.bottomTabs, id: \.self) { item in
+                sidebarRow(for: item)
+            }
         }
         .padding(12)
         // Explicit language dependency: NavigationSplitView reuses its
