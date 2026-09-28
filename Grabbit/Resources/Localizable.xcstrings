@@ -3915,6 +3915,102 @@
           }
         }
       }
+    },
+    "downloads.batch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အစုလိုက်"
+          }
+        }
+      }
+    },
+    "batch.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch Add"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အစုလိုက် ထည့်ရန်"
+          }
+        }
+      }
+    },
+    "batch.links": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Links (one per line)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်များ (တစ်ကြောင်းလျှင် တစ်ခု)"
+          }
+        }
+      }
+    },
+    "batch.found": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d links found"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ် %d ခု တွေ့ရှိသည်"
+          }
+        }
+      }
+    },
+    "batch.skipped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d invalid skipped"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ခု မမှန်ကန်သဖြင့် ကျော်သွားသည်"
+          }
+        }
+      }
+    },
+    "batch.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %d downloads"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် %d ခု ထည့်ရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

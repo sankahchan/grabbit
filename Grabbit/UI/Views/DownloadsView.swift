@@ -9,6 +9,7 @@ struct DownloadsView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
+    @State private var showingBatch = false
     @State private var deletingItem: DownloadItem?
     @State private var detailsSubject: TaskDetailsSheet.Subject?
 
@@ -24,6 +25,10 @@ struct DownloadsView: View {
             } else {
                 HStack {
                     Spacer()
+                    Button(NSLocalizedString("downloads.batch", comment: "")) {
+                        showingBatch = true
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
                     Button(NSLocalizedString("downloads.add", comment: "")) {
                         showingAdd = true
                     }
@@ -43,6 +48,9 @@ struct DownloadsView: View {
         .navigationTitle(NSLocalizedString("downloads.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddDownloadSheet()
+        }
+        .sheet(isPresented: $showingBatch) {
+            BatchAddSheet()
         }
         .alert(item: $deletingItem) { item in
             // engine.remove drops the record and deletes the partial
@@ -96,10 +104,16 @@ struct DownloadsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(NSLocalizedString("downloads.add", comment: "")) {
-                showingAdd = true
+            HStack(spacing: 10) {
+                Button(NSLocalizedString("downloads.batch", comment: "")) {
+                    showingBatch = true
+                }
+                .neoButton(bg: Neo.blue)
+                Button(NSLocalizedString("downloads.add", comment: "")) {
+                    showingAdd = true
+                }
+                .neoButton(bg: Neo.yellow)
             }
-            .neoButton(bg: Neo.yellow)
             .padding(.top, 4)
         }
         .padding()
