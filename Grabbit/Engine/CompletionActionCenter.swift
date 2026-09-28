@@ -56,11 +56,18 @@ public final class CompletionActionCenter {
     }
 
     /// Called whenever a download/torrent reaches a terminal state.
+    /// Synchronous when already on main (keeps unit tests deterministic),
+    /// hops via `Task @MainActor` when called off-main (torrent poll loop).
     public func taskDidSettle() {
-        guard Thread.isMainThread else {
-            Task { @MainActor [weak self] in self?.taskDidSettle() }
-            return
+        if Thread.isMainThread {
+            MainActor.assumeIsolated { self.settleOnMain() }
+        } else {
+            Task { @MainActor [weak self] in self?.settleOnMain() }
         }
+    }
+
+    @MainActor
+    private func settleOnMain() {
         settledSinceIdle += 1
         let action = settings.settings.completionAction
         guard action != .none else { return }
