@@ -3383,6 +3383,91 @@
           }
         }
       }
+    },
+    "settings.magnetHandler": {
+      "comment": "Torrent settings: default app for magnet links",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet links"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet link များ"
+          }
+        }
+      }
+    },
+    "settings.magnetHandler.note": {
+      "comment": "Torrent settings: %@ is the current magnet handler app name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently opened by %@ — take over so Grabbit opens magnet links."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လက်ရှိတွင် %@ က ဖွင့်နေသည် — Magnet link များကို Grabbit က ဖွင့်နိုင်ရန် လွှဲပြောင်းပါ။"
+          }
+        }
+      }
+    },
+    "settings.magnetHandler.current": {
+      "comment": "Torrent settings: Grabbit is the magnet handler",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit opens magnet links."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnet link များကို Grabbit က ဖွင့်မည်။"
+          }
+        }
+      }
+    },
+    "settings.magnetHandler.none": {
+      "comment": "Torrent settings: no magnet handler (used inside the note)",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no app"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မည်သည့် app မှမရှိပါ"
+          }
+        }
+      }
+    },
+    "settings.magnetHandler.setDefault": {
+      "comment": "Torrent settings: claim magnet links button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set Grabbit as default"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ကို default ထားရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

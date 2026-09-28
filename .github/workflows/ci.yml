@@ -60,3 +60,12 @@ jobs:
           -destination 'platform=macOS'
           CODE_SIGNING_REQUIRED=NO
           CODE_SIGNING_ALLOWED=NO
+
+      # Diagnostic: what localizations actually made it into the built app?
+      # (Myanmar switching silently fails when my.lproj is missing.)
+      - name: List built localizations
+        if: always()
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -maxdepth 4 -name "Grabbit.app" -type d 2>/dev/null | head -1)
+          echo "App: $APP"
+          ls "$APP/Contents/Resources/" | grep -i lproj || echo "NO .lproj DIRS"

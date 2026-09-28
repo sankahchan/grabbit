@@ -35,4 +35,15 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(String(localized: "definitely.not.a.real.key").isEmpty)
         BundleLocalization.apply(.system)
     }
+
+    func testMyanmarLocalizationActuallyResolves() {
+        // End-to-end: selecting Myanmar must serve Myanmar strings through
+        // the normal String(localized:) path. If this fails, the .lproj
+        // isn't in the built bundle or the override isn't intercepting.
+        BundleLocalization.apply(.my)
+        XCTAssertEqual(String(localized: "settings.title"), "ဆက်တင်များ")
+        BundleLocalization.apply(.en)
+        XCTAssertEqual(String(localized: "settings.title"), "Settings")
+        BundleLocalization.apply(.system)
+    }
 }

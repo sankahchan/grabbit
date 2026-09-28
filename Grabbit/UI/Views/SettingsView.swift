@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Settings tab: neo-styled cards for appearance, language, downloads,
 /// torrents, updates, and general. Everything binds to `SettingsStore` and persists
@@ -6,6 +7,9 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
     @Environment(\.colorScheme) private var scheme
+    /// Display name of the app macOS currently routes magnet: links to
+    /// (e.g. "Motrix"); empty when none is set.
+    @State private var magnetAppName = ""
 
     var body: some View {
         @Bindable var store = store
@@ -13,37 +17,32 @@ struct SettingsView: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                // Small cards pair up side-by-side; the wide cards
-                // (downloads/torrents) get the full row. Content is capped
-                // so the cards don't stretch across ultra-wide windows.
-                LazyVGrid(
-                    columns: [GridItem(.flexible(), spacing: 16),
-                              GridItem(.flexible(), spacing: 16)],
-                    spacing: 16
-                ) {
+                // Appearance + Language always share one row; the wide
+                // cards (downloads/torrents) get the full row below.
+                // Content breathes with the window (capped at 1000 so rows
+                // don't stretch across ultra-wide displays).
+                HStack(alignment: .top, spacing: 16) {
                     appearanceCard(settings: settings)
+                        .frame(maxWidth: .infinity, alignment: .top)
                     languageCard(settings: settings)
+                        .frame(maxWidth: .infinity, alignment: .top)
                 }
                 downloadsCard(settings: settings)
                 torrentsCard(settings: settings)
-                LazyVGrid(
-                    columns: [GridItem(.flexible(), spacing: 16),
-                              GridItem(.flexible(), spacing: 16)],
-                    spacing: 16
-                ) {
-                    // The updates card only exists when Sparkle can actually
-                    // run (signed Release build + real SUPublicEDKey).
-                    if GrabbitApp.isUpdaterConfigured {
-                        updatesCard(settings: settings)
-                    }
-                    generalCard(settings: settings)
+                // The updates card only exists when Sparkle can actually
+                // run (signed Release build + real SUPublicEDKey).
+                if GrabbitApp.isUpdaterConfigured {
+                    updatesCard(settings: settings)
                 }
+                // General always comes last.
+                generalCard(settings: settings)
             }
-            .frame(maxWidth: 720)
+            .frame(maxWidth: 1000)
             .frame(maxWidth: .infinity)
             .padding(16)
         }
         .navigationTitle(String(localized: "settings.title"))
+        .onAppear { refreshMagnetHandler() }
         .onChange(of: store.settings.theme) { _, _ in store.save() }
         .onChange(of: store.settings.language, handleLanguageChange)
         .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
@@ -157,8 +156,69 @@ struct SettingsView: View {
             Text(String(localized: "settings.trackers.autoUpdate.note"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Divider()
+            magnetHandlerRow()
         }
         .neoCard()
+    }
+
+    // MARK: - Magnet link handler
+
+    /// Which app macOS opens magnet: links with. Registering the scheme in
+    /// Info.plist isn't enough when another app (e.g. Motrix) already owns
+    /// it — the user picks the winner here.
+    private func magnetHandlerRow() -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "settings.magnetHandler"))
+                    .font(.subheadline.weight(.semibold))
+                Text(magnetHandlerNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(String(localized: "settings.magnetHandler.setDefault")) {
+                setGrabbitAsMagnetHandler()
+            }
+            .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+            .disabled(isGrabbitMagnetHandler)
+        }
+    }
+
+    private var isGrabbitMagnetHandler: Bool {
+        magnetAppName == "Grabbit"
+    }
+
+    private var magnetHandlerNote: String {
+        if isGrabbitMagnetHandler {
+            return String(localized: "settings.magnetHandler.current")
+        }
+        let current = magnetAppName.isEmpty
+            ? String(localized: "settings.magnetHandler.none")
+            : magnetAppName
+        return String(
+            format: String(localized: "settings.magnetHandler.note"), current)
+    }
+
+    private func refreshMagnetHandler() {
+        guard let magnet = URL(string: "magnet:"),
+              let appURL = NSWorkspace.shared.urlForApplication(toOpen: magnet)
+        else {
+            magnetAppName = ""
+            return
+        }
+        magnetAppName = appURL.deletingPathExtension().lastPathComponent
+    }
+
+    private func setGrabbitAsMagnetHandler() {
+        NSWorkspace.shared.setDefaultApplication(
+            at: Bundle.main.bundleURL,
+            toOpenURLsWithScheme: "magnet"
+        ) { _ in
+            Task { @MainActor in self.refreshMagnetHandler() }
+        }
+        // Optimistic immediate refresh; the completion re-reads anyway.
+        refreshMagnetHandler()
     }
 
     private func seedRatioRow(settings: Binding<AppSettings>) -> some View {
