@@ -14,7 +14,7 @@ public final class ResumeStore {
     public let directory: URL
     private var autosaveTimer: DispatchSourceTimer?
 
-    public init() {
+    public convenience init() {
         let base = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Grabbit/States", isDirectory: true)
         self.init(directory: base)
