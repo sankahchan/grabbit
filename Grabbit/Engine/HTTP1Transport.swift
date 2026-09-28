@@ -325,10 +325,10 @@ final class ProxyHTTP1Transport: HTTP1Transport {
             kCFStreamSSLLevel: kCFStreamSocketSecurityLevelNegotiatedSSL,
             kCFStreamSSLPeerName: targetHost as CFString,
         ]
-        // CFStreamPropertyKey is an NSString typealias: pass the constant
-        // straight through (toll-free bridged), no struct init involved.
-        CFReadStreamSetProperty(readStream, kCFStreamPropertySSLSettings, ssl as CFDictionary)
-        CFWriteStreamSetProperty(writeStream, kCFStreamPropertySSLSettings, ssl as CFDictionary)
+        // CFStreamPropertyKey's init takes the CFString constant directly.
+        let sslKey = CFStreamPropertyKey(kCFStreamPropertySSLSettings)
+        CFReadStreamSetProperty(readStream, sslKey, ssl as CFDictionary)
+        CFWriteStreamSetProperty(writeStream, sslKey, ssl as CFDictionary)
         guard CFReadStreamOpen(readStream), CFWriteStreamOpen(writeStream) else {
             CFReadStreamClose(readStream)
             CFWriteStreamClose(writeStream)
