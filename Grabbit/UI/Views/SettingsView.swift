@@ -30,6 +30,9 @@ struct SettingsView: View {
                 // stretch across ultra-wide displays).
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
+                // Backlog #3/#4: per-host profiles and packagizer rules.
+                HostProfilesCard()
+                PackagizerCard()
                 completionCard(settings: settings)
                 proxyCard(settings: settings)
                 torrentsCard(settings: settings)

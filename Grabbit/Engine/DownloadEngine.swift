@@ -24,6 +24,10 @@ public final class DownloadEngine {
     public var maxConnections = 16
     /// In-app completion/failure toast cards. Wired by GrabbitApp.
     public weak var toastCenter: ToastCenter?
+    /// Backlog #3/#4: per-host profiles and packagizer rules, applied in
+    /// add(). Wired by GrabbitApp; nil in unit tests.
+    public weak var hostProfileStore: HostProfileStore?
+    public weak var packagizerStore: PackagizerStore?
     /// After-downloads-finish actions (sleep/shutdown/…). Wired by GrabbitApp.
     public weak var completionCenter: CompletionActionCenter?
 
@@ -367,6 +371,13 @@ public final class DownloadEngine {
         let resolvedURL = await MediaFireResolver.resolve(
             url, proxyDictionary: proxyDictionary())
 
+        // Backlog #4 (packagizer): the first enabled rule whose regex
+        // matches the URL renames / re-routes the download.
+        let rule = packagizerStore?.rule(for: resolvedURL)
+        // Backlog #3 (host profiles): saved credentials, thread count,
+        // and user-agent for this host.
+        let hostProfile = hostProfileStore?.profile(for: resolvedURL.host)
+
         // Probe the server for total size. We deliberately do NOT gate
         // multi-connection on the HEAD's Accept-Ranges header: many
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
@@ -375,19 +386,52 @@ public final class DownloadEngine {
         let probe = await probe(resolvedURL)
         let totalBytes = probe.totalBytes
 
-        let candidate = filename ?? probe.filename ?? resolvedURL.lastPathComponent
+        // Explicit filename wins; otherwise the packagizer template
+        // renders against the server's natural name.
+        let naturalName = probe.filename ?? resolvedURL.lastPathComponent
+        let candidate: String
+        if let filename {
+            candidate = filename
+        } else if let rule,
+                  let rendered = rule.render(
+                      filename: naturalName, host: resolvedURL.host)
+        {
+            candidate = rendered
+        } else {
+            candidate = naturalName
+        }
         let decoded = candidate.removingPercentEncoding ?? candidate
         // sanitize_filename: never let a hostile name escape the folder.
         let name = Self.sanitizeFilename(decoded.isEmpty ? "download" : decoded)
         // Auto-detect the category when the caller didn't pin one — the
-        // file then lands in the matching category subfolder.
-        let resolvedCategory = category
+        // file then lands in the matching category subfolder. A
+        // packagizer rule can pin the category instead.
+        let resolvedCategory = category ?? rule?.category
             ?? DownloadCategory.infer(filename: name, contentType: probe.contentType)
+
+        // Host profile credentials / user-agent merge into the per-task
+        // headers (explicit per-task headers win).
+        var effectiveHeaders = headers ?? [:]
+        if let hostProfile {
+            if !hostProfile.userAgent.isEmpty,
+               effectiveHeaders["User-Agent"] == nil
+            {
+                effectiveHeaders["User-Agent"] = hostProfile.userAgent
+            }
+            if let auth = hostProfile.authorizationHeader(),
+               effectiveHeaders["Authorization"] == nil
+            {
+                effectiveHeaders["Authorization"] = auth
+            }
+        }
 
         // aria2-style: never split into pieces smaller than minSplitSize —
         // 16 TCP+TLS handshakes for 16 tiny segments would be pure overhead.
         let minSplitSize: Int64 = 1_048_576 // 1 MiB
-        var connectionCount = max(1, connections ?? min(Self.initialConnections, maxConnections))
+        // Host profile thread count sits between the explicit per-task
+        // value and the global default.
+        let profileConnections: Int? = hostProfile?.maxConnections ?? nil
+        var connectionCount = max(1, connections ?? profileConnections ?? min(Self.initialConnections, maxConnections))
         connectionCount = min(connectionCount, maxConnections)
         if let totalBytes {
             connectionCount = min(connectionCount, max(1, Int(totalBytes / minSplitSize)))
@@ -429,7 +473,7 @@ public final class DownloadEngine {
             sourcePageURL: sourcePageURL,
             eTag: probe.eTag,
             lastModified: probe.lastModified,
-            requestHeaders: headers,
+            requestHeaders: effectiveHeaders.isEmpty ? nil : effectiveHeaders,
             speedLimitBytesPerSec: speedLimitBytesPerSec,
             queueID: queueID
         )

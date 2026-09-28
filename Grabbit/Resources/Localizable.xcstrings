@@ -3089,6 +3089,214 @@
         }
       }
     },
+    "settings.hostProfiles.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Profile"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပရိုဖိုင်ထည့်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.connections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connections"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချိတ်ဆက်မှုများ"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.connectionsAuto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလိုအလျောက်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.customUA": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom UA"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UA သီးသန့်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.host": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဟို့စ်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.hostPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "example.com"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "example.com"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.noAuth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved login"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "login မသိမ်းထားပါ"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved logins, connection counts, and user-agents per host — applied automatically when a download URL matches."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဟို့စ်အလိုက် login၊ connection အရေအတွက်နဲ့ user-agent များ သိမ်းထားမယ် — download URL ကိုက်ညီရင် အလိုအလျောက် သုံးမယ်။"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စကားဝှက်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host Profiles"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဟို့စ်ပရိုဖိုင်များ"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.userAgent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-Agent"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-Agent"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.userAgentPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံမှန်"
+          }
+        }
+      }
+    },
+    "settings.hostProfiles.username": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသုံးပြုသူအမည်"
+          }
+        }
+      }
+    },
     "settings.language.note": {
       "comment": "Setting note",
       "localizations": {
@@ -3238,6 +3446,198 @@
           "stringUnit": {
             "state": "translated",
             "value": "အသိပေးချက်များ"
+          }
+        }
+      }
+    },
+    "settings.packagizer.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Rule"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စည်းမျဉ်းထည့်"
+          }
+        }
+      }
+    },
+    "settings.packagizer.category": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမျိုးအစား"
+          }
+        }
+      }
+    },
+    "settings.packagizer.categoryAuto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလိုအလျောက်"
+          }
+        }
+      }
+    },
+    "settings.packagizer.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမည်"
+          }
+        }
+      }
+    },
+    "settings.packagizer.namePlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rule name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စည်းမျဉ်းအမည်"
+          }
+        }
+      }
+    },
+    "settings.packagizer.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a link matches a rule’s regex, Grabbit renames the file and/or pins its category automatically."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်ခ်က စည်းမျဉ်းရဲ့ regex နဲ့ ကိုက်ညီရင် ဖိုင်နာမည် အလိုအလျောက် ပြောင်းပေးမယ် / category သတ်မှတ်ပေးမယ်။"
+          }
+        }
+      }
+    },
+    "settings.packagizer.pattern": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL pattern (regex)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL ပုံစံ (regex)"
+          }
+        }
+      }
+    },
+    "settings.packagizer.patternInvalid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid regular expression"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "regex မမှန်ပါ"
+          }
+        }
+      }
+    },
+    "settings.packagizer.patternPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "example\\.com/.*\\.zip"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "example\\.com/.*\\.zip"
+          }
+        }
+      }
+    },
+    "settings.packagizer.template": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename template"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်နာမည်ပုံစံ"
+          }
+        }
+      }
+    },
+    "settings.packagizer.templateHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placeholders: {name} {ext} {host} — blank keeps the server’s name."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နေရာချစာလုံးများ: {name} {ext} {host} — လွတ်ထားရင် ဆာဗာပေးတဲ့ နာမည်အတိုင်း။"
+          }
+        }
+      }
+    },
+    "settings.packagizer.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Rules"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်စည်းမျဉ်းများ"
           }
         }
       }

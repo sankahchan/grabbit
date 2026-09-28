@@ -21,6 +21,9 @@ struct GrabbitApp: App {
     @State private var linkGrabberStore: LinkGrabberStore
     @State private var toastCenter: ToastCenter
     @State private var completionCenter: CompletionActionCenter
+    /// Backlog #3/#4: per-host profiles and packagizer rules.
+    @State private var hostProfileStore: HostProfileStore
+    @State private var packagizerStore: PackagizerStore
     /// Phase 5 watch folders: plain let — it owns no UI state itself.
     private let watchMonitor = WatchFolderMonitor()
     @State private var updater: SPUStandardUpdaterController?
@@ -52,6 +55,12 @@ struct GrabbitApp: App {
         // Toast cards: both engines push completion/failure cards here.
         _downloadEngine.wrappedValue.toastCenter = _toastCenter.wrappedValue
         _torrentEngine.wrappedValue.toastCenter = _toastCenter.wrappedValue
+        // Backlog #3/#4: per-host profiles and packagizer rules feed the
+        // download engine's add path.
+        _hostProfileStore = State(initialValue: HostProfileStore())
+        _packagizerStore = State(initialValue: PackagizerStore())
+        _downloadEngine.wrappedValue.hostProfileStore = _hostProfileStore.wrappedValue
+        _downloadEngine.wrappedValue.packagizerStore = _packagizerStore.wrappedValue
         // After-downloads-finish actions (sleep/shutdown/quit/command).
         _completionCenter = State(initialValue: CompletionActionCenter(settings: sharedSettings))
         _completionCenter.wrappedValue.configure(
@@ -119,6 +128,8 @@ struct GrabbitApp: App {
                 .environment(linkGrabberStore)
                 .environment(toastCenter)
                 .environment(completionCenter)
+                .environment(hostProfileStore)
+                .environment(packagizerStore)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.
