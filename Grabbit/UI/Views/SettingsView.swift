@@ -7,10 +7,14 @@ import ServiceManagement
 /// on change.
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var store: SettingsStore
+    @Environment(QueueStore.self) private var queueStore: QueueStore
+    @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
     @Environment(\.colorScheme) private var scheme
     /// Display name of the app macOS currently routes magnet: links to
     /// (e.g. "Motrix"); empty when none is set.
     @State private var magnetAppName = ""
+    /// Phase 5 named queues: name for the queue being added.
+    @State private var newQueueName = ""
 
     var body: some View {
         @Bindable var store = store
@@ -222,8 +226,83 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.autoClear.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Divider()
+            queuesSection()
         }
         .neoCard()
+    }
+
+    // MARK: - Phase 5 named queues
+
+    /// Queue list: rename (non-default), per-queue concurrency stepper,
+    /// delete (non-default; its tasks fall back to the Default queue), add.
+    private func queuesSection() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            subHeader(NSLocalizedString("queue.queues", comment: ""))
+            ForEach(queueStore.queues) { queue in
+                queueRow(queue: queue)
+            }
+            Text(NSLocalizedString("queue.deleteNote", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                TextField(
+                    NSLocalizedString("queue.newName", comment: ""),
+                    text: $newQueueName,
+                    prompt: Text(NSLocalizedString("queue.newName", comment: ""))
+                )
+                .neoTextField()
+                Button(NSLocalizedString("queue.add", comment: "")) {
+                    queueStore.add(name: newQueueName, maxConcurrent: 3)
+                    newQueueName = ""
+                    downloadEngine.kickQueue()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
+                .disabled(newQueueName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+    }
+
+    private func queueRow(queue: DownloadQueue) -> some View {
+        HStack(spacing: 8) {
+            if queue.isDefault {
+                Text(queue.displayName)
+                    .font(.subheadline.weight(.semibold))
+            } else {
+                TextField(
+                    NSLocalizedString("queue.name", comment: ""),
+                    text: Binding(
+                        get: { queue.name },
+                        set: { var updated = queue; updated.name = $0; queueStore.update(updated) }
+                    )
+                )
+                .neoTextField()
+            }
+            Spacer()
+            Text(NSLocalizedString("queue.maxConcurrent", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            NeoStepper(value: Binding(
+                get: { queue.maxConcurrent },
+                set: {
+                    var updated = queue
+                    updated.maxConcurrent = $0
+                    queueStore.update(updated)
+                    downloadEngine.kickQueue()
+                }
+            ), in: 1...20, step: 1) { v in "\(v)" }
+            if !queue.isDefault {
+                Button {
+                    if queueStore.remove(id: queue.id) {
+                        downloadEngine.reassignQueue(from: queue.id)
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
+                .accessibilityLabel(NSLocalizedString("queue.delete", comment: ""))
+            }
+        }
     }
 
     private func torrentsCard(settings: Binding<AppSettings>) -> some View {

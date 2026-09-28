@@ -9,6 +9,7 @@ import AppKit
 struct AddDownloadSheet: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(SettingsStore.self) private var settings: SettingsStore
+    @Environment(QueueStore.self) private var queueStore: QueueStore
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
 
@@ -20,6 +21,7 @@ struct AddDownloadSheet: View {
     @State private var category: DownloadCategory = .other
     @State private var connections: Int = 8
     @State private var speedLimitMB: Int = 0
+    @State private var queueID: UUID? = nil
     @State private var destinationOverride: URL?
     @State private var referer = ""
     @State private var cookie = ""
@@ -133,6 +135,22 @@ struct AddDownloadSheet: View {
                         ? NSLocalizedString("settings.speedLimit.unlimited", comment: "")
                         : "\(v) MB/s"
                 }
+            }
+
+            // MARK: Queue (Phase 5 named queues)
+            HStack {
+                Text(NSLocalizedString("add.queue", comment: ""))
+                    .font(.headline)
+                Spacer()
+                Picker("", selection: $queueID) {
+                    Text(queueStore.defaultQueue.displayName)
+                        .tag(nil as UUID?)
+                    ForEach(queueStore.queues.filter { !$0.isDefault }) { queue in
+                        Text(queue.displayName).tag(queue.id as UUID?)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: 220)
             }
 
             // MARK: Request headers (optional)
@@ -265,7 +283,8 @@ struct AddDownloadSheet: View {
                 connections: connections,
                 destination: destination,
                 headers: headers.isEmpty ? nil : headers,
-                speedLimitBytesPerSec: Int64(speedLimitMB) * 1_048_576
+                speedLimitBytesPerSec: Int64(speedLimitMB) * 1_048_576,
+                queueID: queueID
             )
             dismiss()
         }

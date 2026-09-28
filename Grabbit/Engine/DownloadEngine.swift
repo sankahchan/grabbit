@@ -26,6 +26,9 @@ public final class DownloadEngine {
     private let resumeStore: ResumeStore
     private let history: HistoryStore
     private let settings: SettingsStore
+    /// Phase 5 named queues: per-queue concurrency limits. The global
+    /// `maxActiveTasks` stays the overall ceiling across all queues.
+    public let queues: QueueStore
     private var transports: [UUID: SegmentTransport] = [:]
     private var pendingSegments: [UUID: Int] = [:]
     private var launchGeneration: [UUID: Int] = [:]
@@ -64,10 +67,11 @@ public final class DownloadEngine {
     /// exactly no matter how many connections are open.
     private let globalSpeedBucket = TokenBucket()
 
-    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore()) {
+    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore(), queues: QueueStore = QueueStore()) {
         self.resumeStore = resumeStore
         self.history = history
         self.settings = settings
+        self.queues = queues
         let loaded = resumeStore.loadAll()
         var migrated: [DownloadItem] = []
         migrated.reserveCapacity(loaded.count)
@@ -183,7 +187,8 @@ public final class DownloadEngine {
         destination: URL? = nil,
         sourcePageURL: URL? = nil,
         headers: [String: String]? = nil,
-        speedLimitBytesPerSec: Int64 = 0
+        speedLimitBytesPerSec: Int64 = 0,
+        queueID: UUID? = nil
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
         let url = ShareURLRewriter.rewrite(url)
@@ -245,7 +250,8 @@ public final class DownloadEngine {
             eTag: probe.eTag,
             lastModified: probe.lastModified,
             requestHeaders: headers,
-            speedLimitBytesPerSec: speedLimitBytesPerSec
+            speedLimitBytesPerSec: speedLimitBytesPerSec,
+            queueID: queueID
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -280,9 +286,17 @@ public final class DownloadEngine {
         }
         // Task Management: cap simultaneous downloads. Over-cap tasks wait
         // in .queued; kickQueue() starts the oldest when a slot frees up.
+        // Phase 5 named queues: a task starts only when BOTH its queue has
+        // a free slot and the global cap has room.
+        let queue = queues.queue(for: items[itemIndex].queueID)
+        let queueMax = max(1, queue.maxConcurrent)
+        let activeInQueue = items.filter {
+            $0.state == .downloading
+                && queues.queue(for: $0.queueID).id == queue.id
+        }.count
         let maxActive = max(1, settings.settings.maxActiveTasks)
         let activeCount = items.filter { $0.state == .downloading }.count
-        if activeCount >= maxActive {
+        if activeInQueue >= queueMax || activeCount >= maxActive {
             items[itemIndex].state = .queued
             items[itemIndex].errorMessage = nil
             persistItem(id: id)
@@ -321,16 +335,32 @@ public final class DownloadEngine {
         start(id)
     }
 
-    /// Starts queued tasks while under the max-active-tasks cap. Called
-    /// whenever a slot frees up (finish/fail/pause/remove) and when the cap
-    /// itself is raised in Settings. Idempotent — `start()` re-checks the cap.
+    /// Starts queued tasks while under the caps. Called whenever a slot
+    /// frees up (finish/fail/pause/remove) and when a cap itself is raised
+    /// in Settings. Idempotent — `start()` re-checks the caps.
+    /// Phase 5 named queues: drains each queue oldest-first, cycling through
+    /// queues in store order so no queue starves another.
     @MainActor
     public func kickQueue(excluding: UUID? = nil) {
-        let maxActive = max(1, settings.settings.maxActiveTasks)
-        while items.filter({ $0.state == .downloading }).count < maxActive,
-              let next = items.first(where: { $0.state == .queued && $0.id != excluding }) {
-            start(next.id)
+        let plan = QueuePlanner.startable(
+            items: items,
+            queues: queues.queues,
+            defaultQueue: queues.defaultQueue,
+            globalMaxActive: max(1, settings.settings.maxActiveTasks))
+        for item in plan where item.id != excluding {
+            start(item.id)
         }
+    }
+
+    /// Phase 5 named queues: after a queue is deleted, its tasks fall back
+    /// to the default queue (nil queueID). Called by the queue UI.
+    @MainActor
+    public func reassignQueue(from deletedID: UUID) {
+        for index in items.indices where items[index].queueID == deletedID {
+            items[index].queueID = nil
+            persistItem(id: items[index].id)
+        }
+        kickQueue()
     }
 
     /// Phase 5 scheduler: pushes the current global cap from Settings

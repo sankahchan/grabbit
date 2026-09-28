@@ -123,12 +123,15 @@ public struct DownloadItem: Identifiable, Codable {
     /// (falls back to the global Settings limit). Persisted so a limit
     /// survives app restarts.
     public var speedLimitBytesPerSec: Int64 = 0
+    /// Phase 5 named queues: the queue this task belongs to. nil = the
+    /// default queue (also the legacy value for pre-queue resume files).
+    public var queueID: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id, url, filename, totalBytes, downloadedBytes, segments, state,
              speedBytesPerSec, category, sourceSite, destinationURL, addedAt,
              errorMessage, sourcePageURL, eTag, lastModified, linkExpired,
-             speedLimitBytesPerSec
+             speedLimitBytesPerSec, queueID
         // requestHeaders intentionally absent: runtime-only secret.
     }
 
@@ -151,7 +154,8 @@ public struct DownloadItem: Identifiable, Codable {
         lastModified: String? = nil,
         linkExpired: Bool = false,
         requestHeaders: [String: String]? = nil,
-        speedLimitBytesPerSec: Int64 = 0
+        speedLimitBytesPerSec: Int64 = 0,
+        queueID: UUID? = nil
     ) {
         self.id = id
         self.url = url
@@ -172,6 +176,7 @@ public struct DownloadItem: Identifiable, Codable {
         self.linkExpired = linkExpired
         self.requestHeaders = requestHeaders
         self.speedLimitBytesPerSec = speedLimitBytesPerSec
+        self.queueID = queueID
     }
 
     /// Custom decoder: `speedLimitBytesPerSec` (Phase 5) is absent from
@@ -199,6 +204,7 @@ public struct DownloadItem: Identifiable, Codable {
         lastModified = try c.decodeIfPresent(String.self, forKey: .lastModified)
         linkExpired = try c.decodeIfPresent(Bool.self, forKey: .linkExpired) ?? false
         speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
+        queueID = try c.decodeIfPresent(UUID.self, forKey: .queueID)
         // requestHeaders is runtime-only and never persisted.
         requestHeaders = nil
     }

@@ -16,6 +16,7 @@ struct GrabbitApp: App {
     @State private var historyStore: HistoryStore
     @State private var settings: SettingsStore
     @State private var schedulerStore: SchedulerStore
+    @State private var queueStore: QueueStore
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
     @State private var trayController: TrayController
@@ -34,7 +35,10 @@ struct GrabbitApp: App {
         let sharedHistory = HistoryStore()
         _settings = State(initialValue: sharedSettings)
         _historyStore = State(initialValue: sharedHistory)
-        _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings))
+        // Phase 5 named queues: one store shared by the engine and the UI.
+        let sharedQueues = QueueStore()
+        _queueStore = State(initialValue: sharedQueues)
+        _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
         _schedulerStore = State(initialValue: SchedulerStore())
@@ -88,6 +92,7 @@ struct GrabbitApp: App {
                 .environment(historyStore)
                 .environment(settings)
                 .environment(schedulerStore)
+                .environment(queueStore)
                 .onOpenURL { url in
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.

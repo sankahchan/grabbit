@@ -3771,6 +3771,150 @@
           }
         }
       }
+    },
+    "queue.default": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံမှန်"
+          }
+        }
+      }
+    },
+    "queue.queues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queues"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီမှုများ"
+          }
+        }
+      }
+    },
+    "queue.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်ရန်"
+          }
+        }
+      }
+    },
+    "queue.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမည်"
+          }
+        }
+      }
+    },
+    "queue.maxConcurrent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max concurrent"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တစ်ပြိုင်နက် အများဆုံး"
+          }
+        }
+      }
+    },
+    "queue.delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete queue"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီမှုဖျက်ရန်"
+          }
+        }
+      }
+    },
+    "queue.newName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New queue name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီမှုအမည်အသစ်"
+          }
+        }
+      }
+    },
+    "queue.deleteNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleting a queue moves its tasks to the Default queue."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီမှုတစ်ခုဖျက်လိုက်ပါက ၎င်း၏ task များသည် ပုံမှန်တန်းစီမှုသို့ ပြောင်းရွှေ့သွားမည်။"
+          }
+        }
+      }
+    },
+    "add.queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queue"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီမှု"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
