@@ -23,6 +23,9 @@ public final class MediaEngine {
     public var progress: Double = 0
     public var statusLine: String = ""
     public var errorMessage: String?
+    /// Phase 5 speed limiter: global cap in bytes/sec, 0 = unlimited.
+    /// Synced from Settings by the UI before each download.
+    public var speedLimitBytesPerSec: Int64 = 0
 
     private var process: ManagedProcess?
     /// Serializes probe/download calls.
@@ -114,6 +117,10 @@ public final class MediaEngine {
         }
         if let ffmpegDir = binDir(of: .ffmpeg) {
             args += ["--ffmpeg-location", ffmpegDir]
+        }
+        // Phase 5 speed limiter: yt-dlp enforces its own per-process cap.
+        if speedLimitBytesPerSec > 0 {
+            args += ["--limit-rate", Self.rateString(speedLimitBytesPerSec)]
         }
         args.append(source.absoluteString)
 
@@ -211,5 +218,13 @@ public final class MediaEngine {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let truncated = String(cleaned.prefix(120))
         return truncated.isEmpty ? "media" : truncated
+    }
+
+    /// Phase 5 speed limiter: yt-dlp `--limit-rate` wants "100K"/"1M" style.
+    static func rateString(_ bytesPerSec: Int64) -> String {
+        if bytesPerSec >= 1_048_576 {
+            return "\(bytesPerSec / 1_048_576)M"
+        }
+        return "\(max(1, bytesPerSec / 1_024))K"
     }
 }

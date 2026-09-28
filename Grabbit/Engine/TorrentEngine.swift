@@ -139,6 +139,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 "seed-ratio": Self.ratioString(settings.settings.defaultSeedRatio),
                 "seed-time": "\(settings.settings.defaultSeedTimeMinutes)",
                 "max-concurrent-downloads": "\(max(1, settings.settings.maxActiveTasks))",
+                // Phase 5 speed limiter: bytes/sec, 0 = unlimited.
+                "max-overall-download-limit": "\(max(0, settings.settings.speedLimitBytesPerSec))",
                 // Reclaimed daemons were spawned before the tracker list
                 // existed; push it at runtime too (fresh spawns get it via
                 // --bt-tracker). try? — a rejection must never break startup.
@@ -175,6 +177,14 @@ public final class TorrentEngine: TorrentEngineProtocol {
     public func applyMaxActiveTasks() async {
         try? await rpc?.changeGlobalOption([
             "max-concurrent-downloads": "\(max(1, settings.settings.maxActiveTasks))",
+        ])
+    }
+
+    /// Phase 5 speed limiter: pushes the global cap into the running daemon
+    /// (aria2 `max-overall-download-limit`, bytes/sec; 0 = unlimited).
+    public func applySpeedLimit() async {
+        try? await rpc?.changeGlobalOption([
+            "max-overall-download-limit": "\(max(0, settings.settings.speedLimitBytesPerSec))",
         ])
     }
 

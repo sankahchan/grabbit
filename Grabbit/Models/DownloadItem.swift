@@ -119,11 +119,16 @@ public struct DownloadItem: Identifiable, Codable {
     /// are runtime-only and deliberately EXCLUDED from Codable — they are
     /// never written to the resume store on disk.
     public var requestHeaders: [String: String]?
+    /// Phase 5 speed limiter: per-download cap in bytes/sec, 0 = unlimited
+    /// (falls back to the global Settings limit). Persisted so a limit
+    /// survives app restarts.
+    public var speedLimitBytesPerSec: Int64 = 0
 
     private enum CodingKeys: String, CodingKey {
         case id, url, filename, totalBytes, downloadedBytes, segments, state,
              speedBytesPerSec, category, sourceSite, destinationURL, addedAt,
-             errorMessage, sourcePageURL, eTag, lastModified, linkExpired
+             errorMessage, sourcePageURL, eTag, lastModified, linkExpired,
+             speedLimitBytesPerSec
         // requestHeaders intentionally absent: runtime-only secret.
     }
 
@@ -145,7 +150,8 @@ public struct DownloadItem: Identifiable, Codable {
         eTag: String? = nil,
         lastModified: String? = nil,
         linkExpired: Bool = false,
-        requestHeaders: [String: String]? = nil
+        requestHeaders: [String: String]? = nil,
+        speedLimitBytesPerSec: Int64 = 0
     ) {
         self.id = id
         self.url = url
@@ -165,6 +171,7 @@ public struct DownloadItem: Identifiable, Codable {
         self.lastModified = lastModified
         self.linkExpired = linkExpired
         self.requestHeaders = requestHeaders
+        self.speedLimitBytesPerSec = speedLimitBytesPerSec
     }
 
     /// 0...1. Uses the server-advertised total when known, otherwise falls back

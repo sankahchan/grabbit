@@ -49,6 +49,12 @@ final class SegmentTransport {
     /// UI isn't re-rendered on every TCP packet.
     private static let progressInterval: TimeInterval = 0.25
 
+    /// Phase 5 speed limiter: the shared global bucket (one per engine —
+    /// this is what keeps the global cap exact across segments) and the
+    /// per-download bucket. Either may pace; a rate of 0 is a no-op.
+    var globalBucket: TokenBucket?
+    var itemBucket: TokenBucket?
+
     private var jobs: [Int: Job] = [:]
     private let queue = DispatchQueue(label: "com.sankahchan.grabbit.transport")
     private var didReportFirstHeaders = false
@@ -123,6 +129,12 @@ final class SegmentTransport {
             // 206, or 200 covering the whole file: body follows.
         case .data(let data):
             guard var job = jobs[index] else { return }
+            // Phase 5 speed limiter: pace this chunk through the per-download
+            // bucket first, then the shared global bucket. Runs on this
+            // transport's serial queue, so the block *is* the pacing — no
+            // reordering, and all of this download's segments share it.
+            itemBucket?.consume(data.count)
+            globalBucket?.consume(data.count)
             do {
                 try job.handle.write(contentsOf: data)
             } catch {

@@ -19,6 +19,7 @@ struct AddDownloadSheet: View {
     @State private var format: MediaFormat = .video
     @State private var category: DownloadCategory = .other
     @State private var connections: Int = 8
+    @State private var speedLimitMB: Int = 0
     @State private var destinationOverride: URL?
     @State private var referer = ""
     @State private var cookie = ""
@@ -119,6 +120,19 @@ struct AddDownloadSheet: View {
             HStack {
                 NeoStepper(value: $connections, in: 1...16, step: 1) { v in "\(v)" }
                 Spacer()
+            }
+
+            // MARK: Speed limit (optional, per-download)
+            // 0 = unlimited: falls back to the global Settings cap.
+            HStack {
+                Text(NSLocalizedString("add.speedLimit", comment: ""))
+                    .font(.headline)
+                Spacer()
+                NeoStepper(value: $speedLimitMB, in: 0...2000, step: 1) { v in
+                    v == 0
+                        ? NSLocalizedString("settings.speedLimit.unlimited", comment: "")
+                        : "\(v) MB/s"
+                }
             }
 
             // MARK: Request headers (optional)
@@ -250,7 +264,8 @@ struct AddDownloadSheet: View {
                 sourceSite: site,
                 connections: connections,
                 destination: destination,
-                headers: headers.isEmpty ? nil : headers
+                headers: headers.isEmpty ? nil : headers,
+                speedLimitBytesPerSec: Int64(speedLimitMB) * 1_048_576
             )
             dismiss()
         }

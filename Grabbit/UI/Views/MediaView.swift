@@ -200,6 +200,8 @@ struct MediaView: View {
         // Auto-save into the category download folder (user-changeable in
         // Settings) — no save dialog.
         let directory = settings.folderURL(for: preset.isAudioOnly ? .audio : .video)
+        // Phase 5 speed limiter: push the current global cap into yt-dlp.
+        media.speedLimitBytesPerSec = settings.settings.speedLimitBytesPerSec
         Task { await media.download(preset: preset, to: directory) }
     }
 

@@ -3723,6 +3723,22 @@
           }
         }
       }
+    },
+    "add.speedLimit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed limit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြန်နှုန်း ကန့်သတ်ချက်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

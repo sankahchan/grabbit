@@ -61,7 +61,6 @@ struct SettingsView: View {
             content
                 .onChange(of: store.settings.theme) { _, _ in store.save() }
                 .onChange(of: store.settings.language, onLanguageChange)
-                .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in store.save() }
                 .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
@@ -81,6 +80,13 @@ struct SettingsView: View {
         func body(content: Content) -> some View {
             content
                 .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
+                .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in
+                    store.save()
+                    // Phase 5 speed limiter: push the new cap into the
+                    // running engines immediately (no relaunch).
+                    downloadEngine.syncSpeedLimit()
+                    Task { await torrentEngine.applySpeedLimit() }
+                }
                 .onChange(of: store.settings.vpnKillSwitchEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.vpnInterfaceName) { _, _ in store.save() }
                 .onChange(of: store.settings.defaultSeedRatio) { _, _ in store.save() }

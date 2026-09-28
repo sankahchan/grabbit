@@ -59,6 +59,10 @@ public final class DownloadEngine {
     private static let growthMinSplitBytes: Int64 = 8 * 1_048_576 // 8 MiB
     /// Process-wide sleep-prevention token while any download is active.
     private var sleepActivity: NSObjectProtocol?
+    /// Phase 5 speed limiter: one bucket shared by every transport this
+    /// engine creates. Shared (not per-segment) so the global cap holds
+    /// exactly no matter how many connections are open.
+    private let globalSpeedBucket = TokenBucket()
 
     public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore()) {
         self.resumeStore = resumeStore
@@ -178,7 +182,8 @@ public final class DownloadEngine {
         connections: Int? = nil,
         destination: URL? = nil,
         sourcePageURL: URL? = nil,
-        headers: [String: String]? = nil
+        headers: [String: String]? = nil,
+        speedLimitBytesPerSec: Int64 = 0
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
         let url = ShareURLRewriter.rewrite(url)
@@ -239,7 +244,8 @@ public final class DownloadEngine {
             sourcePageURL: sourcePageURL,
             eTag: probe.eTag,
             lastModified: probe.lastModified,
-            requestHeaders: headers
+            requestHeaders: headers,
+            speedLimitBytesPerSec: speedLimitBytesPerSec
         )
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -325,6 +331,14 @@ public final class DownloadEngine {
               let next = items.first(where: { $0.state == .queued && $0.id != excluding }) {
             start(next.id)
         }
+    }
+
+    /// Phase 5 speed limiter: pushes the current global cap from Settings
+    /// into the shared bucket. Called whenever a download launches and
+    /// when the setting changes (0 = unlimited).
+    @MainActor
+    public func syncSpeedLimit() {
+        globalSpeedBucket.rate = Double(max(0, settings.settings.speedLimitBytesPerSec))
     }
 
     /// Swaps the download URL in place (XDM `SetDownloadInfo` idea) — used
@@ -425,6 +439,11 @@ public final class DownloadEngine {
         }
 
         let transport = SegmentTransport()
+        // Phase 5 speed limiter: refresh the global rate (the user may have
+        // changed it mid-session) and hand the transport both buckets.
+        syncSpeedLimit()
+        transport.globalBucket = globalSpeedBucket
+        transport.itemBucket = TokenBucket(rate: Double(item.speedLimitBytesPerSec))
         transports[id] = transport
         pendingSegments[id] = pending.count
         segmentRetries[id] = [:]
