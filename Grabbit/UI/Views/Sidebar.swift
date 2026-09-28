@@ -34,6 +34,7 @@ struct Sidebar: View {
     @Binding var selection: SidebarSelection
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+    @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -44,6 +45,12 @@ struct Sidebar: View {
             Spacer()
         }
         .padding(12)
+        // Explicit language dependency: NavigationSplitView reuses its
+        // sidebar column across MainView's `.id(language)` re-key, so the
+        // sidebar rendered with the *previous* language's strings until an
+        // unrelated re-render (tab switch, download tick). Re-keying the
+        // column itself on language change fixes the lag.
+        .id(settings.settings.language)
         // Explicit column background: the default sidebar material would not
         // follow our theme override, which left the sidebar light while the
         // content went dark.
