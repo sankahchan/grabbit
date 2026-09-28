@@ -28,7 +28,7 @@ public enum CompletionAction: String, Codable, CaseIterable, Sendable, Equatable
 @Observable
 public final class CompletionActionCenter {
     private let settings: SettingsStore
-    private var activeTaskCount: () -> Int
+    private var activeTaskCount: @MainActor () -> Int
     private let executor: (CompletionAction, String) -> Void
     /// Terminal settles since the last firing. Guards against firing on
     /// a fresh launch (no settles yet) or twice for one drain.
@@ -36,7 +36,7 @@ public final class CompletionActionCenter {
 
     public init(
         settings: SettingsStore,
-        activeTaskCount: @escaping () -> Int = { 0 },
+        activeTaskCount: @escaping @MainActor () -> Int = { 0 },
         executor: ((CompletionAction, String) -> Void)? = nil
     ) {
         self.settings = settings

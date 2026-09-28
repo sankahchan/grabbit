@@ -3,6 +3,7 @@ import XCTest
 
 /// CompletionActionCenter: fires the configured action exactly when the
 /// queue drains (something settled, nothing still running).
+@MainActor
 final class CompletionActionCenterTests: XCTestCase {
     func testNoneNeverFires() {
         let (center, fired) = makeCenter(action: .none, active: 0)

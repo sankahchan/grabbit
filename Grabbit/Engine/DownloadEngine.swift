@@ -1111,7 +1111,7 @@ public final class DownloadEngine {
         // off-main (Process.waitUntilExit blocks); a failure leaves the
         // archive in place and shows an informational toast.
         if settings.settings.autoExtractArchives,
-           ArchiveExtractor.isExtractableArchive(items[itemIndex].filename)
+           ArchiveExtractor.isExtractableArchive(filename: items[itemIndex].filename)
         {
             let archiveURL = items[itemIndex].destinationURL
             let deleteAfter = settings.settings.deleteArchiveAfterExtract
