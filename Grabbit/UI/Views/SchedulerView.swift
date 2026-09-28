@@ -90,6 +90,7 @@ struct SchedulerView: View {
         HStack(spacing: 12) {
             Toggle("", isOn: entry.isEnabled)
                 .labelsHidden()
+                .toggleStyle(NeoToggleStyle())
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.wrappedValue.time.formatted(date: .omitted, time: .shortened))
                     .font(.headline.weight(.bold))
@@ -131,12 +132,9 @@ private struct AddScheduleSheet: View {
                 displayedComponents: .hourAndMinute
             )
 
-            Picker(NSLocalizedString("scheduler.add", comment: ""), selection: $action) {
-                ForEach(ScheduleAction.allCases, id: \.self) { a in
-                    Text(a.localizedTitle).tag(a)
-                }
-            }
-            .pickerStyle(.segmented)
+            NeoSegmented(selection: $action, titles: ScheduleAction.allCases.map {
+                ($0, $0.localizedTitle)
+            })
 
             HStack {
                 Button(NSLocalizedString("common.cancel", comment: "")) {

@@ -111,7 +111,7 @@ struct MediaView: View {
                 .textCase(.uppercase)
             HStack(spacing: 10) {
                 TextField(NSLocalizedString("media.url.placeholder", comment: ""), text: $urlText)
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
                     .onSubmit { probe() }
                 Button(NSLocalizedString("common.paste", comment: "")) { pasteURL() }
                     .neoButton(bg: Neo.paper(scheme))

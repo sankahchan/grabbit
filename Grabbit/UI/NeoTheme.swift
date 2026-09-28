@@ -176,6 +176,11 @@ extension View {
     func neoButton(bg: Color) -> some View {
         buttonStyle(NeoButtonStyle(bg: bg))
     }
+
+    /// Neo-brutalist text field: 2pt ink border on paper.
+    func neoTextField() -> some View {
+        modifier(NeoTextFieldModifier())
+    }
 }
 
 // MARK: - Progress bars
@@ -277,6 +282,180 @@ struct SourceBadge: View {
         case .other: Neo.paperLight
         }
     }
+}
+
+// MARK: - Neo controls
+
+/// Chunky neo-brutalist checkbox: 2.5pt ink border, bright green fill +
+/// ink checkmark when on. Replaces the system blue checkbox everywhere.
+struct NeoToggleStyle: ToggleStyle {
+    @Environment(\.colorScheme) private var scheme
+
+    func makeBody(configuration: Configuration) -> some View {
+        Button {
+            configuration.isOn.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(configuration.isOn ? Neo.green : Neo.paper(scheme))
+                        .frame(width: 22, height: 22)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Neo.ink(scheme), lineWidth: 2.5)
+                        )
+                    if configuration.isOn {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 13, weight: .black))
+                            .foregroundStyle(Neo.onAccent(Neo.green, scheme: scheme))
+                    }
+                }
+                configuration.label
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Neo-brutalist segmented control: 2.5pt ink border, 2pt ink dividers,
+/// selected segment filled bright yellow with ink text. Replaces the
+/// system segmented picker so the control reads Grabbit in both themes.
+struct NeoSegmented<Value: Hashable>: View {
+    struct Option: Hashable {
+        let value: Value
+        let title: String
+        let icon: String?
+    }
+
+    @Binding var selection: Value
+    let options: [Option]
+    @Environment(\.colorScheme) private var scheme
+
+    init(selection: Binding<Value>, options: [Option]) {
+        _selection = selection
+        self.options = options
+    }
+
+    /// Text-only options.
+    init(selection: Binding<Value>, titles: [(Value, String)]) {
+        _selection = selection
+        options = titles.map { Option(value: $0.0, title: $0.1, icon: nil) }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options.indices, id: \.self) { index in
+                segmentButton(for: options[index])
+                if index < options.count - 1 {
+                    Rectangle()
+                        .fill(Neo.ink(scheme))
+                        .frame(width: 2)
+                }
+            }
+        }
+        .background(Neo.paper(scheme))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Neo.ink(scheme), lineWidth: 2.5)
+        )
+    }
+
+    private func segmentButton(for option: Option) -> some View {
+        let selected = selection == option.value
+        return Button {
+            selection = option.value
+        } label: {
+            HStack(spacing: 4) {
+                if let icon = option.icon {
+                    Image(systemName: icon)
+                }
+                Text(option.title)
+            }
+            .font(.subheadline.weight(.bold))
+            .lineLimit(1)
+            .foregroundStyle(
+                selected ? Neo.onAccent(Neo.yellow, scheme: scheme) : Neo.ink(scheme))
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity)
+            .background(selected ? Neo.yellow : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Neo-brutalist text field: 2pt ink border on paper. Replaces
+/// `.textFieldStyle(.roundedBorder)` / the borderless default.
+struct NeoTextFieldModifier: ViewModifier {
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        content
+            .textFieldStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Neo.paper(scheme))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Neo.ink(scheme), lineWidth: 2)
+            )
+    }
+}
+
+/// Neo-brutalist stepper: ink-bordered − / + buttons around the value.
+struct NeoStepper<V: Strideable>: View {
+    @Binding var value: V
+    let range: ClosedRange<V>
+    let step: V.Stride
+    let label: (V) -> String
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            stepButton(icon: "minus", disabled: value <= range.lowerBound) {
+                set(value.advanced(by: step.negated()))
+            }
+            Text(label(value))
+                .font(.subheadline.weight(.semibold))
+                .frame(minWidth: 72)
+                .multilineTextAlignment(.center)
+            stepButton(icon: "plus", disabled: value >= range.upperBound) {
+                set(value.advanced(by: step))
+            }
+        }
+    }
+
+    private func set(_ next: V) {
+        if range.contains(next) { value = next }
+    }
+
+    private func stepButton(
+        icon: String, disabled: Bool, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(Neo.ink(scheme))
+                .frame(width: 26, height: 26)
+                .background(Neo.paper(scheme))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                )
+                .opacity(disabled ? 0.35 : 1)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+    }
+}
+
+private extension SignedNumeric {
+    /// Negation without a `-` operator constraint dance at the call site.
+    func negated() -> Self { 0 - self }
 }
 
 // MARK: - Formatting helpers

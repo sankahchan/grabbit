@@ -21,6 +21,9 @@ struct SettingsView: View {
                 // (downloads/torrents) get full rows below. Content breathes
                 // with the window (capped at 1000 so rows don't stretch
                 // across ultra-wide displays).
+                // The row must fill the content width itself — VStack children
+                // default to ideal width (centered), which left each card at
+                // its own size and the maxWidth:.infinity inside dead.
                 HStack(alignment: .top, spacing: 16) {
                     appearanceCard(settings: settings)
                         .frame(maxWidth: .infinity, alignment: .top)
@@ -29,6 +32,7 @@ struct SettingsView: View {
                     generalCard(settings: settings)
                         .frame(maxWidth: .infinity, alignment: .top)
                 }
+                .frame(maxWidth: .infinity)
                 downloadsCard(settings: settings)
                 torrentsCard(settings: settings)
                 // The updates card only exists when Sparkle can actually
@@ -81,14 +85,18 @@ struct SettingsView: View {
     private func appearanceCard(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.appearance", comment: ""))
-            // No inline label — the header above already says what this is,
-            // and the label would squeeze the segments on narrow cards.
-            Picker("", selection: settings.theme) {
-                Text(NSLocalizedString("settings.theme.system", comment: "")).tag(ThemeMode.system)
-                Text(NSLocalizedString("settings.theme.light", comment: "")).tag(ThemeMode.light)
-                Text(NSLocalizedString("settings.theme.dark", comment: "")).tag(ThemeMode.dark)
-            }
-            .pickerStyle(.segmented)
+            // Icons so the theme reads at a glance, not just as text.
+            NeoSegmented(selection: settings.theme, options: [
+                .init(value: ThemeMode.system,
+                      title: NSLocalizedString("settings.theme.system", comment: ""),
+                      icon: "circle.lefthalf.filled"),
+                .init(value: ThemeMode.light,
+                      title: NSLocalizedString("settings.theme.light", comment: ""),
+                      icon: "sun.max.fill"),
+                .init(value: ThemeMode.dark,
+                      title: NSLocalizedString("settings.theme.dark", comment: ""),
+                      icon: "moon.fill"),
+            ])
         }
         .neoCard()
     }
@@ -97,13 +105,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.language", comment: ""))
             // Autonyms are shown in their own language by convention.
-            // No inline label — it clipped the မြန်မာ segment on narrow cards.
-            Picker("", selection: settings.language) {
-                Text(NSLocalizedString("settings.language.system", comment: "")).tag(AppLanguage.system)
-                Text("English").tag(AppLanguage.en)
-                Text("မြန်မာ").tag(AppLanguage.my)
-            }
-            .pickerStyle(.segmented)
+            NeoSegmented(selection: settings.language, titles: [
+                (AppLanguage.system, NSLocalizedString("settings.language.system", comment: "")),
+                (AppLanguage.en, "English"),
+                (AppLanguage.my, "မြန်မာ"),
+            ])
             Text(NSLocalizedString("settings.language.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -120,8 +126,11 @@ struct SettingsView: View {
             Divider()
             speedLimitRow(settings: settings)
             Toggle(NSLocalizedString("settings.clipboard", comment: ""), isOn: settings.clipboardMonitorEnabled)
+            .toggleStyle(NeoToggleStyle())
             Toggle(NSLocalizedString("settings.autoResume", comment: ""), isOn: settings.autoResumeOnLaunch)
+            .toggleStyle(NeoToggleStyle())
             Toggle(NSLocalizedString("settings.autoClear", comment: ""), isOn: settings.autoClearFinished)
+            .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.autoClear.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -133,6 +142,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.torrents", comment: ""))
             Toggle(NSLocalizedString("settings.vpnKillSwitch", comment: ""), isOn: settings.vpnKillSwitchEnabled)
+            .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.vpnKillSwitch.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -144,7 +154,7 @@ struct SettingsView: View {
                     "utun3",
                     text: settings.vpnInterfaceName,
                     prompt: Text(NSLocalizedString("settings.vpnInterface", comment: "")))
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
                     .frame(width: 160)
                     .disabled(!settings.wrappedValue.vpnKillSwitchEnabled)
             }
@@ -156,6 +166,7 @@ struct SettingsView: View {
                 NSLocalizedString("settings.trackers.autoUpdate", comment: ""),
                 isOn: settings.autoUpdateTrackers
             )
+            .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.trackers.autoUpdate.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -236,11 +247,10 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.seedRatio", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
-            Stepper(value: ratio, in: 0...10, step: 0.5) {
-                Text(ratio.wrappedValue == 0
-                     ? NSLocalizedString("settings.unlimited", comment: "")
-                     : String(format: "%.1f", ratio.wrappedValue))
-                    .font(.subheadline)
+            NeoStepper(value: ratio, in: 0...10, step: 0.5) { v in
+                v == 0
+                    ? NSLocalizedString("settings.unlimited", comment: "")
+                    : String(format: "%.1f", v)
             }
         }
     }
@@ -257,11 +267,10 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.seedTime", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
-            Stepper(value: minutes, in: 0...10080, step: 30) {
-                Text(minutes.wrappedValue == 0
-                     ? NSLocalizedString("settings.unlimited", comment: "")
-                     : "\(minutes.wrappedValue)")
-                    .font(.subheadline)
+            NeoStepper(value: minutes, in: 0...10080, step: 30) { v in
+                v == 0
+                    ? NSLocalizedString("settings.unlimited", comment: "")
+                    : "\(v)"
             }
         }
     }
@@ -270,6 +279,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.updates", comment: ""))
             Toggle(NSLocalizedString("settings.autoUpdate", comment: ""), isOn: settings.autoUpdateEnabled)
+            .toggleStyle(NeoToggleStyle())
             Button(NSLocalizedString("settings.checkNow", comment: "")) {
                 checkForUpdates()
             }
@@ -282,6 +292,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.general", comment: ""))
             Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
+            .toggleStyle(NeoToggleStyle())
         }
         .neoCard()
     }
@@ -324,11 +335,10 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.speedLimit", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
-            Stepper(value: mb, in: 0...2000) {
-                Text(mb.wrappedValue == 0
-                     ? NSLocalizedString("settings.speedLimit.unlimited", comment: "")
-                     : "\(mb.wrappedValue) MB/s")
-                    .font(.subheadline)
+            NeoStepper(value: mb, in: 0...2000, step: 1) { v in
+                v == 0
+                    ? NSLocalizedString("settings.speedLimit.unlimited", comment: "")
+                    : "\(v) MB/s"
             }
         }
     }

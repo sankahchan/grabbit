@@ -47,7 +47,7 @@ struct AddDownloadSheet: View {
                         text: $urlString,
                         prompt: Text(NSLocalizedString("add.url.placeholder", comment: ""))
                     )
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
                     Button(NSLocalizedString("common.paste", comment: "")) { pasteURL() }
                         .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 }
@@ -63,7 +63,7 @@ struct AddDownloadSheet: View {
                     text: $customFilename,
                     prompt: Text(NSLocalizedString("add.filename.placeholder", comment: ""))
                 )
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
 
             // MARK: Quality chips
@@ -84,19 +84,15 @@ struct AddDownloadSheet: View {
             }
 
             // MARK: Format
-            Picker(NSLocalizedString("add.format", comment: ""), selection: $format) {
-                Text(NSLocalizedString("add.format.video", comment: "")).tag(MediaFormat.video)
-                Text(NSLocalizedString("add.format.audio", comment: "")).tag(MediaFormat.audio)
-            }
-            .pickerStyle(.segmented)
+            NeoSegmented(selection: $format, titles: [
+                (MediaFormat.video, NSLocalizedString("add.format.video", comment: "")),
+                (MediaFormat.audio, NSLocalizedString("add.format.audio", comment: "")),
+            ])
 
             // MARK: Category
-            Picker(NSLocalizedString("add.category", comment: ""), selection: $category) {
-                ForEach(DownloadCategory.allCases, id: \.self) { c in
-                    Text(c.localizedName).tag(c)
-                }
-            }
-            .pickerStyle(.segmented)
+            NeoSegmented(selection: $category, titles: DownloadCategory.allCases.map {
+                ($0, $0.localizedName)
+            })
 
             // MARK: Destination
             HStack {
@@ -121,10 +117,7 @@ struct AddDownloadSheet: View {
             // NOTE: no localization key was provided for this label, so the
             // stepper shows the bare value.
             HStack {
-                Stepper(value: $connections, in: 1...16) {
-                    Text("\(connections)")
-                        .font(.headline)
-                }
+                NeoStepper(value: $connections, in: 1...16, step: 1) { v in "\(v)" }
                 Spacer()
             }
 
@@ -206,7 +199,7 @@ struct AddDownloadSheet: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(width: 110, alignment: .leading)
             TextField(label, text: text)
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
         }
     }
 

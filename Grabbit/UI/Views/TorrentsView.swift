@@ -241,11 +241,10 @@ struct TorrentAddSheet: View {
             Text(NSLocalizedString("torrents.add", comment: ""))
                 .font(.title2.weight(.heavy))
 
-            Picker("", selection: $mode) {
-                Text(NSLocalizedString("torrents.add.linkTab", comment: "")).tag(0)
-                Text(NSLocalizedString("torrents.add.fileTab", comment: "")).tag(1)
-            }
-            .pickerStyle(.segmented)
+            NeoSegmented(selection: $mode, titles: [
+                (0, NSLocalizedString("torrents.add.linkTab", comment: "")),
+                (1, NSLocalizedString("torrents.add.fileTab", comment: "")),
+            ])
 
             if mode == 0 {
                 HStack(spacing: 8) {
@@ -254,7 +253,7 @@ struct TorrentAddSheet: View {
                         text: $input,
                         prompt: Text(NSLocalizedString("torrents.add.placeholder", comment: ""))
                     )
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
                     Button(NSLocalizedString("common.paste", comment: "")) { pasteInput() }
                         .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 }
@@ -286,7 +285,7 @@ struct TorrentAddSheet: View {
                     text: $rename,
                     prompt: Text(NSLocalizedString("torrents.add.rename.placeholder", comment: ""))
                 )
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
 
             // MARK: Save folder (optional override)
@@ -426,6 +425,7 @@ struct TorrentFilesSheet: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            .toggleStyle(NeoToggleStyle())
                         }
                     }
                 }
@@ -620,6 +620,7 @@ struct TorrentRemoveSheet: View {
                 .lineLimit(2)
 
             Toggle(NSLocalizedString("torrents.remove.deleteData", comment: ""), isOn: $deleteData)
+                .toggleStyle(NeoToggleStyle())
 
             HStack {
                 Button(NSLocalizedString("common.cancel", comment: "")) {
