@@ -17,6 +17,7 @@ struct GrabbitApp: App {
     @State private var settings: SettingsStore
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
+    @State private var trayController: TrayController
 
     // @MainActor: TorrentEngine is main-actor-isolated, so it must be built here.
     @MainActor
@@ -35,6 +36,10 @@ struct GrabbitApp: App {
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
+        _trayController = State(initialValue: TrayController())
+        _trayController.wrappedValue.configure(
+            downloads: _downloadEngine.wrappedValue,
+            torrents: _torrentEngine.wrappedValue)
         // One-time import of already-finished tasks so existing users don't
         // start with an empty history. Runs only when the store is empty.
         sharedHistory.backfillIfNeeded(
@@ -135,19 +140,6 @@ struct GrabbitApp: App {
                     applyRunMode(initial: false)
                 }
         }
-        // Tray mode: menu bar extra with live speed. Inserted/removed when
-        // the Run As setting changes — no relaunch needed.
-        if settings.settings.runMode == .tray {
-            MenuBarExtra {
-                TrayMenuView()
-                    .environment(downloadEngine)
-                    .environment(torrentEngine)
-            } label: {
-                TrayLabelView()
-                    .environment(downloadEngine)
-                    .environment(torrentEngine)
-            }
-        }
     }
 
     // MARK: - Run As (tray mode)
@@ -155,11 +147,13 @@ struct GrabbitApp: App {
     private static var initialRunModeApplied = false
 
     /// Tray/hidden drop the Dock icon (activation policy .accessory).
-    /// Tray mode also starts with the main window hidden — the app lives
-    /// in the menu bar until opened from the menu or a link click.
+    /// Tray mode additionally shows the menu-bar extra and starts with
+    /// the main window hidden — the app lives in the menu bar until
+    /// opened from the menu or a link click.
     private func applyRunMode(initial: Bool) {
         let mode = settings.settings.runMode
         NSApp.setActivationPolicy(mode == .standard ? .regular : .accessory)
+        trayController.setVisible(mode == .tray)
         if initial, !Self.initialRunModeApplied {
             Self.initialRunModeApplied = true
             if mode == .tray {
