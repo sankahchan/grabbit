@@ -54,7 +54,7 @@ final class SpeedLimiterTests: XCTestCase {
         let bucket = TokenBucket(
             rate: 100_000,
             now: { now },
-            sleeper: { delaysLock.withLock { delays.append($0) } })
+            sleeper: { delay in delaysLock.withLock { delays.append(delay) } })
         let group = DispatchGroup()
         for _ in 0..<4 {
             group.enter()
@@ -93,7 +93,8 @@ final class SpeedLimiterTests: XCTestCase {
         let bucket = TokenBucket(rate: 1000, now: { now }, sleeper: { slept.append($0) })
         now = now.addingTimeInterval(3600)
         bucket.consume(5000)
-        XCTAssertEqual(slept, [4.0], accuracy: 0.001)
+        XCTAssertEqual(slept.count, 1)
+        XCTAssertEqual(slept[0], 4.0, accuracy: 0.001)
     }
 
     func testDefaultSleeperActuallyPaces() {
