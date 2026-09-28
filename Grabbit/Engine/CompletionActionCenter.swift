@@ -37,11 +37,13 @@ public final class CompletionActionCenter {
     public init(
         settings: SettingsStore,
         activeTaskCount: @escaping () -> Int = { 0 },
-        executor: @escaping (CompletionAction, String) -> Void = Self.execute
+        executor: ((CompletionAction, String) -> Void)? = nil
     ) {
         self.settings = settings
         self.activeTaskCount = activeTaskCount
-        self.executor = executor
+        // Default-arg values are checked at the call site, so they cannot
+        // reference the internal `execute` — fall back to it in the body.
+        self.executor = executor ?? Self.execute
     }
 
     /// Production wiring: counts `.downloading` tasks across both engines.
