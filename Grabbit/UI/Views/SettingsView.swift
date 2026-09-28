@@ -21,10 +21,18 @@ struct SettingsView: View {
                 // (downloads/torrents) get full rows below. Content breathes
                 // with the window (capped at 1000 so rows don't stretch
                 // across ultra-wide displays).
-                // Each card fills its share via its own inner
-                // `.frame(maxWidth: .infinity)` (before neoCard), so the
-                // HStack distributes three equal widths.
-                HStack(alignment: .top, spacing: 16) {
+                // Three strictly equal cards. LazyVGrid assigns identical widths
+                // to flexible columns — HStack's flexible distribution cannot:
+                // it adds equal *extra* space to different ideal widths, so
+                // the narrower General card always came out smaller.
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.flexible(minimum: 0), spacing: 16),
+                        count: 3
+                    ),
+                    alignment: .leading,
+                    spacing: 16
+                ) {
                     appearanceCard(settings: settings)
                     languageCard(settings: settings)
                     generalCard(settings: settings)

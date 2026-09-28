@@ -8,6 +8,10 @@ import SwiftUI
 struct MainView: View {
     @State private var selection: SidebarSelection = .downloads
     @Environment(SettingsStore.self) private var store: SettingsStore
+    // The real system theme, read from ABOVE our own override: a view's
+    // environment comes from its parent, so this is unaffected by the
+    // preferredColorScheme we apply below.
+    @Environment(\.colorScheme) private var systemScheme
 
     var body: some View {
         NavigationSplitView {
@@ -19,7 +23,7 @@ struct MainView: View {
         .navigationTitle("Grabbit")
         // The Appearance setting actually drives the UI: without this the
         // picker only saved the value and everything followed the system.
-        .preferredColorScheme(colorSchemeOverride)
+        .preferredColorScheme(resolvedTheme)
         // Re-key on language AND theme: rebuilding the hierarchy makes
         // every NSLocalizedString re-evaluate (instant language switch)
         // and works around preferredColorScheme not reliably applying
@@ -28,10 +32,12 @@ struct MainView: View {
         .id(store.settings.language.rawValue + "/" + store.settings.theme.rawValue)
     }
 
-    /// Maps the saved theme to a SwiftUI override; nil means "follow system".
-    private var colorSchemeOverride: ColorScheme? {
+    /// Maps the saved theme to an explicit override — never nil. Resolving
+    /// System to the real system theme avoids the stuck-override bug where
+    /// going Dark -> System (nil) left the content dark.
+    private var resolvedTheme: ColorScheme {
         switch store.settings.theme {
-        case .system: nil
+        case .system: systemScheme
         case .light: .light
         case .dark: .dark
         }
