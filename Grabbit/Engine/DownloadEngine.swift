@@ -105,6 +105,7 @@ public final class DownloadEngine {
         var eTag: String?
         var lastModified: String?
         var filename: String?
+        var contentType: String?
     }
 
     /// HEAD first; on failure (403/405/network) fall back to
@@ -177,6 +178,11 @@ public final class DownloadEngine {
         }
         result.eTag = headers["etag"]
         result.lastModified = headers["last-modified"]
+        // Strip "; charset=…" parameters — infer() only needs the MIME type.
+        result.contentType = headers["content-type"]?
+            .split(separator: ";").first
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .flatMap { $0.isEmpty ? nil : String($0) }
         if let disposition = headers["content-disposition"],
            let name = DownloadItem.filenameFromContentDisposition(disposition),
            !name.isEmpty
@@ -185,16 +191,71 @@ public final class DownloadEngine {
         }
     }
 
+    // MARK: - Filename hygiene
+
+    /// `sanitize_filename` (Harbor/QDM): strip path separators, control
+    /// characters and leading dots (hidden files / ".." traversal), trim,
+    /// and cap length while preserving the extension.
+    public static func sanitizeFilename(_ raw: String) -> String {
+        var name = raw
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "\\", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+        name = name.unicodeScalars
+            .filter { !CharacterSet.controlCharacters.contains($0) }
+            .map(String.init)
+            .joined()
+        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        while name.hasPrefix(".") { name.removeFirst() }
+        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return "download" }
+        // Cap at 200 characters — well under filesystems' 255-byte limit
+        // even with multi-byte names — preserving the extension.
+        if name.count > 200 {
+            let ext = (name as NSString).pathExtension
+            var base = (name as NSString).deletingPathExtension
+            let keep = max(1, 200 - (ext.isEmpty ? 0 : ext.count + 1))
+            base = String(base.prefix(keep)).trimmingCharacters(in: .whitespaces)
+            name = ext.isEmpty ? base : "\(base).\(ext)"
+            if name.isEmpty { return "download" }
+        }
+        return name
+    }
+
+    /// `unique_filename` (Harbor/QDM): if `<name>` already exists in
+    /// `folder`, fall back to `<name> (2).ext`, `<name> (3).ext`, …
+    /// Finished downloads never silently overwrite each other.
+    public static func uniqueFilename(_ name: String, in folder: URL) -> String {
+        let fm = FileManager.default
+        var candidate = name
+        var n = 1
+        while fm.fileExists(atPath: folder.appendingPathComponent(candidate).path) {
+            n += 1
+            let base = (name as NSString).deletingPathExtension
+            let ext = (name as NSString).pathExtension
+            candidate = ext.isEmpty ? "\(base) (\(n))" : "\(base) (\(n)).\(ext)"
+            if n > 9999 { break } // pathological; give up uniquifying
+        }
+        return candidate
+    }
+
     // MARK: - Public control
 
     /// Adds a download: rewrites share links, probes the server for total
     /// size, builds segments, creates the `.grabbit-part` file, persists
     /// state, and auto-starts.
+    ///
+    /// - Parameter category: fixed category, or `nil` to auto-detect from
+    ///   the filename / Content-Type.
+    /// - Parameter destination: the *folder* the finished file lands in —
+    ///   an explicit per-task override of the category folder. The filename
+    ///   is sanitized and uniquified inside it. Pass `nil` for the
+    ///   category's folder from Settings.
     @MainActor
     public func add(
         url: URL,
         filename: String? = nil,
-        category: DownloadCategory = .other,
+        category: DownloadCategory? = nil,
         sourceSite: SourceSite = .direct,
         connections: Int? = nil,
         destination: URL? = nil,
@@ -216,7 +277,12 @@ public final class DownloadEngine {
 
         let candidate = filename ?? probe.filename ?? url.lastPathComponent
         let decoded = candidate.removingPercentEncoding ?? candidate
-        let name = decoded.isEmpty ? "download" : decoded
+        // sanitize_filename: never let a hostile name escape the folder.
+        let name = Self.sanitizeFilename(decoded.isEmpty ? "download" : decoded)
+        // Auto-detect the category when the caller didn't pin one — the
+        // file then lands in the matching category subfolder.
+        let resolvedCategory = category
+            ?? DownloadCategory.infer(filename: name, contentType: probe.contentType)
 
         // aria2-style: never split into pieces smaller than minSplitSize —
         // 16 TCP+TLS handshakes for 16 tiny segments would be pure overhead.
@@ -227,18 +293,19 @@ public final class DownloadEngine {
             connectionCount = min(connectionCount, max(1, Int(totalBytes / minSplitSize)))
         }
 
-        let destinationURL: URL
-        if let destination {
-            destinationURL = destination
-        } else {
-            let folder = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-                ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
-            destinationURL = folder.appendingPathComponent(name)
-        }
+        // Destination contract: `destination` is the containing *folder*
+        // (every caller passes a directory — a category folder or a
+        // per-task override). With no override the file lands in the
+        // resolved category's subfolder from Settings.
+        let folder = destination ?? settings.folderURL(for: resolvedCategory)
         try? FileManager.default.createDirectory(
-            at: destinationURL.deletingLastPathComponent(),
+            at: folder,
             withIntermediateDirectories: true
         )
+        // unique_filename: never silently overwrite an existing file —
+        // "report.pdf", "report (2).pdf", …
+        let uniqueName = Self.uniqueFilename(name, in: folder)
+        let destinationURL = folder.appendingPathComponent(uniqueName)
 
         let segments: [Segment]
         if let totalBytes {
@@ -252,11 +319,11 @@ public final class DownloadEngine {
 
         var item = DownloadItem(
             url: url,
-            filename: name,
+            filename: uniqueName,
             totalBytes: totalBytes,
             segments: segments,
             state: .queued,
-            category: category,
+            category: resolvedCategory,
             sourceSite: sourceSite,
             destinationURL: destinationURL,
             sourcePageURL: sourcePageURL,
@@ -964,6 +1031,12 @@ public final class DownloadEngine {
             items[itemIndex].downloadedBytes = total
         }
         history.record(.from(download: items[itemIndex], status: .completed))
+        if settings.settings.notificationsEnabled {
+            Notifier.downloadComplete(
+                filename: items[itemIndex].filename,
+                folder: items[itemIndex].destinationURL.deletingLastPathComponent().lastPathComponent
+            )
+        }
         speedSamples[item.id] = nil
         updateSleepPrevention()
         // No resume state needed for a finished download.
@@ -990,6 +1063,12 @@ public final class DownloadEngine {
         items[itemIndex].speedBytesPerSec = 0
         if !wasAlreadyFailed {
             history.record(.from(download: items[itemIndex], status: .failed))
+            if settings.settings.notificationsEnabled {
+                Notifier.downloadFailed(
+                    filename: items[itemIndex].filename,
+                    message: message
+                )
+            }
         }
         speedSamples[id] = nil
         segmentRetries[id] = nil

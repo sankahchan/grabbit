@@ -4219,6 +4219,74 @@
           }
         }
       }
+    },
+    "notify.download.complete.title": {
+      "comment": "Notification title when a download finishes",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download complete"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် ပြီးစီးပါပြီ"
+          }
+        }
+      }
+    },
+    "notify.download.complete.body": {
+      "comment": "Notification body: filename, destination folder name",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” saved to %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” ကို %@ တွင် သိမ်းဆည်းပြီးပါပြီ"
+          }
+        }
+      }
+    },
+    "notify.download.failed.title": {
+      "comment": "Notification title when a download fails",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် မအောင်မြင်ပါ"
+          }
+        }
+      }
+    },
+    "notify.download.failed.body": {
+      "comment": "Notification body: filename, error message",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”: %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”: %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

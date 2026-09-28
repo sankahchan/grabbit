@@ -128,6 +128,9 @@ struct GrabbitApp: App {
                 }
                 .onAppear {
                     applyRunMode(initial: true)
+                    // Ask once for notification authorization (completion /
+                    // failure toasts); a no-op once decided.
+                    Notifier.requestAuthorizationIfNeeded()
                     // Phase 5 scheduler: persisted entries + 1-minute
                     // firing timer driving both engines.
                     schedulerStore.start(

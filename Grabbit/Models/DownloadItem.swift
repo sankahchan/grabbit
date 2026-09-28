@@ -48,6 +48,44 @@ public enum DownloadCategory: String, Codable, CaseIterable {
         case .other: NSLocalizedString("settings.folders.other", comment: "")
         }
     }
+
+    // MARK: - Auto-detection
+
+    private static let videoExtensions: Set<String> = [
+        "mp4", "m4v", "mkv", "webm", "mov", "avi", "flv", "wmv",
+        "mpg", "mpeg", "ts", "m2ts", "3gp", "ogv",
+    ]
+    private static let audioExtensions: Set<String> = [
+        "mp3", "m4a", "aac", "flac", "ogg", "oga", "opus", "wav", "wma", "aiff", "mid",
+    ]
+    private static let documentExtensions: Set<String> = [
+        "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+        "txt", "md", "markdown", "rtf", "csv", "epub", "odt", "ods", "odp",
+    ]
+
+    /// Best-effort category detection from a filename and/or MIME type.
+    /// The extension wins over the Content-Type; anything unrecognized
+    /// falls back to `.other`.
+    public static func infer(filename: String, contentType: String? = nil) -> DownloadCategory {
+        let ext = (filename as NSString).pathExtension.lowercased()
+        if !ext.isEmpty {
+            if videoExtensions.contains(ext) { return .video }
+            if audioExtensions.contains(ext) { return .audio }
+            if documentExtensions.contains(ext) { return .document }
+        }
+        if let ct = contentType?.lowercased() {
+            if ct.hasPrefix("video/") { return .video }
+            if ct.hasPrefix("audio/") { return .audio }
+            if ct.hasPrefix("text/")
+                || ct.contains("pdf")
+                || ct.contains("msword")
+                || ct.contains("officedocument")
+                || ct.contains("rtf")
+                || ct.contains("epub")
+            { return .document }
+        }
+        return .other
+    }
 }
 
 public enum SourceSite: String, Codable {
