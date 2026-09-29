@@ -11,5 +11,10 @@
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v0.1.0/Grabbit-0.1.0.dmg" sparkle:version="0.1.0" sparkle:shortVersionString="0.1.0" type="application/octet-stream"/>
     </item>
+    <item>
+      <title>v1.0.0</title>
+      <pubDate>Tue, 29 Sep 2026 07:11:01 +0000</pubDate>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.0.0/Grabbit-v1.0.0.dmg" sparkle:version="1.0.0" sparkle:shortVersionString="1.0.0" type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
