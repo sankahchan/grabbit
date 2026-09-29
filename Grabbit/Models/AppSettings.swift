@@ -196,6 +196,13 @@ public final class SettingsStore {
     /// secret — a Keychain failure keeps the old copy so the proxy keeps
     /// working, and the migration retries on the next launch.
     private func migrateProxyPasswordToKeychain() {
+        // Don't touch the Keychain at all unless the user has actually
+        // configured a proxy. Otherwise every fresh install prompts for
+        // Keychain access on first launch, which looks like data collection.
+        guard settings.proxyMode != .none, !settings.proxyHost.isEmpty else {
+            proxyPasswordKeychainKnown = true // nothing to migrate
+            return
+        }
         if !settings.proxyPassword.isEmpty {
             save() // moves it to the Keychain when possible; else keeps it
             return
