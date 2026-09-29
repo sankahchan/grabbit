@@ -1,4 +1,5 @@
 {
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtywZDMl72HwUU67wRp6y+qmh+rni3hyphZKGOHgTxn42gCXS5tzAby0LL+nuqP3KaX/ZxjUaX5AJbLA3KY0EfN1571MgpypCMnXfD0k/O2S0bSpPw1I2aJyCCCYbnb+u1bQBkL5eQw8RiL42BGWD40lgYL3SybChdswm7d5f4dem7mtphM10lJTp0Jl/pNYJd9yX3lphRrxuDQkxmSVl0JzuZFPl76klLGl6MwhCbmEfeeYI+HmaWkiuBa1ZrOik+Ewi1zy/NdKBFtzd8oqzL5GB+iPUw0Ykw34b/lYbim6hF1K7xCDqKV4AGGq2NDwMyTg1j0PRCXsXY4eJ/RZrHQIDAQAB",
   "action": {
     "default_title": "Grabbit",
     "default_popup": "popup.html"
