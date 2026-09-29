@@ -44,10 +44,19 @@ function mediaRow(item, tabId) {
   div.querySelector('.url').textContent = shortUrl(item.url);
   div.querySelector('.meta').textContent = (item.site || '') + via;
   const actions = div.querySelector('.actions');
+  // Telegram document URLs (web.telegram.org/document...) are not directly
+  // downloadable via HTTP — they require Telegram's internal API. Don't show
+  // a broken download button; direct users to Telegram's own download.
+  const isTelegramDoc = /web\.telegram\.org\/document/i.test(item.url);
   if (item.isBlob) {
     const note = document.createElement('span');
     note.className = 'blob-note';
     note.textContent = 'In-page stream — use the in-page player download if available.';
+    actions.appendChild(note);
+  } else if (isTelegramDoc) {
+    const note = document.createElement('span');
+    note.className = 'blob-note';
+    note.textContent = 'Telegram file — use Telegram\u2019s download button.';
     actions.appendChild(note);
   } else {
     actions.appendChild(downloadButton(item.url, tabId));
