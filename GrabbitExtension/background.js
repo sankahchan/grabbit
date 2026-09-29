@@ -256,9 +256,9 @@ function schemeUrl(payload) {
 
 async function openViaScheme(payload) {
   try {
-    const tab = await chrome.tabs.create({ url: schemeUrl(payload), active: false });
-    // The scheme hands off to the OS; the leftover tab is just a launcher.
-    setTimeout(() => chrome.tabs.remove(tab.id).catch(() => {}), 1500);
+    // Open in an ACTIVE tab so the user sees the "Open Grabbit?" prompt
+    // if Chrome shows one. Don't auto-close — let the handoff complete.
+    await chrome.tabs.create({ url: schemeUrl(payload), active: true });
     return true;
   } catch {
     return false;
