@@ -3,9 +3,10 @@ import Foundation
 /// Locates the media helper binaries (yt-dlp, ffmpeg, ffprobe, deno).
 ///
 /// Resolution order (Harbor `MediaRuntimeResolver` idea):
-/// 1. Bundled app resources (`Contents/Resources/bin/<name>`)
-/// 2. User-updated copies (`~/Library/Application Support/Grabbit/bin/<name>`)
-/// 3. Env-var override (`YTDLP_PATH`, `FFMPEG_PATH`, `FFPROBE_PATH`, `DENO_PATH`)
+/// 1. Env-var override (`YTDLP_PATH`, `FFMPEG_PATH`, `FFPROBE_PATH`, `DENO_PATH`)
+///    — explicit user intent wins.
+/// 2. Bundled app resources (`Contents/Resources/bin/<name>`)
+/// 3. User-updated copies (`~/Library/Application Support/Grabbit/bin/<name>`)
 /// 4. Homebrew (`/opt/homebrew/bin`, `/usr/local/bin`)
 /// 5. `PATH` lookup
 ///
@@ -73,18 +74,18 @@ public enum MediaRuntimeResolver {
     private static func searchOrder(for component: Component) -> [URL] {
         var urls: [URL] = []
         let name = component.rawValue
-        // 1. Bundled resources.
-        if let resourceURL = Bundle.main.resourceURL {
-            urls.append(resourceURL.appendingPathComponent("bin/\(name)"))
-        }
-        // 2. User-updated copies (component updater).
-        urls.append(userBinDirectory.appendingPathComponent(name))
-        // 3. Env-var override.
+        // 1. Env-var override — explicit user intent wins over everything.
         if let override = ProcessInfo.processInfo.environment[component.envVar],
            !override.isEmpty
         {
             urls.append(URL(fileURLWithPath: override))
         }
+        // 2. Bundled resources.
+        if let resourceURL = Bundle.main.resourceURL {
+            urls.append(resourceURL.appendingPathComponent("bin/\(name)"))
+        }
+        // 3. User-updated copies (component updater).
+        urls.append(userBinDirectory.appendingPathComponent(name))
         // 4. Homebrew prefixes + 5. PATH.
         var dirs = ["/opt/homebrew/bin", "/usr/local/bin"]
         let pathEnv = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin"

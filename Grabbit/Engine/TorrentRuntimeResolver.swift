@@ -3,9 +3,9 @@ import Foundation
 /// Locates the aria2-next torrent daemon binary.
 ///
 /// Resolution order (same pattern as `MediaRuntimeResolver`):
-/// 1. Bundled app resources (`Contents/Resources/bin/aria2-next`)
-/// 2. User copies (`~/Library/Application Support/Grabbit/bin/aria2-next`)
-/// 3. Env-var override (`ARIA2_NEXT_PATH`)
+/// 1. Env-var override (`ARIA2_NEXT_PATH`) — explicit user intent wins.
+/// 2. Bundled app resources (`Contents/Resources/bin/aria2-next`)
+/// 3. User copies (`~/Library/Application Support/Grabbit/bin/aria2-next`)
 /// 4. Homebrew (`/opt/homebrew/bin`, `/usr/local/bin`) — `aria2-next` first,
 ///    then upstream `aria2c` as a fallback (same JSON-RPC protocol)
 /// 5. `PATH` lookup
@@ -46,16 +46,16 @@ public enum TorrentRuntimeResolver {
 
     private static func searchOrder() -> [URL] {
         var urls: [URL] = []
-        // 1. Bundled resources.
-        if let resourceURL = Bundle.main.resourceURL {
-            urls.append(resourceURL.appendingPathComponent("bin/\(binaryName)"))
-        }
-        // 2. User copies.
-        urls.append(userBinDirectory.appendingPathComponent(binaryName))
-        // 3. Env-var override.
+        // 1. Env-var override — explicit user intent wins over everything.
         if let override = ProcessInfo.processInfo.environment[envVar], !override.isEmpty {
             urls.append(URL(fileURLWithPath: override))
         }
+        // 2. Bundled resources.
+        if let resourceURL = Bundle.main.resourceURL {
+            urls.append(resourceURL.appendingPathComponent("bin/\(binaryName)"))
+        }
+        // 3. User copies.
+        urls.append(userBinDirectory.appendingPathComponent(binaryName))
         // 4. Homebrew prefixes + 5. PATH — preferred name first, then fallback.
         var dirs = ["/opt/homebrew/bin", "/usr/local/bin"]
         let pathEnv = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin"
