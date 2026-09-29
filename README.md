@@ -31,6 +31,14 @@
 > until then, use Right-click → Open on first launch. Advanced users can also run:
 > `sudo xattr -cr /Applications/Grabbit.app`
 
+## Browser Extension
+
+The Grabbit Web Grabber extension captures videos from web pages:
+
+1. Load `GrabbitExtension` as unpacked in `chrome://extensions` (Developer Mode).
+2. Run `./GrabbitExtension/native-messaging/install-host.sh <extension-id>`.
+3. See [GrabbitExtension/README.md](GrabbitExtension/README.md) for details.
+
 ## Build from source
 
 Prerequisites: Xcode 15+, macOS 14+, [xcodegen](https://github.com/yonaskolb/XcodeGen).
