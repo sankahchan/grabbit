@@ -280,6 +280,17 @@ function ensurePort() {
 }
 
 function sendToApp(payload) {
+  // Prefer the pre-redirect URL: it carries the real filename
+  // (e.g. github.com/.../Grabbit-v1.0.2.dmg) while the redirect target
+  // is often a UUID (release-assets...). The app follows redirects itself.
+  const original = redirectSource.get(payload.url);
+  if (original) {
+    payload.url = original;
+    // Re-derive filename from the original URL.
+    if (payload.filename) {
+      payload.filename = filenameFromUrl(original);
+    }
+  }
   // Capture request context first (async), then deliver.
   captureContext(payload.url).then((headers) => {
     payload.headers = headers;
