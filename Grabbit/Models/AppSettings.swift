@@ -196,15 +196,20 @@ public final class SettingsStore {
     /// secret — a Keychain failure keeps the old copy so the proxy keeps
     /// working, and the migration retries on the next launch.
     private func migrateProxyPasswordToKeychain() {
-        // Don't touch the Keychain at all unless the user has actually
-        // configured a proxy. Otherwise every fresh install prompts for
-        // Keychain access on first launch, which looks like data collection.
-        guard settings.proxyMode != .none, !settings.proxyHost.isEmpty else {
-            proxyPasswordKeychainKnown = true // nothing to migrate
-            return
-        }
+        // A plaintext password from an older build migrates regardless of
+        // whether the proxy is currently configured — those builds persisted
+        // it even for parked configs, and leaving it in UserDefaults would
+        // violate the "secrets live in the Keychain" invariant.
         if !settings.proxyPassword.isEmpty {
             save() // moves it to the Keychain when possible; else keeps it
+            return
+        }
+        // No password to migrate: only touch the Keychain when the user has
+        // actually configured a proxy. Otherwise every fresh install prompts
+        // for Keychain access on first launch, which looks like data
+        // collection.
+        guard settings.proxyMode != .none, !settings.proxyHost.isEmpty else {
+            proxyPasswordKeychainKnown = true // nothing to load
             return
         }
         switch KeychainStore.load(account: keychainAccount) {

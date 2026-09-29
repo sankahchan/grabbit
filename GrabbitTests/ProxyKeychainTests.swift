@@ -35,9 +35,24 @@ final class ProxyKeychainTests: XCTestCase {
         return try JSONDecoder().decode(AppSettings.self, from: data)
     }
 
+    /// CI runners (and locked-down environments) have no usable login
+    /// keychain for an unsigned test bundle — `SecItemAdd` fails, which would
+    /// fail these tests for environmental reasons. Probe once and skip the
+    /// keychain-dependent tests instead.
+    private func requireKeychain() throws {
+        let probeAccount = "grabbit-test-probe-\(UUID().uuidString)"
+        let saved = KeychainStore.save("probe", account: probeAccount)
+        let loaded = try? KeychainStore.load(account: probeAccount).get()
+        KeychainStore.delete(account: probeAccount)
+        try XCTSkipUnless(
+            saved && loaded == "probe",
+            "Keychain unavailable in this environment")
+    }
+
     // MARK: - Global proxy password
 
     func testLegacyGlobalPasswordMigratesToKeychain() throws {
+        try requireKeychain()
         // Plant a pre-Keychain settings blob with a plaintext password.
         var legacy = AppSettings.default
         legacy.proxyPassword = "s3cret"
@@ -57,7 +72,13 @@ final class ProxyKeychainTests: XCTestCase {
     }
 
     func testGlobalPasswordWriteThroughAndReload() throws {
+        try requireKeychain()
         let store = SettingsStore(keychainAccount: account)
+        // Real usage saves the whole proxy form; a configured proxy is what
+        // re-arms the Keychain load on the next launch (fresh installs must
+        // not touch the Keychain at all).
+        store.settings.proxyMode = .http
+        store.settings.proxyHost = "proxy.example"
         store.settings.proxyPassword = "n3wpw"
         store.save()
 
@@ -69,6 +90,7 @@ final class ProxyKeychainTests: XCTestCase {
     }
 
     func testClearingGlobalPasswordDeletesKeychainItem() throws {
+        try requireKeychain()
         let store = SettingsStore(keychainAccount: account)
         store.settings.proxyPassword = "todelete"
         store.save()
@@ -96,6 +118,7 @@ final class ProxyKeychainTests: XCTestCase {
     }
 
     func testTaskProxyPasswordRoundTripsViaKeychain() throws {
+        try requireKeychain()
         let taskID = UUID()
         var proxy: TaskProxy? = TaskProxy(
             scope: .custom, host: "proxy.example", password: "taskpw")
@@ -130,6 +153,7 @@ final class ProxyKeychainTests: XCTestCase {
     }
 
     func testLegacyTaskProxyPasswordMigrates() throws {
+        try requireKeychain()
         // Old task JSON with a plaintext password (pre-Keychain builds).
         let legacyJSON = """
             {"scope":"custom","mode":"http","host":"h","port":8080,\

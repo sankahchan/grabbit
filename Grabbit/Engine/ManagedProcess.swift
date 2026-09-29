@@ -65,38 +65,49 @@ public final class ManagedProcess {
 
             let outHandle = outPipe.fileHandleForReading
             let errHandle = errPipe.fileHandleForReading
+            // Pipe events and the termination cleanup run on one serial queue:
+            // a fast process (e.g. /bin/echo) can fire the termination handler
+            // before an in-flight readability callback has emitted its lines,
+            // which silently dropped output. Serializing both guarantees
+            // emissions complete before the result continuation resumes.
+            let ioQueue = DispatchQueue(label: "com.sankahchan.grabbit.ManagedProcess.io")
             outHandle.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty else { return }
-                self?.emitLines(data, isStderr: false)
+                ioQueue.async { self?.emitLines(data, isStderr: false) }
             }
             errHandle.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty else { return }
-                self?.appendStderr(data)
-                self?.emitLines(data, isStderr: true)
+                ioQueue.async {
+                    self?.appendStderr(data)
+                    self?.emitLines(data, isStderr: true)
+                }
             }
 
             proc.terminationHandler = { [weak self] p in
                 outHandle.readabilityHandler = nil
                 errHandle.readabilityHandler = nil
-                // Drain anything left in the pipes.
+                // Drain anything left in the pipes, then emit + resume on the
+                // same serial queue as the readability callbacks.
                 let outRest = (try? outHandle.readToEnd()) ?? Data()
                 let errRest = (try? errHandle.readToEnd()) ?? Data()
-                if !outRest.isEmpty { self?.emitLines(outRest, isStderr: false) }
-                if !errRest.isEmpty {
-                    self?.appendStderr(errRest)
-                    self?.emitLines(errRest, isStderr: true)
+                ioQueue.async {
+                    if !outRest.isEmpty { self?.emitLines(outRest, isStderr: false) }
+                    if !errRest.isEmpty {
+                        self?.appendStderr(errRest)
+                        self?.emitLines(errRest, isStderr: true)
+                    }
+                    let wasCancelled = self?.lock.withLock { self?.cancelled ?? false } ?? false
+                    let tail = self?.lock.withLock {
+                        String(decoding: (self?.stderrBuffer ?? Data()), as: UTF8.self)
+                    } ?? ""
+                    self?.lock.withLock { self?.process = nil }
+                    continuation.resume(returning: RunResult(
+                        exitCode: p.terminationStatus,
+                        stderrTail: tail,
+                        wasCancelled: wasCancelled))
                 }
-                let wasCancelled = self?.lock.withLock { self?.cancelled ?? false } ?? false
-                let tail = self?.lock.withLock {
-                    String(decoding: (self?.stderrBuffer ?? Data()), as: UTF8.self)
-                } ?? ""
-                self?.lock.withLock { self?.process = nil }
-                continuation.resume(returning: RunResult(
-                    exitCode: p.terminationStatus,
-                    stderrTail: tail,
-                    wasCancelled: wasCancelled))
             }
 
             do {
