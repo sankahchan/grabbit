@@ -152,10 +152,20 @@ struct GrabbitApp: App {
                     // Shortcuts, or anywhere else.
                     guard let request = GrabbitURLScheme.parse(url) else { return }
                     Task { @MainActor in
-                        await downloadEngine.add(
-                            url: request.url,
-                            filename: request.filename,
-                            headers: request.headers.isEmpty ? nil : request.headers)
+                        // Stream playlists (m3u8/mpd) go to the media engine
+                        // (yt-dlp) for proper video download, not the direct
+                        // engine which would just save the playlist text.
+                        let lower = request.url.absoluteString.lowercased()
+                        if lower.contains(".m3u8") || lower.contains(".mpd") {
+                            let directory = settings.folderURL(for: .video)
+                            mediaEngine.speedLimitBytesPerSec = settings.settings.speedLimitBytesPerSec
+                            await mediaEngine.downloadStream(url: request.url, to: directory)
+                        } else {
+                            await downloadEngine.add(
+                                url: request.url,
+                                filename: request.filename,
+                                headers: request.headers.isEmpty ? nil : request.headers)
+                        }
                     }
                 }
                 .onAppear {

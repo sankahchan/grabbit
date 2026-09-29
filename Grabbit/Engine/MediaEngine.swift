@@ -231,4 +231,16 @@ public final class MediaEngine {
         }
         return "\(max(1, bytesPerSec / 1_024))K"
     }
+
+    /// Extension-triggered stream download: probes the URL and downloads the
+    /// best quality preset to the given directory. Used for m3u8/mpd URLs
+    /// captured by the browser extension.
+    public func downloadStream(url: URL, to directory: URL) async {
+        await probe(url: url)
+        guard let media = probed, !media.presets.isEmpty else { return }
+        // Prefer "Best" preset, fall back to first available.
+        let preset = media.presets.first(where: { $0.label == "Best" })
+            ?? media.presets[0]
+        await download(preset: preset, to: directory)
+    }
 }
