@@ -241,16 +241,12 @@ function filenameFromUrl(url) {
 /// Builds a grabbit://download URL — the fallback transport when the native
 /// messaging host isn't installed. The app is registered for the scheme, so
 /// this still lands the download (with headers) in Grabbit.
+/// NOTE: Headers are OMITTED to keep the URL short. Long cookie headers
+/// can exceed OS URL length limits, causing silent failures.
 function schemeUrl(payload) {
   const params = new URLSearchParams();
   params.set('url', payload.url);
   if (payload.filename) params.set('filename', payload.filename);
-  const headers = payload.headers || {};
-  if (headers['Cookie']) params.set('cookie', headers['Cookie']);
-  if (headers['Referer']) params.set('referer', headers['Referer']);
-  if (headers['User-Agent']) params.set('userAgent', headers['User-Agent']);
-  if (headers['Authorization']) params.set('authorization', headers['Authorization']);
-  if (headers['Origin']) params.set('origin', headers['Origin']);
   return 'grabbit://download?' + params.toString();
 }
 
