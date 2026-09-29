@@ -21,10 +21,15 @@
 ## Install
 
 1. Download the latest `Grabbit-*.dmg` from [Releases](https://github.com/sankahchan/grabbit/releases/latest).
-2. Open it, drag **Grabbit.app** to Applications, and launch.
-3. macOS 14+ on Apple Silicon required.
+2. Open it, drag **Grabbit.app** to Applications.
+3. **First launch:** Right-click Grabbit.app → **Open** → click **Open** in the dialog.
+   (This is needed once because early builds are unsigned. Double-clicking may
+   show a "damaged" warning — that's macOS Gatekeeper, not a broken download.)
+4. macOS 14+ on Apple Silicon required.
 
-> ⚠️ Early builds are unsigned. Developer ID signing + notarization are planned before public distribution — until then, Gatekeeper may ask you to allow the app on first launch.
+> ⚠️ Early builds are unsigned. Developer ID signing + notarization are planned —
+> until then, use Right-click → Open on first launch. Advanced users can also run:
+> `sudo xattr -cr /Applications/Grabbit.app`
 
 ## Build from source
 

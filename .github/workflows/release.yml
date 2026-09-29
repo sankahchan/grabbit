@@ -113,9 +113,10 @@ jobs:
             --title "$TAG" \
             --notes "Grabbit $TAG — macOS 14+ (Apple Silicon).
 
-          Download the DMG below, drag Grabbit.app to Applications, and launch.
-          Auto-updates are delivered via Sparkle once this version is installed.
-          Unsigned build: Developer ID signing + notarization are on the TODO list before public distribution."
+          Download the DMG below, drag Grabbit.app to Applications.
+          First launch: Right-click Grabbit.app → Open → click Open.
+          (Unsigned build — this one-time step bypasses Gatekeeper.)
+          Auto-updates are delivered via Sparkle once this version is installed."
 
       - name: Sign DMG with Sparkle EdDSA key
         env:
