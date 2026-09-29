@@ -291,25 +291,13 @@ function sendToApp(payload) {
       payload.filename = filenameFromUrl(original);
     }
   }
-  // Capture request context first (async), then deliver.
+  // Use the grabbit:// URL scheme as the primary transport — it's more
+  // reliable than native messaging (no host installation issues).
   captureContext(payload.url).then((headers) => {
     payload.headers = headers;
-    try {
-      const port = ensurePort();
-      port.postMessage(payload);
-      // Probe the connection; if the host is missing, disconnect fires async.
-      setTimeout(async () => {
-        if (!nativePort) {
-          // Fallback: the grabbit:// scheme needs no host installation.
-          const ok = await openViaScheme(payload);
-          if (!ok) notifyHostMissing();
-        }
-      }, 750);
-    } catch {
-      openViaScheme(payload).then((ok) => {
-        if (!ok) notifyHostMissing();
-      });
-    }
+    openViaScheme(payload).then((ok) => {
+      if (!ok) notifyHostMissing();
+    });
   });
 }
 
