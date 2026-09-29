@@ -82,7 +82,7 @@ jobs:
         id: app
         run: |
           APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData \
-            -name "Grabbit.app" -maxdepth 4 -type d | head -n 1)
+            -name "Grabbit.app" -maxdepth 6 -type d | head -n 1)
           echo "path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Create DMG
