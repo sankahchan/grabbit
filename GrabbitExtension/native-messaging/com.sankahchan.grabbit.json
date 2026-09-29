@@ -1,1 +1,9 @@
-{"allowed_origins":["chrome-extension://REPLACE_WITH_EXTENSION_ID/"],"args":["--native-messaging"],"description":"Grabbit native messaging host","name":"com.sankahchan.grabbit","path":"/Applications/Grabbit.app/Contents/MacOS/Grabbit","type":"stdio"}
+{
+  "allowed_origins": [
+    "chrome-extension://REPLACE_WITH_EXTENSION_ID/"
+  ],
+  "description": "Grabbit native messaging host",
+  "name": "com.sankahchan.grabbit",
+  "path": "/Users/REPLACE_WITH_USER/Library/Application Support/Grabbit/grabbit-native-helper.py",
+  "type": "stdio"
+}

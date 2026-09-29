@@ -18,6 +18,14 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$SRC_DIR/com.sankahchan.grabbit.json"
 NAME="com.sankahchan.grabbit.json"
 
+# Install the lightweight Python helper as the native host binary.
+HELPER_SRC="$SRC_DIR/grabbit-native-helper.py"
+HELPER_DST="$HOME/Library/Application Support/Grabbit/grabbit-native-helper.py"
+mkdir -p "$(dirname "$HELPER_DST")"
+cp "$HELPER_SRC" "$HELPER_DST"
+chmod +x "$HELPER_DST"
+echo "Installed helper -> $HELPER_DST"
+
 # Chromium-family destinations on macOS.
 declare -a DESTS=(
   "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
@@ -28,7 +36,7 @@ declare -a DESTS=(
 
 for dir in "${DESTS[@]}"; do
   mkdir -p "$dir"
-  sed "s/REPLACE_WITH_EXTENSION_ID/$EXT_ID/" "$SRC" > "$dir/$NAME"
+  sed -e "s/REPLACE_WITH_EXTENSION_ID/$EXT_ID/" -e "s|REPLACE_WITH_USER|$USER|" "$SRC" > "$dir/$NAME"
   echo "Installed -> $dir/$NAME"
 done
 
