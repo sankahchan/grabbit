@@ -107,6 +107,24 @@ jobs:
           Auto-updates are delivered via Sparkle once this version is installed.
           Unsigned build: Developer ID signing + notarization are on the TODO list before public distribution."
 
+      - name: Sign DMG with Sparkle EdDSA key
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "SPARKLE_PRIVATE_KEY secret not set - skipping EdDSA signature"
+            echo "EDSIGNATURE=" >> "$GITHUB_ENV"
+          else
+            echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle-private.pem
+            # Download Sparkle's sign_update tool
+            curl -sL -o /tmp/Sparkle.tar.xz "https://github.com/sparkle-project/Sparkle/releases/download/2.5.0/Sparkle-2.5.0.tar.xz"
+            tar -xf /tmp/Sparkle.tar.xz -C /tmp
+            TAG="${GITHUB_REF_NAME}"
+            SIG=$(/tmp/bin/sign_update "dist/Grabbit-${TAG}.dmg" /tmp/sparkle-private.pem 2>/dev/null | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)
+            echo "EDSIGNATURE=$SIG" >> "$GITHUB_ENV"
+            echo "DMG signed"
+          fi
+
       - name: Update appcast.xml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

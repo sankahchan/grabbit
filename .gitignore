@@ -39,3 +39,4 @@ Grabbit/Resources/lib/
 *.mobileprovision
 *secret*
 *credentials*
+sparkle-private.pem

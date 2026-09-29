@@ -35,7 +35,7 @@ targets:
         NSHumanReadableCopyright: Copyright © 2026 sankahchan
         LSMinimumSystemVersion: "14.0"
         SUFeedURL: https://github.com/sankahchan/grabbit/releases/latest/download/appcast.xml
-        SUPublicEDKey: "TODO: run Sparkle's generate_keys tool and paste the public key here before public distribution"
+        SUPublicEDKey: "CL/8vmhrnp7r4YFKru82iPi66NYvJ3vrWS4gcSUFdCw="
         CFBundleURLTypes:
           - CFBundleURLName: "Grabbit download URL"
             CFBundleURLSchemes: ["grabbit"]
