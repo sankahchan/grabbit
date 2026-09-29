@@ -26,11 +26,19 @@ public final class MediaEngine {
     /// Phase 5 speed limiter: global cap in bytes/sec, 0 = unlimited.
     /// Synced from Settings by the UI before each download.
     public var speedLimitBytesPerSec: Int64 = 0
+    /// Completion/failure toast cards (wired by GrabbitApp, like the other
+    /// engines). Media downloads previously finished silently.
+    public weak var toastCenter: ToastCenter?
+    /// Optional settings — drives notification/sound preferences.
+    public weak var settingsStore: SettingsStore?
 
     private var process: ManagedProcess?
     /// Serializes probe/download calls.
     private var busy = false
     private let history: HistoryStore
+    /// Browser-captured headers for the current probe/download (Referer,
+    /// Cookie, …). Set by `probe`/`downloadStream`, replayed by `download`.
+    private var probeHeaders: [String: String] = [:]
 
     public init(history: HistoryStore = HistoryStore()) {
         self.history = history
@@ -39,10 +47,14 @@ public final class MediaEngine {
     // MARK: - Probe
 
     /// Probes the URL for title + quality presets. Returns nil + sets
-    /// errorMessage when binaries are missing or the probe fails.
+    /// errorMessage when binaries are missing or the probe fails. `headers`
+    /// are browser-captured request headers and are replayed on the probe.
     @MainActor
-    public func probe(url: URL) async {
-        guard !busy else { return }
+    public func probe(url: URL, headers: [String: String]? = nil) async {
+        guard !busy else {
+            NSLog("[Grabbit] MediaEngine.probe skipped: busy")
+            return
+        }
         busy = true
         defer { busy = false }
         state = .probing
@@ -51,21 +63,28 @@ public final class MediaEngine {
         progress = 0
         statusLine = ""
         sourceURL = url
+        probeHeaders = headers ?? [:]
 
         let ytDlp: URL
         switch MediaRuntimeResolver.resolve(.ytDlp) {
         case .success(let u): ytDlp = u
         case .failure(let e):
+            NSLog("[Grabbit] yt-dlp resolve failed: %@", e.localizedDescription)
             fail(e.localizedDescription)
             return
         }
+        NSLog("[Grabbit] probing with yt-dlp at %@", ytDlp.path)
         let helpers = helperBinDirs()
-        switch await MediaProbe.probe(url: url, ytDlp: ytDlp, helperBinDirs: helpers) {
+        switch await MediaProbe.probe(
+            url: url, ytDlp: ytDlp, helperBinDirs: helpers, headers: probeHeaders
+        ) {
         case .success(let media):
+            NSLog("[Grabbit] probe ok: presets=%d", media.presets.count)
             probed = media
             state = media.presets.isEmpty ? .failed : .ready
             if media.presets.isEmpty { errorMessage = "No downloadable formats found." }
         case .failure(let e):
+            NSLog("[Grabbit] probe failed: %@", e.localizedDescription)
             fail(e.localizedDescription)
         }
     }
@@ -122,6 +141,9 @@ public final class MediaEngine {
         if let ffmpegDir = binDir(of: .ffmpeg) {
             args += ["--ffmpeg-location", ffmpegDir]
         }
+        // Browser-captured request context (Referer/Cookie/User-Agent/…):
+        // CDN-gated HLS/DASH URLs only answer when they look like the page.
+        args += MediaProbe.headerArguments(probeHeaders)
         // Phase 5 speed limiter: yt-dlp enforces its own per-process cap.
         if speedLimitBytesPerSec > 0 {
             args += ["--limit-rate", Self.rateString(speedLimitBytesPerSec)]
@@ -163,6 +185,7 @@ public final class MediaEngine {
                 sourceURL: source.absoluteString,
                 saveDirectory: directory,
                 status: .completed))
+            notifyMediaComplete(name: media.title, directory: directory, title: safeTitle)
         } else {
             let detail = result.stderrTail.split(separator: "\n").last.map(String.init)
                 ?? "yt-dlp exited with code \(result.exitCode)"
@@ -172,6 +195,7 @@ public final class MediaEngine {
                 saveDirectory: directory,
                 status: .failed,
                 errorMessage: detail))
+            notifyMediaFailure(name: media.title, message: detail)
             fail(detail)
         }
     }
@@ -191,6 +215,7 @@ public final class MediaEngine {
         progress = 0
         statusLine = ""
         errorMessage = nil
+        probeHeaders = [:]
     }
 
     // MARK: - Helpers
@@ -199,6 +224,49 @@ public final class MediaEngine {
     private func fail(_ message: String) {
         state = .failed
         errorMessage = message
+    }
+
+    /// Completion card/notification for a finished yt-dlp download. `title`
+    /// is the sanitized base name used for the output template; the finished
+    /// file is matched by prefix so Open File lands on it.
+    @MainActor
+    private func notifyMediaComplete(name: String, directory: URL, title: String) {
+        let file = (try? FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil))?
+            .first { $0.lastPathComponent.hasPrefix(title) }
+        if settingsStore?.settings.notificationsEnabled ?? false {
+            Notifier.downloadComplete(
+                filename: file?.lastPathComponent ?? name,
+                folder: directory.lastPathComponent)
+        }
+        if settingsStore?.settings.showCompletionToast ?? false {
+            toastCenter?.push(AppToast(
+                kind: .completed,
+                source: .download,
+                title: NSLocalizedString("toast.completed.title", comment: ""),
+                message: file?.lastPathComponent ?? name,
+                fileURL: file ?? directory))
+        }
+        if settingsStore?.settings.completionSoundEnabled ?? false {
+            ToastCenter.playSound(for: .completed)
+        }
+    }
+
+    @MainActor
+    private func notifyMediaFailure(name: String, message: String) {
+        if settingsStore?.settings.notificationsEnabled ?? false {
+            Notifier.downloadFailed(filename: name, message: message)
+        }
+        if settingsStore?.settings.showCompletionToast ?? false {
+            toastCenter?.push(AppToast(
+                kind: .failed,
+                source: .download,
+                title: NSLocalizedString("toast.failed.title", comment: ""),
+                message: name))
+        }
+        if settingsStore?.settings.completionSoundEnabled ?? false {
+            ToastCenter.playSound(for: .failed)
+        }
     }
 
     /// Dirs of resolved helper binaries (ffmpeg, deno) for PATH injection.
@@ -234,10 +302,24 @@ public final class MediaEngine {
 
     /// Extension-triggered stream download: probes the URL and downloads the
     /// best quality preset to the given directory. Used for m3u8/mpd URLs
-    /// captured by the browser extension.
-    public func downloadStream(url: URL, to directory: URL) async {
-        await probe(url: url)
-        guard let media = probed, !media.presets.isEmpty else { return }
+    /// captured by the browser extension. `headers` are the browser-captured
+    /// request headers (Referer, Cookie, …) the CDN expects.
+    public func downloadStream(
+        url: URL,
+        to directory: URL,
+        headers: [String: String] = [:]
+    ) async {
+        NSLog("[Grabbit] downloadStream start: %@", url.absoluteString)
+        await probe(url: url, headers: headers)
+        NSLog("[Grabbit] downloadStream after probe: presets=%d", probed?.presets.count ?? -1)
+        guard let media = probed, !media.presets.isEmpty else {
+            // Extension-triggered downloads have no visible Media tab, so a
+            // silent no-op looked like "nothing happened". Say it out loud.
+            await notifyMediaFailure(
+                name: url.lastPathComponent,
+                message: errorMessage ?? NSLocalizedString("media.error.noFormats", comment: ""))
+            return
+        }
         // Prefer "Best" preset, fall back to first available.
         let preset = media.presets.first(where: { $0.label == "Best" })
             ?? media.presets[0]

@@ -17,7 +17,7 @@ Grabbit/
 ├── NativeMessaging/     stdio host: reads 4-byte LE length-prefixed JSON from the browser extension
 ├── UI/                  SwiftUI views, neo-brutalist design system
 └── Resources/           Assets, Localizable.xcstrings, bin/ (vendored yt-dlp + ffmpeg + aria2-next)
-extension/               Chrome MV3 + Safari Web Extension (shared JS, no build step)
+GrabbitExtension/        Chrome MV3 extension + native-messaging helper (Safari notes inside)
 ```
 
 Communication is one-directional where possible: engines report progress to `AppState` via `AsyncStream`/delegates; views only read `AppState`.
@@ -59,12 +59,32 @@ This is the core promise: **kill the app mid-download and lose nothing.**
 
 The browser extension talks to the app over Chrome Native Messaging:
 
-1. Extension launches the host (`com.sankahchan.grabbit`) via stdio.
-2. Every message is **4-byte little-endian length prefix + UTF-8 JSON**.
-3. Message types: `{ "type": "grab", "url": "…", "filename": "…", "cookies": "…" }` for a new download; `{ "type": "ping" }` for liveness.
-4. The host validates the origin (extension IDs are allow-listed) and hands grabs to `AppState` on `@MainActor`.
+1. Extension launches the host (`com.sankahchan.grabbit`) via stdio. The
+   installed host is a small Python helper that stays alive on the port and
+   hands work to the running app; a `grabbit://` tab fallback covers
+   machines without the host installed.
+2. Every message is **4-byte little-endian length prefix + UTF-8 JSON**;
+   every message is ACKed with `{"type":"ack","id":…,"ok":…}` so the
+   extension can apply backpressure while streaming.
+3. Message types:
+   - `grab` — `{url, filename, pageUrl, headers}`: written to
+     `Inbox/grab-*.json` and opened as `grabbit://download?payload=<file>`
+     (keeps multi-KB Cookie/Referer headers under OS URL limits).
+   - `stream-init` / `stream-chunk` / `stream-finalize` / `stream-cancel` —
+     in-page blob and MediaSource captures, appended to `Inbox/part-*.part`
+     as they arrive. A `Inbox/meta-<captureId>.json` sidecar lets a fresh
+     helper resume the same files after the MV3 worker is recycled.
+     Finalize assembles the file(s) and opens `grabbit://import?payload=<file>`;
+     the app muxes a separate audio track with bundled ffmpeg when present.
+   - `import` — a finished browser download handed to the app.
+4. The host validates the origin (extension IDs are allow-listed) and the
+   app only ever imports files inside `~/Library/Application Support/Grabbit/Inbox/`.
 
-This is what makes Telegram Web (`web.telegram.org`) blob videos downloadable — the extension captures the blob URL inside the page and forwards it.
+This is what makes Telegram Web (`web.telegram.org`) videos downloadable —
+including channels with "restrict saving content", whose videos play through
+`MediaSource`: a page hook mirrors `SourceBuffer.appendBuffer` segments
+(video + audio tracks) while the media plays, and the app stitches them back
+together on import.
 
 ## Update flow (Sparkle)
 

@@ -5919,6 +5919,86 @@
           }
         }
       }
+    },
+    "import.error.missingFile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The captured file is missing from the Grabbit inbox."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖမ်းယူထားတဲ့ ဖိုင်ကို Grabbit inbox ထဲမှာ မတွေ့ပါ။"
+          }
+        }
+      }
+    },
+    "mux.error.ffmpegUnavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bundled ffmpeg binary is unavailable."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bundled ffmpeg binary ကို မတွေ့ပါ။"
+          }
+        }
+      }
+    },
+    "toast.import.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်သွင်းပြီးပါပြီ"
+          }
+        }
+      }
+    },
+    "toast.import.muxWarning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved the video without audio: %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံမပါဘဲ ဗီဒီယိုကို သိမ်းလိုက်ပါတယ်: %@"
+          }
+        }
+      }
+    },
+    "media.error.noFormats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No downloadable formats found for this link."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒီ link အတွက် ဒေါင်းလုဒ်လုပ်နိုင်တဲ့ format မတွေ့ပါ။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -43,6 +43,7 @@ struct Sidebar: View {
     @Binding var selection: SidebarSelection
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+    @Environment(MediaEngine.self) private var mediaEngine: MediaEngine
     @Environment(LinkGrabberStore.self) private var linkGrabberStore: LinkGrabberStore
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
@@ -118,9 +119,14 @@ struct Sidebar: View {
             n = engine.items.filter { $0.state == .downloading }.count
         case .torrents:
             n = torrentEngine.torrents.filter { $0.state == .downloading }.count
+        case .media:
+            // MediaEngine serializes probe/download, so the active media
+            // download is either probing or downloading.
+            let active = mediaEngine.state == .probing || mediaEngine.state == .downloading
+            n = active ? 1 : 0
         case .linkgrabber:
             n = linkGrabberStore.stagedCount
-        case .grabber, .media, .history, .scheduler, .settings:
+        case .grabber, .history, .scheduler, .settings:
             return nil
         }
         return n > 0 ? n : nil

@@ -9,19 +9,25 @@
   .item { border: 2px solid #1A1A1A; border-radius: 8px; padding: 8px; margin-bottom: 8px; background: #fff; box-shadow: 2px 2px 0 #1A1A1A; }
   .url { word-break: break-all; font-size: 11px; color: #555; margin-bottom: 6px; }
   .meta { font-size: 11px; color: #777; margin-bottom: 6px; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
   button { font: inherit; font-weight: 700; background: #FFD02F; border: 2px solid #1A1A1A; border-radius: 6px; padding: 4px 10px; cursor: pointer; box-shadow: 2px 2px 0 #1A1A1A; }
   button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #1A1A1A; }
   button:disabled { opacity: 0.6; }
+  button.secondary { background: #fff; font-weight: 600; }
   .blob-note { font-size: 11px; color: #777; }
   .empty { color: #777; }
   input[type=text] { flex: 1; font: inherit; border: 2px solid #1A1A1A; border-radius: 6px; padding: 4px 8px; }
   label.toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .warning { display: flex; align-items: center; gap: 8px; background: #FFE9A8; border: 2px solid #1A1A1A; border-radius: 8px; padding: 6px 8px; font-size: 12px; margin-bottom: 10px; }
+  .warning button { padding: 2px 8px; font-size: 12px; }
   hr { border: none; border-top: 2px solid #1A1A1A; margin: 10px 0; }
   .section-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; }
 </style>
 </head>
 <body>
 <h1>Grabbit — web grabber</h1>
+<div id="hostStatus" class="meta">native host: checking…</div>
+<div id="tabWarning" class="warning" style="display: none"></div>
 <div class="row">
   <label class="toggle"><input type="checkbox" id="autoIntercept" checked> Auto-grab browser downloads</label>
 </div>
@@ -30,6 +36,11 @@
   <button id="manualGo">Grab</button>
 </div>
 <div id="clipboardRow"></div>
+<div id="captures" style="display: none">
+  <hr>
+  <p class="section-title">Capturing on this page</p>
+  <div id="captureList"></div>
+</div>
 <hr>
 <p class="section-title">Media on this page</p>
 <div id="list"><p class="empty">Scanning…</p></div>

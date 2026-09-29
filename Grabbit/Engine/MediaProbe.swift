@@ -55,10 +55,13 @@ public enum MediaProbeError: Error, LocalizedError {
 public enum MediaProbe {
     /// Probes the URL. `ffmpeg`/`deno` dirs are injected into PATH so
     /// yt-dlp can use them (Deno is required for YouTube's JS challenges).
+    /// `headers` are browser-captured request headers (Referer, Cookie, …)
+    /// replayed on every yt-dlp request.
     public static func probe(
         url: URL,
         ytDlp: URL,
-        helperBinDirs: [String] = []
+        helperBinDirs: [String] = [],
+        headers: [String: String] = [:]
     ) async -> Result<ProbedMedia, Error> {
         let proc = ManagedProcess()
         let jsonBox = LockedBox(Data())
@@ -69,7 +72,9 @@ public enum MediaProbe {
         let env = childEnvironment(extraBinDirs: helperBinDirs)
         let result = await proc.run(
             executable: ytDlp,
-            arguments: ["-J", "--no-playlist", "--no-warnings", url.absoluteString],
+            arguments: ["-J", "--no-playlist", "--no-warnings"]
+                + headerArguments(headers)
+                + [url.absoluteString],
             environment: env)
         let jsonData = jsonBox.value
         guard result.exitCode == 0, !jsonData.isEmpty else {
@@ -91,6 +96,24 @@ public enum MediaProbe {
         let extra = extraBinDirs.filter { !$0.isEmpty }.joined(separator: ":")
         if !extra.isEmpty { env["PATH"] = extra + ":" + current }
         return env
+    }
+
+    /// Browser-captured request headers as yt-dlp arguments. `Referer` maps to
+    /// `--referer` (yt-dlp rewrites it correctly for HLS/DASH children); every
+    /// other header is replayed verbatim with `--add-header`. Sorted for
+    /// deterministic arguments (unit-testable).
+    public static func headerArguments(_ headers: [String: String]) -> [String] {
+        var args: [String] = []
+        if let referer = headers["Referer"], !referer.isEmpty {
+            args += ["--referer", referer]
+        }
+        let remaining = headers
+            .filter { $0.key.caseInsensitiveCompare("Referer") != .orderedSame }
+            .sorted { $0.key < $1.key }
+        for (name, value) in remaining where !value.isEmpty {
+            args += ["--add-header", "\(name): \(value)"]
+        }
+        return args
     }
 
     // MARK: - Parsing (pure, unit-testable)
@@ -131,22 +154,19 @@ public enum MediaProbe {
         let audios = formats.filter { $0.acodec != "none" && $0.vcodec == "none" }
         let bestAudioSize = audios.compactMap(\.filesize).max()
 
-        func sizeFor(bucket: (lower: Int, cap: Int)) -> Int64? {
-            let v = videos.filter {
-                let h = $0.height ?? Int.max
-                return h > bucket.lower && h <= bucket.cap
-            }.compactMap(\.filesize).max()
-            guard let v else { return nil }
-            return v + (bestAudioSize ?? 0)
-        }
+        // HLS/DASH variants carry no filesize metadata, so a size must never
+        // be a prerequisite for a preset — otherwise m3u8/mpd captures yield
+        // zero presets and the media engine silently does nothing.
+        let bestVideoSize = videos.compactMap(\.filesize).max()
 
         var presets: [MediaPreset] = []
-        // Best: highest video + best audio merged.
-        if let v = videos.compactMap(\.filesize).max() {
+        // Best: highest video + best audio merged. Added even when no
+        // filesize is advertised (live/HLS streams).
+        if !videos.isEmpty {
             presets.append(MediaPreset(
                 id: "best", label: NSLocalizedString("media.preset.best", comment: ""),
                 formatSpec: "bv*+ba/b",
-                estimatedSize: v + (bestAudioSize ?? 0)))
+                estimatedSize: bestVideoSize.map { $0 + (bestAudioSize ?? 0) }))
         }
         // Height-capped presets, highest first. A row is only added when the
         // probe actually lists a format in that height bucket (above the next
@@ -161,19 +181,23 @@ public enum MediaProbe {
             ("360p", NSLocalizedString("media.preset.360p", comment: ""), 0, 360),
         ]
         for (id, label, lower, cap) in rows {
-            if let size = sizeFor(bucket: (lower, cap)) {
-                presets.append(MediaPreset(
-                    id: id, label: label,
-                    formatSpec: "bv*[height<=\(cap)]+ba/b[height<=\(cap)]",
-                    estimatedSize: size))
+            let bucketVideos = videos.filter {
+                let h = $0.height ?? Int.max
+                return h > lower && h <= cap
             }
+            guard !bucketVideos.isEmpty else { continue }
+            let bucketSize = bucketVideos.compactMap(\.filesize).max()
+            presets.append(MediaPreset(
+                id: id, label: label,
+                formatSpec: "bv*[height<=\(cap)]+ba/b[height<=\(cap)]",
+                estimatedSize: bucketSize.map { $0 + (bestAudioSize ?? 0) }))
         }
-        if let v = videos.compactMap(\.filesize).max() {
+        if !videos.isEmpty {
             // Backlog #10: video-only row — best video track, no audio.
             presets.append(MediaPreset(
                 id: "videoOnly", label: NSLocalizedString("media.preset.videoOnly", comment: ""),
                 formatSpec: "bv*",
-                estimatedSize: v,
+                estimatedSize: bestVideoSize,
                 videoOnly: true))
         }
         if !audios.isEmpty {

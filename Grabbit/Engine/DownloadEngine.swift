@@ -530,6 +530,147 @@ public final class DownloadEngine {
         start(item.id)
     }
 
+    // MARK: - Imported files (browser captures / finished browser downloads)
+
+    /// Registers a file captured outside the HTTP engine (browser-extension
+    /// blob/MSE capture, or a finished browser download handed over by the
+    /// native helper) as a completed task: optionally muxes a separate audio
+    /// track, moves the file into the category folder, appends a completed
+    /// item, and records history.
+    ///
+    /// - Parameter auxiliaryAudioURL: separate audio track to mux into the
+    ///   video with the bundled ffmpeg before filing it away (MSE captures).
+    @MainActor
+    public func importCompletedFile(
+        at fileURL: URL,
+        auxiliaryAudioURL: URL? = nil,
+        suggestedName: String? = nil,
+        sourcePageURL: URL? = nil,
+        sourceSite: SourceSite = .telegram,
+        mimeType: String? = nil
+    ) async {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            notifyImportFailure(
+                name: suggestedName ?? fileURL.lastPathComponent,
+                message: NSLocalizedString("import.error.missingFile", comment: ""))
+            return
+        }
+
+        let rawName = (suggestedName?.isEmpty == false ? suggestedName! : fileURL.lastPathComponent)
+        let decoded = rawName.removingPercentEncoding ?? rawName
+        let name = Self.sanitizeFilename(decoded.isEmpty ? fileURL.lastPathComponent : decoded)
+        let category = DownloadCategory.infer(filename: name, contentType: mimeType)
+        let folder = settings.folderURL(for: category)
+        try? fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
+        let uniqueName = Self.uniqueFilename(name, in: folder)
+        let destinationURL = folder.appendingPathComponent(uniqueName)
+
+        var sourceURL = fileURL
+        var muxWarning: String?
+
+        if let audioURL = auxiliaryAudioURL, fileManager.fileExists(atPath: audioURL.path) {
+            // ffmpeg infers the output container from the extension, so stage
+            // with the destination's own extension.
+            let ext = destinationURL.pathExtension.isEmpty ? "mp4" : destinationURL.pathExtension
+            let staging = folder.appendingPathComponent(".grabbit-mux-\(UUID().uuidString).\(ext)")
+            switch await MediaMuxer.mux(video: fileURL, audio: audioURL, output: staging) {
+            case .success:
+                sourceURL = staging
+                try? fileManager.removeItem(at: fileURL)
+                try? fileManager.removeItem(at: audioURL)
+            case .failure(let error):
+                // Keep the video: a silent file beats no file. The helper's
+                // Inbox GC removes whatever is left over.
+                muxWarning = error.localizedDescription
+                try? fileManager.removeItem(at: audioURL)
+            }
+        }
+
+        do {
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            do {
+                try fileManager.moveItem(at: sourceURL, to: destinationURL)
+            } catch {
+                // Different volumes (Inbox vs. an external destination folder).
+                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                try? fileManager.removeItem(at: sourceURL)
+            }
+        } catch {
+            try? fileManager.removeItem(at: sourceURL)
+            notifyImportFailure(name: name, message: error.localizedDescription)
+            return
+        }
+
+        let attributes = try? fileManager.attributesOfItem(atPath: destinationURL.path)
+        let size = (attributes?[.size] as? NSNumber)?.int64Value
+        let item = DownloadItem(
+            url: sourcePageURL ?? destinationURL,
+            filename: destinationURL.lastPathComponent,
+            totalBytes: size,
+            downloadedBytes: size ?? 0,
+            segments: [],
+            state: .completed,
+            category: category,
+            sourceSite: sourceSite,
+            destinationURL: destinationURL,
+            sourcePageURL: sourcePageURL,
+            sortRank: (items.map(\.sortRank).max() ?? -1) + 1)
+        items.append(item)
+        history.record(.from(download: item, status: .completed))
+
+        if settings.settings.notificationsEnabled {
+            Notifier.downloadComplete(
+                filename: item.filename,
+                folder: destinationURL.deletingLastPathComponent().lastPathComponent)
+        }
+        if settings.settings.showCompletionToast {
+            toastCenter?.push(AppToast(
+                kind: .completed,
+                source: .download,
+                title: NSLocalizedString("toast.import.title", comment: ""),
+                message: item.filename,
+                fileURL: destinationURL))
+        }
+        if settings.settings.completionSoundEnabled {
+            ToastCenter.playSound(for: .completed)
+        }
+        if let muxWarning {
+            toastCenter?.push(AppToast(
+                kind: .info,
+                source: .download,
+                title: NSLocalizedString("toast.import.title", comment: ""),
+                message: String(
+                    format: NSLocalizedString("toast.import.muxWarning", comment: ""),
+                    muxWarning)))
+        }
+        // Regular completions clear themselves from the Downloads list when
+        // the setting is on (the History tab keeps the record); imports do
+        // the same so captured files don't pile up there.
+        if settings.settings.autoClearFinished {
+            remove(item.id)
+        }
+    }
+
+    @MainActor
+    private func notifyImportFailure(name: String, message: String) {
+        if settings.settings.notificationsEnabled {
+            Notifier.downloadFailed(filename: name, message: message)
+        }
+        if settings.settings.showCompletionToast {
+            toastCenter?.push(AppToast(
+                kind: .failed,
+                source: .download,
+                title: NSLocalizedString("toast.failed.title", comment: ""),
+                message: name))
+        }
+        if settings.settings.completionSoundEnabled {
+            ToastCenter.playSound(for: .failed)
+        }
+    }
+
     @MainActor
     public func start(_ id: UUID) {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }

@@ -67,7 +67,7 @@ Build with `⌘B`, run tests with `⌘U`. CI does the same on every push to `mai
 | `Grabbit/NativeMessaging` | Native-messaging host for the browser extension |
 | `Grabbit/UI` | Views (neo-brutalist design) |
 | `Grabbit/Resources` | Assets, `Localizable.xcstrings`, vendored `bin/` (yt-dlp, ffmpeg, aria2-next — downloaded at release build time) |
-| `extension/` | Chrome MV3 + Safari Web Extension (shared JS) |
+| `GrabbitExtension/` | Chrome MV3 extension + native-messaging helper |
 | `.github/workflows` | `ci.yml` (build + test), `release.yml` (DMG + appcast) |
 | `ARCHITECTURE.md` | Design deep-dive |
 | `DEPENDENCIES.md` | Third-party components and licenses |

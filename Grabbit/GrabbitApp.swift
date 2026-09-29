@@ -69,6 +69,11 @@ struct GrabbitApp: App {
         _downloadEngine.wrappedValue.completionCenter = _completionCenter.wrappedValue
         _torrentEngine.wrappedValue.completionCenter = _completionCenter.wrappedValue
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
+        // Media downloads should surface completion/failure the same way
+        // direct downloads do (extension-triggered yt-dlp runs have no
+        // visible Media tab otherwise).
+        _mediaEngine.wrappedValue.toastCenter = _toastCenter.wrappedValue
+        _mediaEngine.wrappedValue.settingsStore = sharedSettings
         _schedulerStore = State(initialValue: SchedulerStore())
         _trayController = State(initialValue: TrayController())
         _trayController.wrappedValue.configure(
@@ -131,6 +136,7 @@ struct GrabbitApp: App {
                 .environment(hostProfileStore)
                 .environment(packagizerStore)
                 .onOpenURL { url in
+                    NSLog("[Grabbit] onOpenURL: %@", url.absoluteString)
                     // In tray mode the window is hidden — a link click
                     // should bring it forward so the new task is visible.
                     if settings.settings.runMode == .tray {
@@ -148,18 +154,45 @@ struct GrabbitApp: App {
                         }
                         return
                     }
+                    // grabbit://import?payload=… — a capture (Telegram blob /
+                    // MSE stream) or a finished browser download the native
+                    // helper handed over. It is already on disk.
+                    if url.scheme?.lowercased() == "grabbit",
+                       url.host?.lowercased() == "import"
+                    {
+                        guard let request = GrabbitURLScheme.parseImport(url) else { return }
+                        Task { @MainActor in
+                            await downloadEngine.importCompletedFile(
+                                at: request.fileURL,
+                                auxiliaryAudioURL: request.auxiliaryAudioURL,
+                                suggestedName: request.filename,
+                                sourcePageURL: request.pageURL,
+                                sourceSite: request.source == "extension-stream" ? .telegram : .other,
+                                mimeType: request.mimeType)
+                        }
+                        return
+                    }
                     // grabbit://download?url=… — from the browser extension,
                     // Shortcuts, or anywhere else.
-                    guard let request = GrabbitURLScheme.parse(url) else { return }
+                    guard let request = GrabbitURLScheme.parse(url) else {
+                        NSLog("[Grabbit] URL parse failed")
+                        return
+                    }
                     Task { @MainActor in
                         // Stream playlists (m3u8/mpd) go to the media engine
                         // (yt-dlp) for proper video download, not the direct
                         // engine which would just save the playlist text.
                         let lower = request.url.absoluteString.lowercased()
                         if lower.contains(".m3u8") || lower.contains(".mpd") {
+                            NSLog("[Grabbit] routing to MediaEngine: %@", request.url.absoluteString)
                             let directory = settings.folderURL(for: .video)
                             mediaEngine.speedLimitBytesPerSec = settings.settings.speedLimitBytesPerSec
-                            await mediaEngine.downloadStream(url: request.url, to: directory)
+                            await mediaEngine.downloadStream(
+                                url: request.url,
+                                to: directory,
+                                headers: request.headers)
+                            NSLog("[Grabbit] MediaEngine.downloadStream returned (state=%@)",
+                                  String(describing: mediaEngine.state))
                         } else {
                             await downloadEngine.add(
                                 url: request.url,
