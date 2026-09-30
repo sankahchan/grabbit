@@ -160,9 +160,15 @@
   }
 
   /// Low-volume diagnostic channel → native helper appends to
-  /// Inbox/telegram-debug.log (Telegram only; helps debug capture issues).
+  /// Inbox/telegram-debug.log. Telegram-only events (media-item / mse-*) stay
+  /// gated to keep the log quiet; blob and stream handoffs are rare and
+  /// useful on any site, so they always log.
   function sendDebug(event, details) {
-    if (!IS_TELEGRAM) return;
+    const alwaysLog =
+      event.startsWith('fetch-blob') ||
+      event.startsWith('blob-') ||
+      event.startsWith('page-fetch');
+    if (!IS_TELEGRAM && !alwaysLog) return;
     try {
       chrome.runtime
         .sendMessage({ type: 'grabbit-debug', event, details: details || {} })
@@ -817,6 +823,7 @@
       await sendStreamMessage({ type: 'grabbit-stream-finalize', captureId: requestId, filename }, 60000);
       chrome.runtime.sendMessage({ type: 'grabbit-blob-result', requestId, ok: true, filename }).catch(() => {});
     } catch (error) {
+      sendDebug('blob-error', { url: blobUrl.slice(0, 300), error: String(error) });
       await sendStreamMessage({ type: 'grabbit-stream-cancel', captureId: requestId });
       chrome.runtime
         .sendMessage({ type: 'grabbit-blob-result', requestId, ok: false, error: String(error) })

@@ -109,6 +109,9 @@
   //
   // The content script needs to know whether a blob: URL wraps a real Blob
   // (fetchable) or a MediaSource (only recoverable through appendBuffer).
+  // Revocation is delayed: some sites revoke the object URL synchronously
+  // right after starting a download, which would make the Grabbit capture
+  // fetch fail instantly. The grace period keeps the blob resolvable.
 
   try {
     const origCreate = URL.createObjectURL;
@@ -134,8 +137,19 @@
       };
       const origRevoke = URL.revokeObjectURL;
       if (typeof origRevoke === 'function') {
+        const REVOKE_GRACE_MS = 60000;
         URL.revokeObjectURL = function (url) {
-          return origRevoke.call(URL, url);
+          if (typeof url === 'string' && url.startsWith('blob:')) {
+            setTimeout(() => {
+              try {
+                origRevoke.call(URL, url);
+              } catch {
+                // ignore
+              }
+            }, REVOKE_GRACE_MS);
+            return;
+          }
+          return origRevoke.apply(URL, arguments);
         };
       }
     }

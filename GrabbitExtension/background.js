@@ -251,9 +251,20 @@ async function sendToApp(payload) {
     },
     { expectAck: true, timeoutMs: 3000 }
   );
+  debugLog('grab-delivery', {
+    url: payload.url.slice(0, 240),
+    filename: payload.filename || '',
+    ok: delivered,
+    via: delivered ? 'native' : 'pending-fallback',
+  });
   if (delivered) return true;
 
   const usedFallback = await openViaScheme({ ...payload, headers });
+  debugLog('grab-delivery', {
+    url: payload.url.slice(0, 240),
+    ok: usedFallback,
+    via: 'scheme-fallback',
+  });
   notify(
     'Grabbit',
     usedFallback
@@ -595,6 +606,154 @@ function startBlobStream(tabId, url, filename) {
     )
     .then((res) => ({ ok: res?.ok !== false, version: res?.version, requestId }))
     .catch(() => ({ ok: false }));
+}
+
+/// Captures a blob: URL with a freshly injected isolated-world script.
+/// Unlike the content script this is always the current code — a tab that
+/// predates the latest extension update can still be captured.
+///
+/// Two phases: first a probe finds which frame can actually read the blob
+/// (blob: URLs are origin-scoped, so a wrong tab/frame fails instantly), then
+/// the real capture streams from the first capable frame.
+async function captureBlobViaInjection(tabId, blobUrl, requestId, filename, mimeHint) {
+  let capableFrames = [];
+  try {
+    const probes = await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      world: 'ISOLATED',
+      func: async (url) => {
+        try {
+          const response = await fetch(url);
+          const ok = response.ok || response.status === 200;
+          try {
+            await response.body?.cancel();
+          } catch {
+            // Cancelling the probe read is best-effort.
+          }
+          return ok;
+        } catch {
+          return false;
+        }
+      },
+      args: [blobUrl],
+    });
+    capableFrames = probes.filter((p) => p.result === true).map((p) => p.frameId);
+  } catch (error) {
+    debugLog('blob-capture-probe-error', { tabId, error: String(error) });
+    return false;
+  }
+  if (capableFrames.length === 0) return false;
+
+  try {
+    const [injection] = await chrome.scripting.executeScript({
+      target: { tabId, frameIds: [capableFrames[0]] },
+      world: 'ISOLATED',
+      func: async (url, reqId, fname, hint) => {
+        const send = (message) => chrome.runtime.sendMessage(message).catch(() => null);
+        const cancel = () => send({ type: 'grabbit-stream-cancel', captureId: reqId });
+        const CHUNK = 256 * 1024;
+        const SLICE = 0xc000; // multiple of 3 → no mid-string base64 padding
+        const toBase64 = (u8) => {
+          let out = '';
+          for (let i = 0; i < u8.length; i += SLICE) {
+            out += btoa(String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + SLICE, u8.length))));
+          }
+          return out;
+        };
+        try {
+          const response = await fetch(url);
+          if (!response.ok && response.status !== 200) return false;
+          const mime = response.headers.get('content-type') || hint || '';
+          const init = await send({
+            type: 'grabbit-stream-init',
+            captureId: reqId,
+            streamId: 'blob',
+            mime,
+            track: mime.startsWith('audio/') ? 'audio' : 'video',
+            filename: fname || '',
+            pageUrl: location.href,
+          });
+          if (!init || init.ok !== true) {
+            await cancel();
+            return false;
+          }
+          const reader = response.body.getReader();
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value || value.length === 0) continue;
+            for (let offset = 0; offset < value.length; offset += CHUNK) {
+              const slice = value.subarray(offset, Math.min(offset + CHUNK, value.length));
+              const ack = await send({
+                type: 'grabbit-stream-chunk',
+                captureId: reqId,
+                streamId: 'blob',
+                mime,
+                data: toBase64(slice),
+              });
+              if (!ack || ack.ok !== true) {
+                await cancel();
+                return false;
+              }
+            }
+          }
+          const done = await send({
+            type: 'grabbit-stream-finalize',
+            captureId: reqId,
+            filename: fname || '',
+          });
+          if (!done || done.ok !== true) {
+            await cancel();
+            return false;
+          }
+          return true;
+        } catch {
+          await cancel();
+          return false;
+        }
+      },
+      args: [blobUrl, requestId, filename || '', mimeHint || ''],
+    });
+    return injection?.result === true;
+  } catch (error) {
+    debugLog('blob-capture-inject-error', { tabId, error: String(error) });
+    return false;
+  }
+}
+
+/// Chrome appends " (2)" when a same-named file already exists; Grabbit's
+/// inbox de-duplicates real collisions itself, so drop it for a clean name.
+function cleanSuggestedName(name) {
+  return String(name || '').replace(/ \(\d+\)(?=\.|$)/, '');
+}
+
+/// Chrome assigns a download's final filename a moment after a blob download
+/// starts (anchor download attribute or server suggestion). Waiting briefly
+/// lets the capture use that name instead of a generated fallback.
+async function waitForDownloadFilename(downloadId, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      const [item] = await chrome.downloads.search({ id: downloadId });
+      const name = basename(item?.filename) || '';
+      if (name && !name.endsWith('.crdownload') && !name.startsWith('Unconfirmed ')) {
+        return name;
+      }
+    } catch {
+      // Keep polling; the downloads store may be briefly unavailable.
+    }
+    if (Date.now() >= deadline) return '';
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+}
+
+/// Removes the browser-side copy once an in-page capture produced the same
+/// bytes, so the user does not end up with two copies (the file itself is
+/// deleted too when the download already completed).
+async function discardBrowserDownload(downloadId) {
+  await chrome.downloads.cancel(downloadId).catch(() => {});
+  await chrome.downloads.removeFile(downloadId).catch(() => {});
+  await chrome.downloads.erase({ id: downloadId }).catch(() => {});
 }
 
 /// Waits for Telegram's own download to appear after it has been triggered,
@@ -941,38 +1100,89 @@ try {
         return;
       }
 
-      if (!(await autoInterceptEnabled())) return;
-
-      if (url.startsWith('blob:')) {
-        await chrome.downloads.cancel(item.id).catch(() => {});
-        await chrome.downloads.erase({ id: item.id }).catch(() => {});
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-        if (tab?.id == null) {
-          notify('Grabbit', 'Blob download detected but no tab is available to capture it.');
-          return;
-        }
-        const requestId = 'blob-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-        try {
-          await chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'grabbit-fetch-blob',
-              url,
-              requestId,
-              filename: basename(item.filename) || '',
-            },
-            { frameId: 0 }
-          );
-        } catch {
-          notify('Grabbit', 'Blob link expired before capture — reopen the media and try again.');
-        }
+      if (!(await autoInterceptEnabled())) {
+        debugLog('intercept', {
+          url: url.slice(0, 240),
+          filename: basename(item.filename) || '',
+          decision: 'skip-toggle-off',
+        });
         return;
       }
 
-      if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+      if (url.startsWith('blob:')) {
+        debugLog('intercept', {
+          url: url.slice(0, 120),
+          filename: basename(item.filename) || '',
+          decision: 'blob-capture',
+        });
+        // Chrome resolves the intended filename shortly after the download
+        // starts (anchor download attribute); prefer it over a generated name.
+        const filename =
+          cleanSuggestedName(basename(item.filename)) ||
+          cleanSuggestedName(await waitForDownloadFilename(item.id));
+        debugLog('blob-resolved-name', { filename });
 
-      await chrome.downloads.cancel(item.id).catch(() => {});
-      await chrome.downloads.erase({ id: item.id }).catch(() => {});
+        // blob:https://host/uuid — only resolvable from a page of that exact
+        // origin, which is not necessarily the active tab (the link is often a
+        // popup/tab opened by the site). Try same-origin tabs first.
+        const match = /^blob:(https?:\/\/[^/]+)/i.exec(url);
+        const blobOrigin = match ? match[1] : null;
+        const candidateTabs = [];
+        if (blobOrigin) {
+          const allTabs = await chrome.tabs.query({});
+          for (const t of allTabs) {
+            if (t.id != null && typeof t.url === 'string' && t.url.startsWith(blobOrigin)) {
+              candidateTabs.push(t.id);
+            }
+          }
+        }
+        const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (activeTab?.id != null && !candidateTabs.includes(activeTab.id)) {
+          candidateTabs.push(activeTab.id);
+        }
+        debugLog('blob-candidates', { blobOrigin, tabIds: candidateTabs });
+
+        let captured = false;
+        for (const tabId of candidateTabs) {
+          const attemptId = `blob-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${tabId}`;
+          captured = await captureBlobViaInjection(tabId, url, attemptId, filename, item.mime || '');
+          debugLog('blob-capture', { ok: captured, via: 'injection', tabId });
+          if (captured) break;
+        }
+
+        if (captured) {
+          await discardBrowserDownload(item.id);
+          notify('Grabbit', 'Captured into Grabbit: ' + (filename || 'file'));
+          return;
+        }
+
+        // In-page capture failed (blob revoked early, popup already closed, no
+        // same-origin frame left). The browser itself could still resolve the
+        // blob — leave this download alone and import the finished file.
+        pendingImports.set(item.id, {
+          filename,
+          pageUrl: item.referrer || '',
+          source: 'browser-blob',
+        });
+        persistPendingImports();
+        debugLog('blob-capture-fallback', { downloadId: item.id, filename });
+        return;
+      }
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        debugLog('intercept', {
+          url: url.slice(0, 120),
+          decision: 'skip-unsupported-scheme',
+        });
+        return;
+      }
+
+      debugLog('intercept', {
+        url: url.slice(0, 240),
+        filename: basename(item.filename) || '',
+        decision: 'reroute',
+      });
+      await discardBrowserDownload(item.id);
       sendToApp({
         url,
         source: 'auto-intercept',
@@ -1068,9 +1278,9 @@ try {
         {
           type: 'import',
           path: item.filename,
-          filename: basename(item.filename) || '',
+          filename: cleanSuggestedName(basename(item.filename)) || '',
           pageUrl: item.referrer || pending.pageUrl || '',
-          source: 'telegram-progressive',
+          source: pending.source || 'telegram-progressive',
         },
         { expectAck: true, timeoutMs: 20000 }
       );

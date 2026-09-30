@@ -142,6 +142,45 @@ def mime_extension(mime):
     return "bin"
 
 
+def sniff_extension(path):
+    """Best-effort file-type detection from magic bytes.
+
+    Blob downloads often carry no MIME type, so Chrome suggests a generic name
+    and the mime-based extension resolves to "bin". Sniffing the actual bytes
+    recovers the real extension (zip, mp4, pdf, ...).
+    """
+    try:
+        with open(path, "rb") as handle:
+            head = handle.read(16)
+    except Exception:
+        return ""
+    if not head:
+        return ""
+    if head[:4] in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"):
+        return "zip"
+    if head[:4] == b"%PDF":
+        return "pdf"
+    if head[4:8] == b"ftyp":
+        return "mp4"
+    if head[:4] == b"\x1aE\xdf\xa3":
+        return "mkv"
+    if head[:3] == b"ID3" or head[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return "mp3"
+    if head[:4] == b"Rar!":
+        return "rar"
+    if head[:6] == b"7z\xbc\xaf\x27\x1c":
+        return "7z"
+    if head[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if head[:3] == b"\xff\xd8\xff":
+        return "jpg"
+    if head[:2] == b"MZ":
+        return "exe"
+    if head[:5] == b"<?xml":
+        return "xml"
+    return ""
+
+
 def unique_path(path):
     if not path.exists():
         return path
@@ -309,6 +348,10 @@ def handle_import(msg):
     # browser download there first (same volume: an atomic rename).
     INBOX.mkdir(parents=True, exist_ok=True)
     name = sanitize_filename(msg.get("filename") or source.name)
+    if Path(name).suffix.lower() in ("", ".bin"):
+        sniffed = sniff_extension(source)
+        if sniffed:
+            name = f"{Path(name).stem}.{sniffed}"
     destination = unique_path(INBOX / name)
     try:
         shutil.move(str(source), str(destination))
@@ -440,9 +483,9 @@ def handle_stream_finalize(msg):
     requested = sanitize_filename(
         msg.get("filename") or capture.get("filename") or primary.get("name") or ""
     )
-    suffix = Path(requested).suffix
+    suffix = Path(requested).suffix.lstrip(".")
     stem = sanitize_filename(Path(requested).stem if suffix else requested)
-    ext = mime_extension(primary.get("mime", ""))
+    ext = suffix or mime_extension(primary.get("mime", ""))
     dest = unique_path(INBOX / f"{stem}.{ext}")
     try:
         os.replace(primary["path"], dest)
@@ -450,6 +493,16 @@ def handle_stream_finalize(msg):
         for meta in candidates:
             unlink_quiet(meta["path"])
         return False
+
+    if ext.lower() == "bin":
+        sniffed = sniff_extension(dest)
+        if sniffed:
+            renamed = unique_path(dest.with_suffix("." + sniffed))
+            try:
+                os.replace(dest, renamed)
+                dest = renamed
+            except Exception:
+                pass
 
     aux_path = ""
     if audio is not None and audio is not primary:
