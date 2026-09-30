@@ -597,6 +597,46 @@ function startBlobStream(tabId, url, filename) {
     .catch(() => ({ ok: false }));
 }
 
+/// Waits for Telegram's own download to appear after it has been triggered,
+/// falling back to the in-page streaming capture when it never starts
+/// (e.g. channels with "restrict saving content"). Runs detached from the
+/// popup response so the button stays responsive.
+async function watchForTelegramDownload(tabId, url, filename, startedAt, report) {
+  const deadline = Date.now() + 45000;
+  let started = false;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const recent = await chrome.downloads.search({ limit: 10, orderBy: ['-startTime'] });
+      started = recent.some((d) => {
+        const candidate = d.finalUrl || d.url || '';
+        if (!isTelegramHost(candidate) && !isTelegramBlobURL(candidate)) return false;
+        const time = d.startTime ? Date.parse(d.startTime) : 0;
+        return !time || time >= startedAt - 2000;
+      });
+    } catch {
+      // downloads API unavailable — assume it worked.
+      started = true;
+    }
+    if (started) break;
+    const pendingThisRun = [...pendingImports.values()].some(
+      (entry) => (entry.addedAt || 0) >= startedAt - 2000
+    );
+    if (pendingThisRun) {
+      started = true;
+      break;
+    }
+  }
+  debugLog('media-download-started', { started, report });
+  if (started) {
+    notify('Grabbit', 'Telegram is downloading — Grabbit will import the file when it finishes.');
+    return;
+  }
+  notify('Grabbit', 'Telegram did not start a download — capturing in-page instead…');
+  const res = await startBlobStream(tabId, url, filename);
+  debugLog('stream-fallback', { ok: res.ok, reason: 'telegram-did-not-download' });
+}
+
 // --- Extension message router ----------------------------------------------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -650,59 +690,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         msg.url,
         msg.kind === 'audio' ? 'audio' : '',
         msg.filename || ''
-      ).then(async (report) => {
+      ).then((report) => {
         debugLog('media-download-trigger', { report, url: msg.url.slice(0, 300) });
         if (!report) {
           notify('Grabbit', 'Telegram could not be driven directly — capturing in-page instead…');
-          const res = await startBlobStream(msg.tabId, msg.url, msg.filename);
-          debugLog('stream-fallback', { ok: res.ok, reason: 'injection-failed' });
-          sendResponse(res);
+          startBlobStream(msg.tabId, msg.url, msg.filename).then((res) => {
+            debugLog('stream-fallback', { ok: res.ok, reason: 'injection-failed' });
+            sendResponse(res);
+          });
           return;
         }
-        // Telegram prepares the file (MTProto fetch with progress) before the
-        // browser download appears — poll for it instead of assuming 3s.
+        // Respond immediately: Telegram may spend up to ~45s fetching the
+        // file before its browser download appears, and the popup button
+        // must not sit on "Capturing…" for that whole window.
         notify(
           'Grabbit',
           'Telegram is preparing the download — it will be imported into Grabbit automatically.'
         );
-        const deadline = Date.now() + 45000;
-        let started = false;
-        while (Date.now() < deadline) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          try {
-            const recent = await chrome.downloads.search({ limit: 10, orderBy: ['-startTime'] });
-            started = recent.some((d) => {
-              const candidate = d.finalUrl || d.url || '';
-              if (!isTelegramHost(candidate) && !isTelegramBlobURL(candidate)) return false;
-              const time = d.startTime ? Date.parse(d.startTime) : 0;
-              return !time || time >= startedAt - 2000;
-            });
-          } catch {
-            // downloads API unavailable — assume it worked.
-            started = true;
-          }
-          if (started) break;
-          const pendingThisRun = [...pendingImports.values()].some(
-            (entry) => (entry.addedAt || 0) >= startedAt - 2000
-          );
-          if (pendingThisRun) {
-            started = true;
-            break;
-          }
-        }
-        debugLog('media-download-started', { started, report });
-        if (started) {
-          notify(
-            'Grabbit',
-            'Telegram is downloading — Grabbit will import the file when it finishes.'
-          );
-          sendResponse({ ok: true, version: chrome.runtime.getManifest().version });
-        } else {
-          notify('Grabbit', 'Telegram did not start a download — capturing in-page instead…');
-          const res = await startBlobStream(msg.tabId, msg.url, msg.filename);
-          debugLog('stream-fallback', { ok: res.ok, reason: 'telegram-did-not-download' });
-          sendResponse(res);
-        }
+        sendResponse({ ok: true, version: chrome.runtime.getManifest().version });
+        // Keep watching in the background; falls back to the in-page capture
+        // when Telegram never produces a download (e.g. restricted channels).
+        watchForTelegramDownload(msg.tabId, msg.url, msg.filename, startedAt, report);
       });
       return true;
     }

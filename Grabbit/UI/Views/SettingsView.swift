@@ -16,6 +16,9 @@ struct SettingsView: View {
     @State private var magnetAppName = ""
     /// Phase 5 named queues: name for the queue being added.
     @State private var newQueueName = ""
+    /// Shown under the "Check Now" button when the updater is unavailable
+    /// (dev builds / unsigned Release builds).
+    @State private var updaterNote: String?
 
     var body: some View {
         @Bindable var store = store
@@ -72,7 +75,10 @@ struct SettingsView: View {
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
                 .onChange(of: store.settings.trackerSyncHours) { _, _ in store.save() }
-                .onChange(of: store.settings.autoUpdateEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.autoUpdateEnabled) { _, newValue in
+                    store.save()
+                    UpdaterBridge.applyAutomaticChecks(newValue)
+                }
                 .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.showCompletionToast) { _, _ in store.save() }
                 .onChange(of: store.settings.showFailureToast) { _, _ in store.save() }
@@ -725,10 +731,17 @@ struct SettingsView: View {
             sectionHeader(NSLocalizedString("settings.section.updates", comment: ""))
             Toggle(NSLocalizedString("settings.autoUpdate", comment: ""), isOn: settings.autoUpdateEnabled)
             .toggleStyle(NeoToggleStyle())
-            Button(NSLocalizedString("settings.checkNow", comment: "")) {
-                checkForUpdates()
+            HStack(spacing: 8) {
+                Button(NSLocalizedString("settings.checkNow", comment: "")) {
+                    checkForUpdates()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
+                if let updaterNote {
+                    Text(updaterNote)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
         }
         .neoCard()
     }
@@ -781,9 +794,16 @@ struct SettingsView: View {
 
     // MARK: - Updates
 
-    /// Sparkle hookup point: call
-    /// `SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil).checkForUpdates(nil)`
-    /// here once the Sparkle package is integrated.
+    /// Sparkle hookup: the controller is created by `GrabbitApp` (signed
+    /// Release builds with a real SUPublicEDKey) and published through
+    /// `UpdaterBridge` for this button and the auto-check toggle.
     private func checkForUpdates() {
+        guard UpdaterBridge.isAvailable else {
+            updaterNote = NSLocalizedString(
+                "settings.updates.unavailable", comment: "")
+            return
+        }
+        updaterNote = nil
+        UpdaterBridge.checkForUpdates()
     }
 }

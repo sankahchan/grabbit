@@ -91,11 +91,17 @@ struct GrabbitApp: App {
         // signed app + real SUPublicEDKey), and the failure pops an error
         // dialog. Only create it when it's actually usable.
         if Self.isUpdaterConfigured {
-            _updater = State(initialValue: SPUStandardUpdaterController(
+            let controller = SPUStandardUpdaterController(
                 startingUpdater: true,
                 updaterDelegate: nil,
                 userDriverDelegate: nil
-            ))
+            )
+            // Settings > Check Now needs a handle, and the persisted
+            // "automatically check for updates" preference must reach Sparkle.
+            UpdaterBridge.controller = controller
+            controller.updater.automaticallyChecksForUpdates =
+                sharedSettings.settings.autoUpdateEnabled
+            _updater = State(initialValue: controller)
         }
     }
 

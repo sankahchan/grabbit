@@ -5999,6 +5999,22 @@
           }
         }
       }
+    },
+    "settings.updates.unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update checks need a signed release build."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update စစ်ဖို့ signed release build လိုပါတယ်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
