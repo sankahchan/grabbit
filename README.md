@@ -1,10 +1,25 @@
 # Grabbit
 
+<p align="center">
+  <img src="docs/icon.png" width="128" alt="Grabbit icon">
+</p>
+
 [![CI](https://img.shields.io/github/actions/workflow/status/sankahchan/grabbit/ci.yml?branch=main&label=CI)](https://github.com/sankahchan/grabbit/actions)
 [![Latest release](https://img.shields.io/github/v/release/sankahchan/grabbit?label=release)](https://github.com/sankahchan/grabbit/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Grabbit** is an IDM-style download manager for macOS — native SwiftUI, Apple Silicon only. Grab links, torrents, and site videos fast with multi-connection segmented downloads, and pick up exactly where you left off even if the app is killed mid-download. Bilingual UI: English + မြန်မာ.
+
+## Screenshots
+
+|  |  |
+|---|---|
+| ![New Download](docs/screenshots/add-download.png) | ![Downloads](docs/screenshots/downloads.png) |
+| Add downloads with per-task options | Segmented multi-connection downloads |
+| ![Torrents](docs/screenshots/torrents.png) | ![Media probe](docs/screenshots/media-probe.png) |
+| Torrents via the bundled aria2-next daemon | Site downloads via yt-dlp (quality presets) |
+| ![Media download](docs/screenshots/media-download.png) | |
+| Live yt-dlp progress with speed and ETA | |
 
 ## Features
 
