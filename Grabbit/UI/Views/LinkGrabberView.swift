@@ -15,6 +15,10 @@ struct LinkGrabberView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            NeoPageHeader(
+                sticker: NSLocalizedString("page.linkgrabber.sticker", comment: ""),
+                title: NSLocalizedString("nav.linkgrabber", comment: ""),
+                accent: Neo.green)
             header
             if store.packages.isEmpty {
                 emptyState
@@ -120,7 +124,7 @@ struct LinkGrabberView: View {
                         set: { store.renamePackage(package.id, to: $0) }
                     )
                 )
-                .textFieldStyle(.plain)
+                .neoTextField()
                 .font(.headline)
                 Text(String(
                     format: NSLocalizedString("linkgrabber.links.count", comment: ""),
@@ -149,7 +153,7 @@ struct LinkGrabberView: View {
                 linkRow(link)
             }
         }
-        .neoCard()
+        .neoCard(accent: Neo.green)
     }
 
     // MARK: - Link row
@@ -160,7 +164,7 @@ struct LinkGrabberView: View {
                 get: { link.selected },
                 set: { store.setSelected($0, for: link.id) }
             ))
-            .toggleStyle(.checkbox)
+            .toggleStyle(NeoToggleStyle())
             .disabled(link.status == .duplicate)
 
             statusIcon(for: link.status)
@@ -173,7 +177,7 @@ struct LinkGrabberView: View {
                         set: { store.setFilename($0, for: link.id) }
                     )
                 )
-                .textFieldStyle(.plain)
+                .neoTextField()
                 .font(.body)
                 HStack(spacing: 6) {
                     Text(link.url.absoluteString)
@@ -208,8 +212,7 @@ struct LinkGrabberView: View {
         Group {
             switch status {
             case .checking:
-                ProgressView()
-                    .controlSize(.small)
+                NeoSpinner(size: 14)
                     .help(NSLocalizedString("linkgrabber.status.checking", comment: ""))
             case .online:
                 Image(systemName: "checkmark.circle.fill")
@@ -242,7 +245,7 @@ struct LinkGrabberView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
             Spacer()
-            if isCommitting { ProgressView().controlSize(.small) }
+            if isCommitting { NeoSpinner(size: 16) }
             Button(role: .destructive) {
                 store.remove(ids: store.links.filter(\.selected).map(\.id))
             } label: {

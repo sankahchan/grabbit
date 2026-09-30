@@ -6223,6 +6223,176 @@
           }
         }
       }
+    },
+    "page.about.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GRABBIT"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GRABBIT"
+          }
+        }
+      }
+    },
+    "page.downloads.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QUEUE"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တန်းစီ"
+          }
+        }
+      }
+    },
+    "page.grabber.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BROWSER CAPTURE"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဘရောက်ဇာ ဖမ်းယူမှု"
+          }
+        }
+      }
+    },
+    "page.history.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COMPLETED WORK"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးစီးမှုများ"
+          }
+        }
+      }
+    },
+    "page.linkgrabber.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STAGING AREA"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယာယီနေရာ"
+          }
+        }
+      }
+    },
+    "page.media.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIDEO & AUDIO"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယိုနှင့် အသံ"
+          }
+        }
+      }
+    },
+    "page.scheduler.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TIME PLANS"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အချိန်စီစဉ်မှု"
+          }
+        }
+      }
+    },
+    "page.settings.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PREFERENCES"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နှစ်သက်ရာ သတ်မှတ်ချက်များ"
+          }
+        }
+      }
+    },
+    "page.torrents.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MAGNET ENGINE"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MAGNET အင်ဂျင်"
+          }
+        }
+      }
+    },
+    "sidebar.subtitle": {
+      "comment": "Sidebar brand subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Manager"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ် မန်နေဂျာ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

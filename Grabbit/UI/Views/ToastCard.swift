@@ -42,17 +42,16 @@ struct ToastCard: View {
                 }
             }
         }
-        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard()
-        // Bright Neo border accent per kind, readable in both modes.
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(
-                    toast.kind == .completed ? Neo.green
-                        : toast.kind == .failed ? Neo.red : Neo.blue,
-                    lineWidth: 3)
-        )
+        .neoCard(accent: accentColor)
+    }
+
+    private var accentColor: Color {
+        switch toast.kind {
+        case .completed: Neo.green
+        case .failed: Neo.red
+        case .info: Neo.blue
+        }
     }
 
     private func statusIcon(for kind: ToastKind) -> some View {

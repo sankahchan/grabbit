@@ -38,6 +38,10 @@ struct GrabberView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                NeoPageHeader(
+                    sticker: NSLocalizedString("page.grabber.sticker", comment: ""),
+                    title: NSLocalizedString("grabber.title", comment: ""),
+                    accent: Neo.pink)
                 statusCard
                 detectedCard
                 hintCard
@@ -92,7 +96,7 @@ struct GrabberView: View {
             Spacer()
         }
         .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-        .neoCard(bg: bg)
+        .neoCard(bg: bg, accent: extensionConnected ? Neo.green : Neo.red)
     }
 
     // MARK: - Detected media
@@ -113,7 +117,7 @@ struct GrabberView: View {
                 }
             }
         }
-        .neoCard()
+        .neoCard(accent: Neo.purple)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

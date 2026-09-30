@@ -32,6 +32,33 @@ private struct WindowFrameSaver: NSViewRepresentable {
     }
 }
 
+/// Paints the window's titlebar strip with the theme paper. The SwiftUI
+/// toolbar background only tints the toolbar itself; a transparent titlebar
+/// plus a matching window background covers the traffic-light strip too.
+private struct WindowPaper: NSViewRepresentable {
+    var color: NSColor
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { [weak view, color] in
+            Self.apply(on: view?.window, color: color)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { [weak nsView, color] in
+            Self.apply(on: nsView?.window, color: color)
+        }
+    }
+
+    private static func apply(on window: NSWindow?, color: NSColor) {
+        guard let window else { return }
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = color
+    }
+}
+
 /// Root view: NavigationSplitView with a chunky neo-brutalist sidebar.
 ///
 /// Add affordances live inside each tab (Downloads and Torrents each have
@@ -40,6 +67,7 @@ private struct WindowFrameSaver: NSViewRepresentable {
 struct MainView: View {
     @Environment(AppNavigation.self) private var navigation
     @Environment(SettingsStore.self) private var store: SettingsStore
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         NavigationSplitView {
@@ -48,9 +76,24 @@ struct MainView: View {
                 set: { navigation.selection = $0 }))
                 .navigationSplitViewColumnWidth(min: 210, ideal: 230)
         } detail: {
-            detailView
+            // Dot-grid paper behind every page (the neo-brutalist signature).
+            ZStack {
+                NeoDotBackground()
+                detailView
+            }
         }
         .navigationTitle("Grabbit")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                themeToggle
+            }
+        }
+        // The system toolbar material paints a white band over the paper in
+        // light mode (and a mismatched band in dark). Tint the window toolbar
+        // and the titlebar strip to the same paper as the content.
+        .toolbarBackground(Neo.paper(scheme), for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
+        .background(WindowPaper(color: NSColor(Neo.paper(scheme))))
         // Completion/failure cards now render inline at the top of the
         // Downloads / Torrents tabs (inside each tab's own card) instead
         // of a floating overlay.
@@ -69,6 +112,35 @@ struct MainView: View {
         // NSLocalizedString re-evaluate (instant language switch). Theme
         // needs no rebuild — NSApp.appearance applies immediately.
         .id(store.settings.language.rawValue)
+    }
+
+    /// Quick appearance control in the titlebar: cycles System → Light → Dark.
+    private var themeToggle: some View {
+        Button {
+            cycleTheme()
+        } label: {
+            Image(systemName: themeIcon)
+        }
+        .neoIconButton(bg: Neo.paper(scheme))
+        .help(NSLocalizedString("settings.section.appearance", comment: ""))
+    }
+
+    private var themeIcon: String {
+        switch store.settings.theme {
+        case .system: "circle.lefthalf.filled"
+        case .light: "sun.max.fill"
+        case .dark: "moon.fill"
+        }
+    }
+
+    private func cycleTheme() {
+        switch store.settings.theme {
+        case .system: store.settings.theme = .light
+        case .light: store.settings.theme = .dark
+        case .dark: store.settings.theme = .system
+        }
+        store.save()
+        applyAppearance()
     }
 
     /// Maps the saved theme onto the app-wide AppKit appearance.

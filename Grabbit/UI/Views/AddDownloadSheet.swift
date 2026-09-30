@@ -143,15 +143,14 @@ struct AddDownloadSheet: View {
                 Text(NSLocalizedString("add.queue", comment: ""))
                     .font(.headline)
                 Spacer()
-                Picker("", selection: $queueID) {
-                    Text(queueStore.defaultQueue.displayName)
-                        .tag(nil as UUID?)
-                    ForEach(queueStore.queues.filter { !$0.isDefault }) { queue in
-                        Text(queue.displayName).tag(queue.id as UUID?)
-                    }
-                }
-                .pickerStyle(.menu)
-                .frame(maxWidth: 220)
+                NeoMenuPicker<UUID?>(
+                    selection: $queueID,
+                    options: [(value: nil, title: queueStore.defaultQueue.displayName)]
+                        + queueStore.queues.filter { !$0.isDefault }.map {
+                            (value: $0.id as UUID?, title: $0.displayName)
+                        },
+                    maxWidth: 220
+                )
             }
 
             // MARK: Request headers (optional)

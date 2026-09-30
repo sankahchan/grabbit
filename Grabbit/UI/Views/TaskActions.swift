@@ -201,7 +201,7 @@ enum Clipboard {
 
 func badgeColor(for state: DownloadState) -> Color {
     switch state {
-    case .queued: Neo.paperLight
+    case .queued: Neo.purple
     case .downloading: Neo.blue
     case .paused: Neo.yellow
     case .completed: Neo.green

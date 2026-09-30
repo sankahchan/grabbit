@@ -164,15 +164,14 @@ struct BatchAddSheet: View {
                 Text(NSLocalizedString("add.queue", comment: ""))
                     .font(.headline)
                 Spacer()
-                Picker("", selection: $queueID) {
-                    Text(queueStore.defaultQueue.displayName)
-                        .tag(nil as UUID?)
-                    ForEach(queueStore.queues.filter { !$0.isDefault }) { queue in
-                        Text(queue.displayName).tag(queue.id as UUID?)
-                    }
-                }
-                .pickerStyle(.menu)
-                .frame(maxWidth: 200)
+                NeoMenuPicker<UUID?>(
+                    selection: $queueID,
+                    options: [(value: nil, title: queueStore.defaultQueue.displayName)]
+                        + queueStore.queues.filter { !$0.isDefault }.map {
+                            (value: $0.id as UUID?, title: $0.displayName)
+                        },
+                    maxWidth: 200
+                )
             }
             HStack {
                 NeoStepper(value: $connections, in: 1...16, step: 1) { v in "\(v)" }
@@ -203,7 +202,7 @@ struct BatchAddSheet: View {
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                 Spacer()
-                if isAdding { ProgressView().controlSize(.small) }
+                if isAdding { NeoSpinner(size: 16) }
                 Button(destination == .downloads
                     ? String(format: NSLocalizedString("batch.add", comment: ""), links.count)
                     : String(format: NSLocalizedString("batch.stage", comment: ""), links.count)
@@ -318,17 +317,16 @@ private struct BatchItemRow: View {
                     NSLocalizedString("batch.filenameAuto", comment: ""),
                     text: $custom.filename
                 )
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
                 .frame(minWidth: 120)
-                Picker("", selection: $custom.category) {
-                    Text(NSLocalizedString("batch.sharedValue", comment: ""))
-                        .tag(nil as DownloadCategory?)
-                    ForEach(DownloadCategory.allCases, id: \.self) { c in
-                        Text(c.localizedName).tag(c as DownloadCategory?)
-                    }
-                }
-                .pickerStyle(.menu)
-                .frame(maxWidth: 130)
+                NeoMenuPicker<DownloadCategory?>(
+                    selection: $custom.category,
+                    options: [(value: nil, title: NSLocalizedString("batch.sharedValue", comment: ""))]
+                        + DownloadCategory.allCases.map {
+                            (value: $0 as DownloadCategory?, title: $0.localizedName)
+                        },
+                    maxWidth: 130
+                )
                 HStack(spacing: 4) {
                     NeoStepper(value: Binding(
                         get: { custom.connections ?? sharedConnections },

@@ -34,6 +34,10 @@ struct DownloadsView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            NeoPageHeader(
+                sticker: NSLocalizedString("page.downloads.sticker", comment: ""),
+                title: NSLocalizedString("downloads.title", comment: ""),
+                accent: Neo.yellow)
             if engine.recoveredCount > 0 {
                 recoveryBanner
             }
@@ -239,7 +243,7 @@ struct DownloadsView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        .neoCard()
+        .neoCard(accent: badgeColor(for: item.state))
     }
 
     private func handleAction(_ action: TaskAction, for item: DownloadItem) {

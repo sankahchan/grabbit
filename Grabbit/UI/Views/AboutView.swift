@@ -19,6 +19,10 @@ struct AboutView: View {
 
         ScrollView {
             VStack(spacing: 16) {
+                NeoPageHeader(
+                    sticker: NSLocalizedString("page.about.sticker", comment: ""),
+                    title: NSLocalizedString("nav.about", comment: ""),
+                    accent: Neo.yellow)
                 identityCard
                 updatesCard(settings: settings)
                 creditsCard
@@ -61,7 +65,7 @@ struct AboutView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .neoCard()
+        .neoCard(accent: Neo.yellow)
     }
 
     // MARK: - Updates
@@ -91,7 +95,7 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard()
+        .neoCard(accent: Neo.green)
     }
 
     /// Sparkle hookup: the controller is created by `GrabbitApp` (signed
@@ -119,7 +123,7 @@ struct AboutView: View {
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard()
+        .neoCard(accent: Neo.purple)
     }
 
     // MARK: - Shared styling

@@ -41,7 +41,7 @@ enum NeoPalette {
     // MARK: Scheme-adaptive neutrals
 
     static let inkLight   = Color(hex: 0x111111)
-    static let paperLight = Color(hex: 0xFFFDF7)
+    static let paperLight = Color(hex: 0xF8F2E3)
     static let inkDark    = Color(hex: 0xF2EDE3)
     static let paperDark  = Color(hex: 0x17171C)
 
@@ -89,20 +89,30 @@ typealias Neo = NeoPalette
 struct NeoCardModifier: ViewModifier {
     /// Pass nil (default) for theme-aware paper.
     var bg: Color?
+    /// Optional bright strip along the top edge (the GistHub-style card).
+    var accent: Color?
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         content
             .padding(14)
             .background(bg ?? Neo.paper(scheme))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(alignment: .top) {
+                if let accent {
+                    Rectangle()
+                        .fill(accent)
+                        .frame(height: 7)
+                }
+            }
+            .clipShape(shape)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                shape
                     .fill(Neo.ink(scheme))
                     .offset(x: 6, y: 6)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                shape
                     .stroke(Neo.ink(scheme), lineWidth: 3)
             )
     }
@@ -162,9 +172,10 @@ struct NeoButtonStyle: ButtonStyle {
 }
 
 extension View {
-    /// Neo-brutalist card. Pass `bg` to override the theme-aware paper default.
-    func neoCard(bg: Color? = nil) -> some View {
-        modifier(NeoCardModifier(bg: bg))
+    /// Neo-brutalist card. Pass `bg` to override the theme-aware paper
+    /// default, and `accent` for a bright strip along the top edge.
+    func neoCard(bg: Color? = nil, accent: Color? = nil) -> some View {
+        modifier(NeoCardModifier(bg: bg, accent: accent))
     }
 
     /// Small uppercase pill badge with a 2pt ink border.
@@ -470,6 +481,172 @@ struct NeoStepper<V: Strideable>: View {
 private extension SignedNumeric {
     /// Negation without a `-` operator constraint dance at the call site.
     func negated() -> Self { 0 - self }
+}
+
+// MARK: - Page chrome
+
+/// Dot-grid paper, the signature neo-brutalist backdrop: warm cream in light
+/// mode, deep charcoal in dark, both with a faint ink dot grid.
+struct NeoDotBackground: View {
+    var spacing: CGFloat = 22
+    var dotSize: CGFloat = 2
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        ZStack {
+            Neo.paper(scheme)
+            Canvas { context, size in
+                let color = scheme == .dark
+                    ? Color.white.opacity(0.09)
+                    : Color.black.opacity(0.14)
+                let cols = Int(size.width / spacing) + 2
+                let rows = Int(size.height / spacing) + 2
+                for row in 0..<rows {
+                    for col in 0..<cols {
+                        let origin = CGPoint(
+                            x: CGFloat(col) * spacing + spacing / 2,
+                            y: CGFloat(row) * spacing + spacing / 2
+                        )
+                        let rect = CGRect(
+                            x: origin.x, y: origin.y,
+                            width: dotSize, height: dotSize
+                        )
+                        context.fill(Path(ellipseIn: rect), with: .color(color))
+                    }
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// Big heavy page title with a small uppercase accent sticker above it —
+/// the in-content header from the neo-brutalist reference.
+struct NeoPageHeader: View {
+    var sticker: String
+    var title: String
+    var accent: Color = Neo.yellow
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(sticker)
+                .neoBadge(bg: accent)
+            Text(title)
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(Neo.ink(scheme))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Neo rules & loading
+
+/// 2pt ink rule replacing the system hairline `Divider`.
+struct NeoDivider: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Rectangle()
+            .fill(Neo.ink(scheme))
+            .frame(height: 2)
+    }
+}
+
+/// Indeterminate neo spinner: a bordered square with one filled quadrant.
+struct NeoSpinner: View {
+    var size: CGFloat = 16
+    var fill: Color = Neo.yellow
+    @Environment(\.colorScheme) private var scheme
+    @State private var angle: Double = 0
+
+    var body: some View {
+        ZStack {
+            Rectangle().fill(Neo.paper(scheme))
+            Rectangle()
+                .fill(fill)
+                .frame(width: size / 2, height: size / 2)
+                .offset(x: -size / 4, y: -size / 4)
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: max(2, size / 8), style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: max(2, size / 8), style: .continuous)
+                .stroke(Neo.ink(scheme), lineWidth: 2)
+        )
+        .rotationEffect(.degrees(angle))
+        .onAppear {
+            withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {
+                angle = 360
+            }
+        }
+    }
+}
+
+// MARK: - Neo menu picker
+
+/// Neo-brutalist popup menu — replaces `.pickerStyle(.menu)` on macOS,
+/// which cannot be themed.
+struct NeoMenuPicker<Value: Hashable>: View {
+    @Binding var selection: Value
+    let options: [(value: Value, title: String)]
+    var bg: Color?
+    var maxWidth: CGFloat?
+    @Environment(\.colorScheme) private var scheme
+
+    init(
+        selection: Binding<Value>,
+        options: [(value: Value, title: String)],
+        bg: Color? = nil,
+        maxWidth: CGFloat? = nil
+    ) {
+        _selection = selection
+        self.options = options
+        self.bg = bg
+        self.maxWidth = maxWidth
+    }
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.value) { option in
+                Button {
+                    selection = option.value
+                } label: {
+                    if option.value == selection {
+                        Label(option.title, systemImage: "checkmark")
+                    } else {
+                        Text(option.title)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text(currentTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .black))
+            }
+            .foregroundStyle(Neo.ink(scheme))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .frame(maxWidth: maxWidth, alignment: .leading)
+            .background(bg ?? Neo.paper(scheme))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Neo.ink(scheme), lineWidth: 2)
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize(horizontal: maxWidth == nil, vertical: true)
+    }
+
+    private var currentTitle: String {
+        options.first { $0.value == selection }?.title ?? "—"
+    }
 }
 
 // MARK: - Formatting helpers

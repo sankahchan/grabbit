@@ -94,6 +94,10 @@ struct SchedulerView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            NeoPageHeader(
+                sticker: NSLocalizedString("page.scheduler.sticker", comment: ""),
+                title: NSLocalizedString("scheduler.title", comment: ""),
+                accent: Neo.blue)
             if !scheduler.entries.isEmpty {
                 HStack {
                     Spacer()
@@ -178,7 +182,7 @@ struct SchedulerView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }
-        .neoCard()
+        .neoCard(accent: Neo.blue)
     }
 
     /// "Daily", or the system-localized short weekday names for the set bits.

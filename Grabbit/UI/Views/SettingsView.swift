@@ -23,6 +23,10 @@ struct SettingsView: View {
 
         ScrollView {
             VStack(spacing: 16) {
+                NeoPageHeader(
+                    sticker: NSLocalizedString("page.settings.sticker", comment: ""),
+                    title: NSLocalizedString("settings.title", comment: ""),
+                    accent: Neo.pink)
                 // One wide Basic card (Motrix-style): appearance, language,
                 // startup, seeding, and task management. Downloads, automation
                 // and torrents get their own cards below. Content breathes with
@@ -231,7 +235,7 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.toast.sound", comment: ""), isOn: settings.completionSoundEnabled)
             .toggleStyle(NeoToggleStyle())
             runAsRow(settings: settings)
-            Divider()
+            NeoDivider()
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
             .toggleStyle(NeoToggleStyle())
@@ -239,14 +243,14 @@ struct SettingsView: View {
             .toggleStyle(NeoToggleStyle())
             Toggle(NSLocalizedString("settings.startup.autoResumeTasks", comment: ""), isOn: settings.autoResumeOnLaunch)
             .toggleStyle(NeoToggleStyle())
-            Divider()
+            NeoDivider()
             subHeader(NSLocalizedString("settings.section.seeding", comment: ""))
             seedRatioRow(settings: settings)
             seedTimeRow(settings: settings)
-            Divider()
+            NeoDivider()
             subHeader(NSLocalizedString("settings.section.taskManagement", comment: ""))
             maxActiveTasksRow(settings: settings)
-            Divider()
+            NeoDivider()
             completionSection(settings: settings)
         }
         .neoCard()
@@ -274,7 +278,7 @@ struct SettingsView: View {
             ForEach(DownloadCategory.allCases, id: \.self) { category in
                 folderRow(for: category, settings: settings)
             }
-            Divider()
+            NeoDivider()
             speedLimitRow(settings: settings)
             Toggle(NSLocalizedString("settings.clipboard", comment: ""), isOn: settings.clipboardMonitorEnabled)
             .toggleStyle(NeoToggleStyle())
@@ -285,7 +289,7 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.autoClear.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Divider()
+            NeoDivider()
             subHeader(NSLocalizedString("settings.section.archives", comment: ""))
             Toggle(NSLocalizedString("settings.archives.autoExtract", comment: ""), isOn: settings.autoExtractArchives)
             .toggleStyle(NeoToggleStyle())
@@ -294,7 +298,7 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.archives.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Divider()
+            NeoDivider()
             proxySection(settings: settings)
         }
         .neoCard()
@@ -307,11 +311,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("settings.section.automation", comment: ""))
             HostProfilesSection()
-            Divider()
+            NeoDivider()
             PackagizerRulesSection()
-            Divider()
+            NeoDivider()
             queuesSection()
-            Divider()
+            NeoDivider()
             watchSection()
         }
         .neoCard()
@@ -323,23 +327,25 @@ struct SettingsView: View {
     private func completionSection(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             subHeader(NSLocalizedString("settings.completion.title", comment: ""))
-            Picker(
-                NSLocalizedString("settings.completion.action", comment: ""),
-                selection: settings.completionAction
-            ) {
-                ForEach(CompletionAction.allCases, id: \.self) { action in
-                    Text(NSLocalizedString(action.localizationKey, comment: ""))
-                        .tag(action)
-                }
+            HStack {
+                Text(NSLocalizedString("settings.completion.action", comment: ""))
+                    .font(.headline)
+                Spacer()
+                NeoMenuPicker(
+                    selection: settings.completionAction,
+                    options: CompletionAction.allCases.map {
+                        (value: $0, title: NSLocalizedString($0.localizationKey, comment: ""))
+                    },
+                    maxWidth: 320
+                )
             }
-            .pickerStyle(.menu)
             if settings.wrappedValue.completionAction == .runCommand {
                 TextField(
                     NSLocalizedString(
                         "settings.completion.command.placeholder", comment: ""),
                     text: settings.completionCommand
                 )
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
             Text(NSLocalizedString("settings.completion.note", comment: ""))
                 .font(.caption)
@@ -537,7 +543,7 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.torrents.profile.note", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Divider()
+            NeoDivider()
             Toggle(NSLocalizedString("settings.vpnKillSwitch", comment: ""), isOn: settings.vpnKillSwitchEnabled)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.vpnKillSwitch.note", comment: ""))
@@ -555,7 +561,7 @@ struct SettingsView: View {
                     .frame(width: 160)
                     .disabled(!settings.wrappedValue.vpnKillSwitchEnabled)
             }
-            Divider()
+            NeoDivider()
             Toggle(
                 NSLocalizedString("settings.trackers.autoUpdate", comment: ""),
                 isOn: settings.autoUpdateTrackers
@@ -573,7 +579,7 @@ struct SettingsView: View {
                 }
                 .disabled(!settings.wrappedValue.autoUpdateTrackers)
             }
-            Divider()
+            NeoDivider()
             magnetHandlerRow()
         }
         .neoCard()

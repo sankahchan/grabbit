@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 enum SidebarSelection: String, Hashable, CaseIterable {
     case downloads, torrents, media, grabber, linkgrabber, scheduler, history, settings, about
@@ -54,11 +55,14 @@ struct Sidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            brandHeader
+            NeoDivider()
+                .padding(.vertical, 2)
             ForEach(SidebarSelection.mainTabs, id: \.self) { item in
                 sidebarRow(for: item)
             }
             Spacer()
-            Divider()
+            NeoDivider()
             ForEach(SidebarSelection.bottomTabs, id: \.self) { item in
                 sidebarRow(for: item)
             }
@@ -77,6 +81,34 @@ struct Sidebar: View {
     }
 
     // MARK: - Rows
+
+    /// Brand block at the top of the sidebar (reference-style app tile).
+    private var brandHeader: some View {
+        HStack(spacing: 10) {
+            if let icon = NSApp.applicationIconImage {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 34, height: 34)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Neo.ink(scheme), lineWidth: 2)
+                    )
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Grabbit")
+                    .font(.headline.weight(.black))
+                Text(NSLocalizedString("sidebar.subtitle", comment: ""))
+                    .font(.system(size: 9, weight: .bold))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .foregroundStyle(Neo.ink(scheme))
+        .padding(.vertical, 2)
+    }
 
     private func sidebarRow(for item: SidebarSelection) -> some View {
         let isSelected = selection == item

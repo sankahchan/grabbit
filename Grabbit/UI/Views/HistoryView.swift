@@ -26,6 +26,10 @@ struct HistoryView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            NeoPageHeader(
+                sticker: NSLocalizedString("page.history.sticker", comment: ""),
+                title: NSLocalizedString("history.title", comment: ""),
+                accent: Neo.orange)
             // The window title already reads "History"; the old in-content
             // duplicate is gone. Filter chips carry the CLEAR action.
             filterChips
@@ -187,7 +191,7 @@ struct HistoryView: View {
                 rowActions(for: entry)
             }
         }
-        .neoCard()
+        .neoCard(accent: entry.status == .failed ? Neo.red : Neo.green)
     }
 
     @ViewBuilder

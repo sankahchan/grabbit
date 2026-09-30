@@ -130,15 +130,15 @@ private struct HostProfileEditSheet: View {
                 TextField(
                     NSLocalizedString("settings.hostProfiles.hostPlaceholder", comment: ""),
                     text: $host)
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
             labeled(NSLocalizedString("settings.hostProfiles.username", comment: "")) {
                 TextField("", text: $username)
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
             }
             labeled(NSLocalizedString("settings.hostProfiles.password", comment: "")) {
                 SecureField("", text: $password)
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
             }
             Toggle(NSLocalizedString("settings.hostProfiles.connections", comment: ""),
                    isOn: $useCustomConnections)
@@ -150,7 +150,7 @@ private struct HostProfileEditSheet: View {
                 TextField(
                     NSLocalizedString("settings.hostProfiles.userAgentPlaceholder", comment: ""),
                     text: $userAgent)
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
             HStack {
                 Spacer()
@@ -313,13 +313,13 @@ private struct PackagizerRuleEditSheet: View {
                 TextField(
                     NSLocalizedString("settings.packagizer.namePlaceholder", comment: ""),
                     text: $name)
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
             }
             labeled(NSLocalizedString("settings.packagizer.pattern", comment: "")) {
                 TextField(
                     NSLocalizedString("settings.packagizer.patternPlaceholder", comment: ""),
                     text: $urlPattern)
-                .textFieldStyle(.roundedBorder)
+                .neoTextField()
                 .font(.system(.body, design: .monospaced))
             }
             if !patternValid {
@@ -329,21 +329,20 @@ private struct PackagizerRuleEditSheet: View {
             }
             labeled(NSLocalizedString("settings.packagizer.template", comment: "")) {
                 TextField("{name}.{ext}", text: $filenameTemplate)
-                    .textFieldStyle(.roundedBorder)
+                    .neoTextField()
                     .font(.system(.body, design: .monospaced))
             }
             Text(NSLocalizedString("settings.packagizer.templateHint", comment: ""))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             labeled(NSLocalizedString("settings.packagizer.category", comment: "")) {
-                Picker("", selection: $category) {
-                    Text(NSLocalizedString("settings.packagizer.categoryAuto", comment: ""))
-                        .tag(nil as DownloadCategory?)
-                    ForEach(DownloadCategory.allCases, id: \.self) { c in
-                        Text(c.localizedName).tag(c as DownloadCategory?)
-                    }
-                }
-                .pickerStyle(.menu)
+                NeoMenuPicker<DownloadCategory?>(
+                    selection: $category,
+                    options: [(value: nil, title: NSLocalizedString("settings.packagizer.categoryAuto", comment: ""))]
+                        + DownloadCategory.allCases.map {
+                            (value: $0 as DownloadCategory?, title: $0.localizedName)
+                        }
+                )
             }
             HStack {
                 Spacer()

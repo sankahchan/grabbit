@@ -16,6 +16,10 @@ struct TorrentsView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            NeoPageHeader(
+                sticker: NSLocalizedString("page.torrents.sticker", comment: ""),
+                title: NSLocalizedString("torrents.title", comment: ""),
+                accent: Neo.purple)
             statusCard
 
             if torrentEngine.vpnHolding {
@@ -99,7 +103,7 @@ struct TorrentsView: View {
                 EmptyView()
             }
         }
-        .neoCard()
+        .neoCard(accent: statusColor)
     }
 
     private var statusColor: Color {
@@ -198,7 +202,7 @@ struct TorrentsView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        .neoCard()
+        .neoCard(accent: Neo.purple)
     }
 
     private func handleAction(_ action: TaskAction, for item: TorrentItem) {
@@ -477,7 +481,7 @@ struct TorrentFilesSheet: View {
                 }
                 .frame(maxHeight: 320)
             } else {
-                ProgressView()
+                NeoSpinner(size: 20)
                     .frame(maxWidth: .infinity)
             }
 

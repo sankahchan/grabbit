@@ -19,6 +19,10 @@ struct MediaView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                NeoPageHeader(
+                    sticker: NSLocalizedString("page.media.sticker", comment: ""),
+                    title: NSLocalizedString("media.title", comment: ""),
+                    accent: Neo.blue)
                 runtimeCard
                 urlCard
                 switch media.state {
@@ -81,7 +85,7 @@ struct MediaView: View {
                 }
             }
         }
-        .neoCard()
+        .neoCard(accent: Neo.blue)
     }
 
     private func refreshRuntime() {
@@ -125,7 +129,7 @@ struct MediaView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .neoCard()
+        .neoCard(accent: Neo.yellow)
     }
 
     private var canProbe: Bool {
@@ -148,11 +152,11 @@ struct MediaView: View {
 
     private var probingCard: some View {
         HStack(spacing: 10) {
-            ProgressView()
+            NeoSpinner()
             Text(NSLocalizedString("media.probing", comment: ""))
                 .font(.subheadline.weight(.bold))
         }
-        .neoCard()
+        .neoCard(accent: Neo.blue)
     }
 
     // MARK: - Probe result
@@ -186,12 +190,16 @@ struct MediaView: View {
                 Text(Self.formatDuration(duration))
                     .font(.caption)
             }
-            Picker(NSLocalizedString("media.quality", comment: ""), selection: $selectedPresetID) {
-                ForEach(probed.presets) { preset in
-                    Text(presetLabel(preset)).tag(preset.id)
-                }
+            HStack(spacing: 10) {
+                Text(NSLocalizedString("media.quality", comment: ""))
+                    .font(.headline)
+                Spacer()
+                NeoMenuPicker(
+                    selection: $selectedPresetID,
+                    options: probed.presets.map { (value: $0.id, title: presetLabel($0)) },
+                    maxWidth: 320
+                )
             }
-            .pickerStyle(.menu)
             HStack(spacing: 10) {
                 Button(NSLocalizedString("media.download", comment: "")) { startDownload() }
                     .neoButton(bg: Neo.green)
@@ -252,7 +260,7 @@ struct MediaView: View {
                     .lineLimit(1)
             }
         }
-        .neoCard()
+        .neoCard(accent: Neo.blue)
     }
 
     private var completedCard: some View {
