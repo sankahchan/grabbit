@@ -85,6 +85,19 @@ jobs:
             -name "Grabbit.app" -maxdepth 6 -type d | head -n 1)
           echo "path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
+      # The unsigned build's executable is only linker-signed, which leaves
+      # the app bundle with an INVALID code signature ("code has no resources
+      # but signature indicates they must be present"). Sparkle 2 rejects
+      # updates whose new bundle has a corrupted signature even when the
+      # EdDSA archive signature is valid. An ad-hoc deep signature makes the
+      # bundle valid; EdDSA still provides the actual trust for updates.
+      - name: Ad-hoc code sign app
+        run: |
+          APP_PATH="${{ steps.app.outputs.path }}"
+          codesign --force --deep --sign - "$APP_PATH"
+          codesign --verify --verbose=2 "$APP_PATH"
+          codesign -dv "$APP_PATH" 2>&1 | grep -E "Signature|Identifier" || true
+
       - name: Create DMG (Motrix-style)
         run: |
           brew install create-dmg

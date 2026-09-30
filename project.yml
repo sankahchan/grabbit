@@ -30,7 +30,7 @@ targets:
     info:
       path: Grabbit/Info.plist
       properties:
-        CFBundleShortVersionString: 1.1.3
+        CFBundleShortVersionString: 1.1.4
         CFBundleVersion: "1"
         NSHumanReadableCopyright: Copyright © 2026 sankahchan
         LSMinimumSystemVersion: "14.0"
