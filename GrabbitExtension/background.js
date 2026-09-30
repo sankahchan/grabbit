@@ -1177,9 +1177,15 @@ try {
         return;
       }
 
+      // Chrome resolves the server-provided name (Content-Disposition)
+      // shortly after onCreated; using it avoids junk names like "download"
+      // from URL-only suggestions (Google Drive).
+      const resolvedName =
+        cleanSuggestedName(basename(item.filename)) ||
+        cleanSuggestedName(await waitForDownloadFilename(item.id));
       debugLog('intercept', {
         url: url.slice(0, 240),
-        filename: basename(item.filename) || '',
+        filename: resolvedName,
         decision: 'reroute',
       });
       await discardBrowserDownload(item.id);
@@ -1188,7 +1194,7 @@ try {
         source: 'auto-intercept',
         title: '',
         pageUrl: item.referrer || '',
-        filename: basename(item.filename) || filenameFromUrl(url),
+        filename: resolvedName || filenameFromUrl(url),
       });
     } catch {
       // Never break the browser's own download UI.

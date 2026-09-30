@@ -458,10 +458,15 @@ public final class DownloadEngine {
         let totalBytes = probe.totalBytes
 
         // Explicit filename wins; otherwise the packagizer template
-        // renders against the server's natural name.
+        // renders against the server's natural name. Exception: an
+        // extension-less explicit hint (e.g. "download" from a URL that ends
+        // in /download) loses to a Content-Disposition name — Google Drive
+        // serves the real name that way.
         let naturalName = probe.filename ?? resolvedURL.lastPathComponent
+        let explicitIsGeneric = filename
+            .map { ($0 as NSString).pathExtension.isEmpty } ?? false
         let candidate: String
-        if let filename {
+        if let filename, !(explicitIsGeneric && probe.filename != nil) {
             candidate = filename
         } else if let rule,
                   let rendered = rule.render(
