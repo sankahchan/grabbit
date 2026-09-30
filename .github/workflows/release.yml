@@ -177,3 +177,9 @@ jobs:
           git add appcast.xml
           git commit -m "Release $TAG: update appcast.xml"
           git push origin HEAD:main
+          # Sparkle's SUFeedURL points at
+          #   releases/latest/download/appcast.xml
+          # so the feed must ALSO exist as a release asset — committing it to
+          # main alone leaves that URL 404ing (which surfaces as "Update
+          # Error! An error occurred in retrieving update information").
+          gh release upload "$TAG" appcast.xml --clobber
