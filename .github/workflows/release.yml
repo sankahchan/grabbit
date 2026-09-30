@@ -189,6 +189,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
           git commit -m "Release $TAG: update appcast.xml"
+          # main may have moved since the tag (e.g. a hotfix pushed while the
+          # build ran) — rebase the appcast commit before pushing so the
+          # release never fails on a rejected non-fast-forward.
+          git pull --rebase origin main
           git push origin HEAD:main
           # Sparkle's SUFeedURL points at
           #   releases/latest/download/appcast.xml
