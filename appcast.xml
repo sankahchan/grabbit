@@ -42,5 +42,11 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.1.2/Grabbit-v1.1.2.dmg" sparkle:version="1.1.2" sparkle:shortVersionString="1.1.2" sparkle:edSignature="9DTECYq8LYLTEgP6xGdwJ3MGlpV9uvUaIxfpkG9q4uqv2rCZ3tHJm2oJv6263TcHRff9u1UqJar8KnUWqRIpCg==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.1.3</title>
+      <pubDate>Wed, 30 Sep 2026 05:13:15 +0000</pubDate>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.1.3/Grabbit-v1.1.3.dmg" sparkle:version="1.1.3" sparkle:shortVersionString="1.1.3" sparkle:edSignature="pc2+FSOxgYPFknA1rIeutw0fWAYIf8bIzCtbCAXXjHjrGyaWvD1iD+Nh7kZBIkbOD1Y1mF3JrdkMdVsq9NHwDw==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
