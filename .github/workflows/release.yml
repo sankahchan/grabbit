@@ -127,13 +127,16 @@ jobs:
             echo "EDSIGNATURE=" >> "$GITHUB_ENV"
           else
             echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle-private.pem
-            # Download Sparkle's sign_update tool
+            # Download Sparkle's sign_update tool (version must match the
+            # Sparkle framework the app links against).
             curl -sL -o /tmp/Sparkle.tar.xz "https://github.com/sparkle-project/Sparkle/releases/download/2.5.0/Sparkle-2.5.0.tar.xz"
             tar -xf /tmp/Sparkle.tar.xz -C /tmp
             TAG="${GITHUB_REF_NAME}"
-            SIG=$(/tmp/bin/sign_update "dist/Grabbit-${TAG}.dmg" /tmp/sparkle-private.pem 2>/dev/null | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)
+            # Sparkle 2.5's sign_update takes the key file via --ed-key-file;
+            # -p prints only the bare signature for the appcast attribute.
+            SIG=$(/tmp/bin/sign_update --ed-key-file /tmp/sparkle-private.pem -p "dist/Grabbit-${TAG}.dmg")
             echo "EDSIGNATURE=$SIG" >> "$GITHUB_ENV"
-            echo "DMG signed"
+            echo "DMG signed (${#SIG} chars)"
           fi
 
       - name: Update appcast.xml
