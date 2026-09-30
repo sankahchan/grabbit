@@ -46,6 +46,7 @@ final class ImportAndSchemeTests: XCTestCase {
         let request = GrabbitURLScheme.parse(schemeURL(host: "download", path: payloadPath), inbox: inbox)
         XCTAssertEqual(request?.url.absoluteString, "https://cdn.example.com/video.m3u8")
         XCTAssertEqual(request?.filename, "video.m3u8")
+        XCTAssertEqual(request?.title, "Example")
         XCTAssertEqual(request?.headers["Referer"], "https://example.com/watch")
         XCTAssertEqual(request?.headers["Cookie"], "session=abc")
         XCTAssertEqual(request?.headers["User-Agent"], "TestAgent/1.0")

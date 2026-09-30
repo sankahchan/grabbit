@@ -105,6 +105,19 @@ struct GrabbitApp: App {
         }
     }
 
+    /// Extension media naming: the page title when present; otherwise a
+    /// filename that isn't a generic playlist name ("master.m3u8" etc.).
+    static func mediaName(for request: GrabbitURLRequest) -> String? {
+        if let title = request.title, !title.isEmpty {
+            return title
+        }
+        guard let filename = request.filename else { return nil }
+        let base = (filename as NSString).deletingPathExtension
+        let generic: Set<String> = ["master", "index", "playlist", "manifest", "video", "stream"]
+        guard !base.isEmpty, !generic.contains(base.lowercased()) else { return nil }
+        return base
+    }
+
     /// True for signed Release builds with a real Sparkle Ed25519 key.
     /// Dev builds (and Release builds before `generate_keys` is run) skip
     /// the updater entirely instead of showing "Unable to Check For Updates".

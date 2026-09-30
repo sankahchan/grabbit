@@ -39,6 +39,9 @@ public final class MediaEngine {
     /// Browser-captured headers for the current probe/download (Referer,
     /// Cookie, …). Set by `probe`/`downloadStream`, replayed by `download`.
     private var probeHeaders: [String: String] = [:]
+    /// Preferred display/file name for an extension-triggered stream (the
+    /// page title). Nil for interactive probes — yt-dlp's own title wins.
+    private var preferredTitle: String?
 
     public init(history: HistoryStore = HistoryStore()) {
         self.history = history
@@ -64,6 +67,7 @@ public final class MediaEngine {
         statusLine = ""
         sourceURL = url
         probeHeaders = headers ?? [:]
+        preferredTitle = nil
 
         let ytDlp: URL
         switch MediaRuntimeResolver.resolve(.ytDlp) {
@@ -101,13 +105,16 @@ public final class MediaEngine {
         state = .downloading
         errorMessage = nil
         progress = 0
+        // Extension captures carry a page title; a bare m3u8 URL would
+        // otherwise be named after its playlist file ("master").
+        let displayTitle = preferredTitle.flatMap { $0.isEmpty ? nil : $0 } ?? media.title
 
         let ytDlp: URL
         switch MediaRuntimeResolver.resolve(.ytDlp) {
         case .success(let u): ytDlp = u
         case .failure(let e):
             history.record(.media(
-                name: media.title,
+                name: displayTitle,
                 sourceURL: source.absoluteString,
                 saveDirectory: directory,
                 status: .failed,
@@ -117,7 +124,7 @@ public final class MediaEngine {
         }
 
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let safeTitle = Self.safeFilename(media.title)
+        let safeTitle = Self.safeFilename(displayTitle)
         // %(ext)s lets yt-dlp pick the real container (mp4, mkv fallback, mp3).
         let template = directory.appendingPathComponent("\(safeTitle).%(ext)s").path
 
@@ -181,21 +188,21 @@ public final class MediaEngine {
             progress = 1
             statusLine = ""
             history.record(.media(
-                name: media.title,
+                name: displayTitle,
                 sourceURL: source.absoluteString,
                 saveDirectory: directory,
                 status: .completed))
-            notifyMediaComplete(name: media.title, directory: directory, title: safeTitle)
+            notifyMediaComplete(name: displayTitle, directory: directory, title: safeTitle)
         } else {
             let detail = result.stderrTail.split(separator: "\n").last.map(String.init)
                 ?? "yt-dlp exited with code \(result.exitCode)"
             history.record(.media(
-                name: media.title,
+                name: displayTitle,
                 sourceURL: source.absoluteString,
                 saveDirectory: directory,
                 status: .failed,
                 errorMessage: detail))
-            notifyMediaFailure(name: media.title, message: detail)
+            notifyMediaFailure(name: displayTitle, message: detail)
             fail(detail)
         }
     }
@@ -216,6 +223,7 @@ public final class MediaEngine {
         statusLine = ""
         errorMessage = nil
         probeHeaders = [:]
+        preferredTitle = nil
     }
 
     // MARK: - Helpers
@@ -303,23 +311,28 @@ public final class MediaEngine {
     /// Extension-triggered stream download: probes the URL and downloads the
     /// best quality preset to the given directory. Used for m3u8/mpd URLs
     /// captured by the browser extension. `headers` are the browser-captured
-    /// request headers (Referer, Cookie, …) the CDN expects.
+    /// request headers (Referer, Cookie, …) the CDN expects; `preferredName`
+    /// is the page title, so files aren't named after the playlist ("master").
     public func downloadStream(
         url: URL,
         to directory: URL,
-        headers: [String: String] = [:]
+        headers: [String: String] = [:],
+        preferredName: String? = nil
     ) async {
         NSLog("[Grabbit] downloadStream start: %@", url.absoluteString)
         await probe(url: url, headers: headers)
         NSLog("[Grabbit] downloadStream after probe: presets=%d", probed?.presets.count ?? -1)
+        let trimmedName = preferredName?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let media = probed, !media.presets.isEmpty else {
             // Extension-triggered downloads have no visible Media tab, so a
             // silent no-op looked like "nothing happened". Say it out loud.
             await notifyMediaFailure(
-                name: url.lastPathComponent,
+                name: (trimmedName?.isEmpty == false ? trimmedName! : url.lastPathComponent),
                 message: errorMessage ?? NSLocalizedString("media.error.noFormats", comment: ""))
             return
         }
+        // Name the file after the page when we have it.
+        preferredTitle = (trimmedName?.isEmpty == false) ? trimmedName : nil
         // Prefer "Best" preset, fall back to first available.
         let preset = media.presets.first(where: { $0.label == "Best" })
             ?? media.presets[0]

@@ -22,6 +22,9 @@ import Foundation
 struct GrabbitURLRequest {
     var url: URL
     var filename: String?
+    /// Page title captured by the browser extension. Used to name media
+    /// downloads — a bare m3u8 URL would otherwise become "master".
+    var title: String?
     /// Request headers the browser captured for this download (Cookie,
     /// Referer, …). Sent verbatim on every segment connection.
     var headers: [String: String]
@@ -85,6 +88,7 @@ enum GrabbitURLScheme {
             return GrabbitURLRequest(
                 url: target,
                 filename: payload.filename.flatMap { $0.isEmpty ? nil : $0 },
+                title: payload.title.flatMap { $0.isEmpty ? nil : $0 },
                 headers: payload.headers ?? [:])
         }
 
@@ -109,7 +113,8 @@ enum GrabbitURLScheme {
             headers["Origin"] = origin
         }
         let filename = value("filename").flatMap { $0.isEmpty ? nil : $0 }
-        return GrabbitURLRequest(url: target, filename: filename, headers: headers)
+        let title = value("title").flatMap { $0.isEmpty ? nil : $0 }
+        return GrabbitURLRequest(url: target, filename: filename, title: title, headers: headers)
     }
 
     // MARK: - grabbit://import
