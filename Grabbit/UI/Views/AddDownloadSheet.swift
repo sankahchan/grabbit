@@ -280,6 +280,9 @@ struct AddDownloadSheet: View {
         let site: SourceSite = detectedSite == .other ? .direct : detectedSite
         let destination = destinationURL
         let engine = engine
+        // Fire-and-forget: `add` inserts the task optimistically before any
+        // network probe, so the sheet can dismiss immediately and the row
+        // appears at once.
         Task {
             await engine.add(
                 url: url,
@@ -293,8 +296,8 @@ struct AddDownloadSheet: View {
                 queueID: queueID,
                 proxy: taskProxy.scope == .global ? nil : taskProxy
             )
-            dismiss()
         }
+        dismiss()
     }
 }
 

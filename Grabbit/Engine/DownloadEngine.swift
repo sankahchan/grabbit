@@ -382,11 +382,63 @@ public final class DownloadEngine {
         proxy: TaskProxy? = nil
     ) async {
         // Share links (Dropbox / Drive / OneDrive) become direct URLs first.
-        let url = ShareURLRewriter.rewrite(url)
+        let rewritten = ShareURLRewriter.rewrite(url)
+
+        // --- Optimistic insert ---------------------------------------------
+        // The list must react to "Start Download" immediately, but the final
+        // task shape depends on network probes below (MediaFire resolution,
+        // HEAD). Insert a provisional task now — before the first await, so
+        // SwiftUI renders on the next tick — and rewrite it in place once
+        // the server answers.
+        let provisionalRaw = filename ?? rewritten.lastPathComponent
+        let provisionalDecoded = provisionalRaw.removingPercentEncoding ?? provisionalRaw
+        let provisionalName = Self.sanitizeFilename(
+            provisionalDecoded.isEmpty ? "download" : provisionalDecoded)
+        let provisionalCategory = category ?? DownloadCategory.infer(filename: provisionalName)
+        let provisionalFolder = destination ?? settings.folderURL(for: provisionalCategory)
+        try? FileManager.default.createDirectory(
+            at: provisionalFolder,
+            withIntermediateDirectories: true
+        )
+        let provisionalUnique = Self.uniqueFilename(provisionalName, in: provisionalFolder)
+
+        var provisional = DownloadItem(
+            url: rewritten,
+            filename: provisionalUnique,
+            segments: [Segment(index: 0, startByte: 0, endByte: Int64.max)],
+            state: .queued,
+            category: provisionalCategory,
+            sourceSite: sourceSite,
+            destinationURL: provisionalFolder.appendingPathComponent(provisionalUnique),
+            sourcePageURL: sourcePageURL,
+            speedLimitBytesPerSec: speedLimitBytesPerSec,
+            queueID: queueID,
+            // Backlog #7: new tasks go last in the persisted list order.
+            sortRank: (items.map(\.sortRank).max() ?? -1) + 1,
+            proxy: proxy
+        )
+        // Per-task proxy passwords live in the Keychain, never in task JSON.
+        TaskProxy.restorePassword(&provisional.proxy, for: provisional.id)
+
+        let provisionalPartial = resumeStore.partialFileURL(for: provisional)
+        let created = FileManager.default.createFile(
+            atPath: provisionalPartial.path, contents: nil)
+        guard created else {
+            provisional.state = .failed
+            provisional.errorMessage = "Couldn't create partial download file."
+            items.append(provisional)
+            return
+        }
+        items.append(provisional)
+        persistItem(id: provisional.id)
+        let itemID = provisional.id
+
+        // --- Network resolution + probe ------------------------------------
         // MediaFire share pages serve HTML, not the file — resolve to the
         // direct download*.mediafire.com URL via the share page.
         let resolvedURL = await MediaFireResolver.resolve(
-            url, proxyDictionary: proxyDictionary(for: proxy))
+            rewritten, proxyDictionary: proxyDictionary(for: proxy))
+        guard items.contains(where: { $0.id == itemID }) else { return }
 
         // Backlog #4 (packagizer): the first enabled rule whose regex
         // matches the URL renames / re-routes the download.
@@ -401,6 +453,8 @@ public final class DownloadEngine {
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
         let probe = await probe(resolvedURL, proxy: proxy)
+        guard let itemIndex = items.firstIndex(where: { $0.id == itemID })
+        else { return } // removed while probing
         let totalBytes = probe.totalBytes
 
         // Explicit filename wins; otherwise the packagizer template
@@ -478,56 +532,50 @@ public final class DownloadEngine {
             segments = [Segment(index: 0, startByte: 0, endByte: Int64.max)]
         }
 
-        var item = DownloadItem(
-            url: resolvedURL,
-            filename: uniqueName,
-            totalBytes: totalBytes,
-            segments: segments,
-            state: .queued,
-            category: resolvedCategory,
-            sourceSite: sourceSite,
-            destinationURL: destinationURL,
-            sourcePageURL: sourcePageURL,
-            eTag: probe.eTag,
-            lastModified: probe.lastModified,
-            requestHeaders: effectiveHeaders.isEmpty ? nil : effectiveHeaders,
-            speedLimitBytesPerSec: speedLimitBytesPerSec,
-            queueID: queueID,
-            // Backlog #7: new tasks go last in the persisted list order.
-            sortRank: (items.map(\.sortRank).max() ?? -1) + 1,
-            proxy: proxy
-        )
-        // Per-task proxy passwords live in the Keychain, never in task JSON.
-        TaskProxy.restorePassword(&item.proxy, for: item.id)
+        // Rewrite the provisional task with the probed values (same id, so
+        // the row the user is already watching updates in place).
+        var item = items[itemIndex]
+        item.url = resolvedURL
+        item.filename = uniqueName
+        item.totalBytes = totalBytes
+        item.segments = segments
+        item.category = resolvedCategory
+        item.destinationURL = destinationURL
+        item.eTag = probe.eTag
+        item.lastModified = probe.lastModified
+        item.requestHeaders = effectiveHeaders.isEmpty ? nil : effectiveHeaders
+        items[itemIndex] = item
 
+        // Move the partial file if the final destination changed, then
+        // pre-size the sparse file so segment workers can seek anywhere.
         let partialURL = resumeStore.partialFileURL(for: item)
-        let created = FileManager.default.createFile(atPath: partialURL.path, contents: nil)
-        if created, let totalBytes {
-            // Pre-size the sparse file so segment workers can seek/write anywhere.
+        if partialURL != provisionalPartial {
+            try? FileManager.default.removeItem(at: provisionalPartial)
+            _ = FileManager.default.createFile(atPath: partialURL.path, contents: nil)
+        }
+        if let totalBytes {
             if let handle = try? FileHandle(forWritingTo: partialURL) {
                 try? handle.truncate(atOffset: UInt64(totalBytes))
                 try? handle.close()
             }
         }
-        guard created else {
-            item.state = .failed
-            item.errorMessage = "Couldn't create partial download file."
-            items.append(item)
-            return
-        }
+        persistItem(id: itemID)
 
-        items.append(item)
-        persistItem(id: item.id)
         // Share-page guard: the probe answered with a web page, not a file
         // (an unhandled share host). Downloading it would produce a bogus
         // "complete" file, so fail fast with a clear message instead.
         if Self.isHTMLPage(contentType: probe.contentType, filename: name) {
             fail(
-                id: item.id,
+                id: itemID,
                 message: NSLocalizedString("download.error.htmlPage", comment: ""))
             return
         }
-        start(item.id)
+        // Respect a pause/remove the user performed while we were probing.
+        if let currentIndex = items.firstIndex(where: { $0.id == itemID }),
+           items[currentIndex].state == .queued
+        {
+            start(itemID)
+        }
     }
 
     // MARK: - Imported files (browser captures / finished browser downloads)

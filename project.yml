@@ -30,12 +30,13 @@ targets:
     info:
       path: Grabbit/Info.plist
       properties:
-        CFBundleShortVersionString: 1.1.4
+        CFBundleShortVersionString: 1.1.5
         CFBundleVersion: "1"
         NSHumanReadableCopyright: Copyright © 2026 sankahchan
         LSMinimumSystemVersion: "14.0"
         SUFeedURL: https://github.com/sankahchan/grabbit/releases/latest/download/appcast.xml
         SUPublicEDKey: "DzIXu4kgfyZoGsC47pDCwb4Z8d3h0jf4ou4gReVz+54="
+        SUScheduledCheckInterval: 21600
         CFBundleURLTypes:
           - CFBundleURLName: "Grabbit download URL"
             CFBundleURLSchemes: ["grabbit"]
