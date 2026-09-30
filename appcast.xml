@@ -31,5 +31,10 @@
       <pubDate>Tue, 29 Sep 2026 17:48:55 +0000</pubDate>
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.1.0/Grabbit-v1.1.0.dmg" sparkle:version="1.1.0" sparkle:shortVersionString="1.1.0" type="application/octet-stream"/>
     </item>
+    <item>
+      <title>v1.1.1</title>
+      <pubDate>Wed, 30 Sep 2026 01:36:44 +0000</pubDate>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.1.1/Grabbit-v1.1.1.dmg" sparkle:version="1.1.1" sparkle:shortVersionString="1.1.1" type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
