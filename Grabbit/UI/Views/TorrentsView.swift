@@ -54,7 +54,9 @@ struct TorrentsView: View {
                 }
             }
         }
-        .padding(12)
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity)
+        .padding(16)
         .navigationTitle(NSLocalizedString("torrents.title", comment: ""))
         .task {
             // Lazily boot the daemon when the tab first appears.

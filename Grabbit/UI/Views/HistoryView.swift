@@ -26,7 +26,8 @@ struct HistoryView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            header
+            // The window title already reads "History"; the old in-content
+            // duplicate is gone. Filter chips carry the CLEAR action.
             filterChips
             if filtered.isEmpty {
                 Spacer()
@@ -43,7 +44,9 @@ struct HistoryView: View {
                 }
             }
         }
-        .padding(12)
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity)
+        .padding(16)
         .navigationTitle(NSLocalizedString("history.title", comment: ""))
         .alert(
             NSLocalizedString("history.clear.confirm.title", comment: ""),
@@ -64,19 +67,8 @@ struct HistoryView: View {
 
     // MARK: - Header
 
-    private var header: some View {
-        HStack {
-            Text(NSLocalizedString("history.title", comment: ""))
-                .font(.title2.weight(.heavy))
-            Spacer()
-            if !history.entries.isEmpty {
-                Button(NSLocalizedString("history.clear", comment: "")) {
-                    showingClearConfirm = true
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
-            }
-        }
-    }
+    // The old in-content "History" title duplicated the window title and has
+    // been merged away; CLEAR now sits at the end of the filter row.
 
     // MARK: - Filter chips
 
@@ -95,6 +87,12 @@ struct HistoryView: View {
                 }
             }
             Spacer()
+            if !history.entries.isEmpty {
+                Button(NSLocalizedString("history.clear", comment: "")) {
+                    showingClearConfirm = true
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
+            }
         }
     }
 

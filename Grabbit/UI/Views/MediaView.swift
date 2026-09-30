@@ -36,6 +36,8 @@ struct MediaView: View {
                     EmptyView()
                 }
             }
+            .frame(maxWidth: 900)
+            .frame(maxWidth: .infinity)
             .padding(16)
         }
         .navigationTitle(NSLocalizedString("media.title", comment: ""))

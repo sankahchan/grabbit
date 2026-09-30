@@ -16,9 +16,6 @@ struct SettingsView: View {
     @State private var magnetAppName = ""
     /// Phase 5 named queues: name for the queue being added.
     @State private var newQueueName = ""
-    /// Shown under the "Check Now" button when the updater is unavailable
-    /// (dev builds / unsigned Release builds).
-    @State private var updaterNote: String?
 
     var body: some View {
         @Bindable var store = store
@@ -27,20 +24,16 @@ struct SettingsView: View {
         ScrollView {
             VStack(spacing: 16) {
                 // One wide Basic card (Motrix-style): appearance, language,
-                // startup, seeding, and task management. The wide
-                // downloads/torrents cards get full rows below. Content
-                // breathes with the window (capped at 1000 so rows don't
-                // stretch across ultra-wide displays).
+                // startup, seeding, and task management. Downloads, automation
+                // and torrents get their own cards below. Content breathes with
+                // the window (capped at 900 so rows don't stretch across
+                // ultra-wide displays). Update controls live in the About tab.
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
+                automationCard
                 torrentsCard(settings: settings)
-                // The updates card only exists when Sparkle can actually
-                // run (signed Release build + real SUPublicEDKey).
-                if GrabbitApp.isUpdaterConfigured {
-                    updatesCard(settings: settings)
-                }
             }
-            .frame(maxWidth: 1000)
+            .frame(maxWidth: 900)
             .frame(maxWidth: .infinity)
             .padding(16)
         }
@@ -75,10 +68,6 @@ struct SettingsView: View {
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
                 .onChange(of: store.settings.trackerSyncHours) { _, _ in store.save() }
-                .onChange(of: store.settings.autoUpdateEnabled) { _, newValue in
-                    store.save()
-                    UpdaterBridge.applyAutomaticChecks(newValue)
-                }
                 .onChange(of: store.settings.notificationsEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.showCompletionToast) { _, _ in store.save() }
                 .onChange(of: store.settings.showFailureToast) { _, _ in store.save() }
@@ -306,6 +295,17 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Divider()
+            proxySection(settings: settings)
+        }
+        .neoCard()
+    }
+
+    /// Ordering aids that act on the download pipeline (host profiles,
+    /// rename/re-route rules, queues, watch folders). Split out of the
+    /// Downloads card so each card stays scannable.
+    private var automationCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(NSLocalizedString("settings.section.automation", comment: ""))
             HostProfilesSection()
             Divider()
             PackagizerRulesSection()
@@ -313,8 +313,6 @@ struct SettingsView: View {
             queuesSection()
             Divider()
             watchSection()
-            Divider()
-            proxySection(settings: settings)
         }
         .neoCard()
     }
@@ -726,26 +724,6 @@ struct SettingsView: View {
         }
     }
 
-    private func updatesCard(settings: Binding<AppSettings>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("settings.section.updates", comment: ""))
-            Toggle(NSLocalizedString("settings.autoUpdate", comment: ""), isOn: settings.autoUpdateEnabled)
-            .toggleStyle(NeoToggleStyle())
-            HStack(spacing: 8) {
-                Button(NSLocalizedString("settings.checkNow", comment: "")) {
-                    checkForUpdates()
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
-                if let updaterNote {
-                    Text(updaterNote)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .neoCard()
-    }
-
     // MARK: - Rows
 
     private func folderRow(for category: DownloadCategory, settings: Binding<AppSettings>) -> some View {
@@ -794,16 +772,5 @@ struct SettingsView: View {
 
     // MARK: - Updates
 
-    /// Sparkle hookup: the controller is created by `GrabbitApp` (signed
-    /// Release builds with a real SUPublicEDKey) and published through
-    /// `UpdaterBridge` for this button and the auto-check toggle.
-    private func checkForUpdates() {
-        guard UpdaterBridge.isAvailable else {
-            updaterNote = NSLocalizedString(
-                "settings.updates.unavailable", comment: "")
-            return
-        }
-        updaterNote = nil
-        UpdaterBridge.checkForUpdates()
-    }
+    // Update controls (auto-check toggle + Check Now) live in the About tab.
 }

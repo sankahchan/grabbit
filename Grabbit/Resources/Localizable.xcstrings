@@ -6015,6 +6015,214 @@
           }
         }
       }
+    },
+    "nav.about": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကြောင်း"
+          }
+        }
+      }
+    },
+    "about.versionFormat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (build %@)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗားရှင်း %@ (build %@)"
+          }
+        }
+      }
+    },
+    "about.tagline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open-source download manager for macOS."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS အတွက် open-source download manager။"
+          }
+        }
+      }
+    },
+    "about.updates.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparkle checks GitHub Releases and delivers new versions over the air."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sparkle သည် GitHub Releases ကို စစ်ဆေးပြီး ဗားရှင်းအသစ်များကို အလိုအလျောက် ရောက်ရှိစေပါသည်။"
+          }
+        }
+      }
+    },
+    "about.section.links": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LINKS"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လင့်များ"
+          }
+        }
+      }
+    },
+    "about.link.github": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Repository"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Repository"
+          }
+        }
+      }
+    },
+    "about.link.releases": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Notes"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release မှတ်တမ်း"
+          }
+        }
+      }
+    },
+    "about.link.issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report an Issue"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြဿနာ တင်ပြရန်"
+          }
+        }
+      }
+    },
+    "about.link.privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကိုယ်ရေးကိုယ်တာ မူဝါဒ"
+          }
+        }
+      }
+    },
+    "about.section.credits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CREDITS"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဂုဏ်ပြုစာ"
+          }
+        }
+      }
+    },
+    "about.credits.runtime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bundled tools: yt-dlp, ffmpeg, deno and aria2-next. Grabbit itself is MIT licensed."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပါဝင်သော ကိရိယာများ — yt-dlp, ffmpeg, deno နှင့် aria2-next။ Grabbit ကိုယ်တိုင် MIT လိုင်စင်ဖြစ်သည်။"
+          }
+        }
+      }
+    },
+    "about.link.licenses": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Third-Party Licenses"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Third-Party လိုင်စင်များ"
+          }
+        }
+      }
+    },
+    "settings.section.automation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATION"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလိုအလျောက် လုပ်ဆောင်မှု"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

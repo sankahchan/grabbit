@@ -12,7 +12,17 @@ struct DownloadsView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
     @State private var showingBatch = false
-    @State private var deletingItem: DownloadItem?
+    /// Snapshot taken when the trash button is clicked. The confirmation
+    /// alert must not hold the live `DownloadItem`: the engine mutates it
+    /// (bytes/speed) on every tick, which rebuilt the alert ~1×/second and
+    /// swallowed the Delete click — users had to click several times.
+    @State private var deleteRequest: DeleteRequest?
+    @State private var showingDeleteConfirm = false
+
+    private struct DeleteRequest: Identifiable {
+        let id: UUID
+        let isCompleted: Bool
+    }
     @State private var detailsSubject: TaskDetailsSheet.Subject?
     /// Backlog #7: the card currently being dragged (for drop-reorder).
     @State private var draggedItemID: UUID?
@@ -89,7 +99,9 @@ struct DownloadsView: View {
                     engine: engine))
             }
         }
-        .padding(12)
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity)
+        .padding(16)
         .navigationTitle(NSLocalizedString("downloads.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddDownloadSheet()
@@ -97,19 +109,24 @@ struct DownloadsView: View {
         .sheet(isPresented: $showingBatch) {
             BatchAddSheet()
         }
-        .alert(item: $deletingItem) { item in
+        .alert(
+            NSLocalizedString("downloads.remove.title", comment: ""),
+            isPresented: $showingDeleteConfirm,
+            presenting: deleteRequest
+        ) { request in
             // engine.remove drops the record and deletes the partial
             // (.grabbit-part) file; a finished file on disk is kept.
-            Alert(
-                title: Text(NSLocalizedString("downloads.remove.title", comment: "")),
-                message: Text(item.state == .completed
-                    ? NSLocalizedString("downloads.remove.keepFile", comment: "")
-                    : NSLocalizedString("downloads.remove.deletePartial", comment: "")),
-                primaryButton: .destructive(Text(NSLocalizedString("common.delete", comment: ""))) {
-                    engine.remove(item.id)
-                },
-                secondaryButton: .cancel(Text(NSLocalizedString("common.cancel", comment: "")))
-            )
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                engine.remove(request.id)
+                deleteRequest = nil
+            }
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {
+                deleteRequest = nil
+            }
+        } message: { request in
+            Text(request.isCompleted
+                ? NSLocalizedString("downloads.remove.keepFile", comment: "")
+                : NSLocalizedString("downloads.remove.deletePartial", comment: ""))
         }
         .sheet(item: $detailsSubject) { subject in
             TaskDetailsSheet(subject: subject)
@@ -232,7 +249,8 @@ struct DownloadsView: View {
         case .resume:
             engine.resume(item.id)
         case .delete:
-            deletingItem = item
+            deleteRequest = DeleteRequest(id: item.id, isCompleted: item.state == .completed)
+            showingDeleteConfirm = true
         case .openFolder:
             FinderReveal.reveal(
                 directory: item.destinationURL.deletingLastPathComponent(),

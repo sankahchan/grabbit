@@ -1,14 +1,16 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, grabber, linkgrabber, scheduler, history, settings
+    case downloads, torrents, media, grabber, linkgrabber, scheduler, history, settings, about
 
-    /// Main tabs, top-to-bottom order.
+    /// Main tabs, top-to-bottom order. History is content (the record of
+    /// finished work), so it lives with the work areas rather than with the
+    /// app-level utilities pinned to the bottom.
     static let mainTabs: [SidebarSelection] = [
-        .downloads, .torrents, .media, .grabber, .linkgrabber, .scheduler,
+        .downloads, .torrents, .media, .grabber, .linkgrabber, .scheduler, .history,
     ]
-    /// Utility buttons pinned to the sidebar bottom.
-    static let bottomTabs: [SidebarSelection] = [.history, .settings]
+    /// Utility buttons pinned to the sidebar bottom (macOS convention).
+    static let bottomTabs: [SidebarSelection] = [.settings, .about]
 
     var icon: String {
         switch self {
@@ -20,6 +22,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .history: "clock.arrow.circlepath"
         case .scheduler: "clock"
         case .settings: "gearshape"
+        case .about: "info.circle"
         }
     }
 
@@ -33,6 +36,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .history: NSLocalizedString("nav.history", comment: "")
         case .scheduler: NSLocalizedString("nav.scheduler", comment: "")
         case .settings: NSLocalizedString("nav.settings", comment: "")
+        case .about: NSLocalizedString("nav.about", comment: "")
         }
     }
 }
@@ -126,7 +130,7 @@ struct Sidebar: View {
             n = active ? 1 : 0
         case .linkgrabber:
             n = linkGrabberStore.stagedCount
-        case .grabber, .history, .scheduler, .settings:
+        case .grabber, .history, .scheduler, .settings, .about:
             return nil
         }
         return n > 0 ? n : nil

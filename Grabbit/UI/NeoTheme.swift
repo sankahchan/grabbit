@@ -375,6 +375,9 @@ struct NeoSegmented<Value: Hashable>: View {
             }
             .font(.subheadline.weight(.bold))
             .lineLimit(1)
+            // Longer localized labels (e.g. "မြန်မာ") must shrink, never
+            // truncate with an ellipsis inside a segment.
+            .minimumScaleFactor(0.8)
             .foregroundStyle(
                 selected ? Neo.onAccent(Neo.yellow, scheme: scheme) : Neo.ink(scheme))
             .padding(.vertical, 7)

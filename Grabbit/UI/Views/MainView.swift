@@ -100,6 +100,8 @@ struct MainView: View {
             SchedulerView()
         case .settings:
             SettingsView()
+        case .about:
+            AboutView()
         }
     }
 }

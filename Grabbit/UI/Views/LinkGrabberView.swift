@@ -30,6 +30,8 @@ struct LinkGrabberView: View {
             Spacer(minLength: 0)
             footer
         }
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity)
         .padding(16)
         .navigationTitle(NSLocalizedString("nav.linkgrabber", comment: ""))
     }

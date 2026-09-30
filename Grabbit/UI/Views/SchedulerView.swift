@@ -119,7 +119,9 @@ struct SchedulerView: View {
                 }
             }
         }
-        .padding(12)
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity)
+        .padding(16)
         .navigationTitle(NSLocalizedString("scheduler.title", comment: ""))
         .sheet(isPresented: $showingAdd) {
             AddScheduleSheet { entry in

@@ -42,6 +42,8 @@ struct GrabberView: View {
                 detectedCard
                 hintCard
             }
+            .frame(maxWidth: 900)
+            .frame(maxWidth: .infinity)
             .padding(16)
         }
         .navigationTitle(NSLocalizedString("grabber.title", comment: ""))

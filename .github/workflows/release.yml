@@ -144,30 +144,31 @@ jobs:
           VERSION="${TAG#v}"
           DMG_URL="https://github.com/sankahchan/grabbit/releases/download/${TAG}/Grabbit-${TAG}.dmg"
           PUBDATE=$(date -u +"%a, %d %b %Y %H:%M:%S %z")
+          # Empty when SPARKLE_PRIVATE_KEY is missing; the attribute is then
+          # omitted and Sparkle (with SUPublicEDKey configured) will reject the
+          # update, which is the safe failure mode.
+          SIG="${EDSIGNATURE:-}"
           cat > /tmp/update_appcast.py <<'PYEOF'
           import re, sys
-          tag, version, dmg_url, pubdate = sys.argv[1:5]
+          tag, version, dmg_url, pubdate, signature = sys.argv[1:6]
           path = "appcast.xml"
           src = open(path).read()
+          sig_attr = f' sparkle:edSignature="{signature}"' if signature else ""
           item = (
               "    <item>\n"
               f"      <title>{tag}</title>\n"
               f"      <pubDate>{pubdate}</pubDate>\n"
               f'      <enclosure url="{dmg_url}" sparkle:version="{version}" '
-              f'sparkle:shortVersionString="{version}" type="application/octet-stream"/>\n'
+              f'sparkle:shortVersionString="{version}"{sig_attr} type="application/octet-stream"/>\n'
+              "      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>\n"
               "    </item>\n"
               "  </channel>"
           )
           new = re.sub(r"  </channel>", item, src, count=1)
           open(path, "w").write(new)
-          print(f"appcast.xml updated for {tag}")
+          print(f"appcast.xml updated for {tag} (edSignature: {'yes' if signature else 'NO — set SPARKLE_PRIVATE_KEY!'})")
           PYEOF
-          python3 /tmp/update_appcast.py "$TAG" "$VERSION" "$DMG_URL" "$PUBDATE"
-          # Honest note: proper Sparkle 2 delta/signature support needs
-          # SUPublicEDKey configured in the app and sparkle:edSignature on the
-          # enclosure, generated with the generate_appcast tool and the private
-          # Ed25519 key. That is a TODO until Developer ID signing is set up;
-          # the enclosure above is enough for Sparkle to notify + download.
+          python3 /tmp/update_appcast.py "$TAG" "$VERSION" "$DMG_URL" "$PUBDATE" "$SIG"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
