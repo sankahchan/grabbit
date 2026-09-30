@@ -11,10 +11,6 @@ struct AboutView: View {
     /// (dev builds / unsigned Release builds).
     @State private var updaterNote: String?
 
-    private static let repositoryURL = URL(string: "https://github.com/sankahchan/grabbit")!
-    private static let issuesURL = URL(string: "https://github.com/sankahchan/grabbit/issues")!
-    private static let releasesURL = URL(string: "https://github.com/sankahchan/grabbit/releases")!
-    private static let privacyURL = URL(string: "https://github.com/sankahchan/grabbit/blob/main/PRIVACY.md")!
     private static let licensesURL = URL(string: "https://github.com/sankahchan/grabbit/blob/main/THIRD-PARTY-LICENSES.md")!
 
     var body: some View {
@@ -25,7 +21,6 @@ struct AboutView: View {
             VStack(spacing: 16) {
                 identityCard
                 updatesCard(settings: settings)
-                linksCard
                 creditsCard
             }
             .frame(maxWidth: 900)
@@ -109,51 +104,6 @@ struct AboutView: View {
         }
         updaterNote = nil
         UpdaterBridge.checkForUpdates()
-    }
-
-    // MARK: - Links
-
-    private var linksCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(NSLocalizedString("about.section.links", comment: ""))
-            linkRow(
-                NSLocalizedString("about.link.github", comment: ""),
-                icon: "chevron.left.forwardslash.chevron.right",
-                url: Self.repositoryURL)
-            linkRow(
-                NSLocalizedString("about.link.releases", comment: ""),
-                icon: "shippingbox",
-                url: Self.releasesURL)
-            linkRow(
-                NSLocalizedString("about.link.issues", comment: ""),
-                icon: "exclamationmark.bubble",
-                url: Self.issuesURL)
-            linkRow(
-                NSLocalizedString("about.link.privacy", comment: ""),
-                icon: "hand.raised",
-                url: Self.privacyURL)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard()
-    }
-
-    private func linkRow(_ title: String, icon: String, url: URL) -> some View {
-        Button {
-            NSWorkspace.shared.open(url)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .frame(width: 22)
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Image(systemName: "arrow.up.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Credits
