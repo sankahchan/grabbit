@@ -29,6 +29,9 @@ struct GrabbitApp: App {
     @State private var updater: SPUStandardUpdaterController?
     @State private var nativeMessagingHost: NativeMessagingHost?
     @State private var trayController: TrayController
+    /// Sidebar selection shared with the URL-scheme handlers so incoming
+    /// grabs switch to the tab that shows them.
+    @State private var navigation = AppNavigation()
 
     // @MainActor: TorrentEngine is main-actor-isolated, so it must be built here.
     @MainActor
@@ -154,6 +157,7 @@ struct GrabbitApp: App {
                 .environment(completionCenter)
                 .environment(hostProfileStore)
                 .environment(packagizerStore)
+                .environment(navigation)
                 .onOpenURL { url in
                     NSLog("[Grabbit] onOpenURL: %@", url.absoluteString)
                     // In tray mode the window is hidden — a link click
@@ -165,6 +169,7 @@ struct GrabbitApp: App {
                     // magnet:?xt=… — handed to the torrent engine (clicking a
                     // magnet link anywhere opens Grabbit).
                     if url.scheme?.lowercased() == "magnet" {
+                        navigation.selection = .torrents
                         let magnet = url.absoluteString
                         let savePath = settings.folderURL(for: .other)
                         Task { @MainActor in
@@ -180,6 +185,7 @@ struct GrabbitApp: App {
                        url.host?.lowercased() == "import"
                     {
                         guard let request = GrabbitURLScheme.parseImport(url) else { return }
+                        navigation.selection = .downloads
                         Task { @MainActor in
                             await downloadEngine.importCompletedFile(
                                 at: request.fileURL,
@@ -204,15 +210,21 @@ struct GrabbitApp: App {
                         let lower = request.url.absoluteString.lowercased()
                         if lower.contains(".m3u8") || lower.contains(".mpd") {
                             NSLog("[Grabbit] routing to MediaEngine: %@", request.url.absoluteString)
+                            // Show the Media tab so the in-progress media
+                            // download is visible immediately.
+                            navigation.selection = .media
                             let directory = settings.folderURL(for: .video)
                             mediaEngine.speedLimitBytesPerSec = settings.settings.speedLimitBytesPerSec
                             await mediaEngine.downloadStream(
                                 url: request.url,
                                 to: directory,
-                                headers: request.headers)
+                                headers: request.headers,
+                                preferredName: Self.mediaName(for: request))
                             NSLog("[Grabbit] MediaEngine.downloadStream returned (state=%@)",
                                   String(describing: mediaEngine.state))
                         } else {
+                            // Direct downloads land in the Downloads tab.
+                            navigation.selection = .downloads
                             await downloadEngine.add(
                                 url: request.url,
                                 filename: request.filename,

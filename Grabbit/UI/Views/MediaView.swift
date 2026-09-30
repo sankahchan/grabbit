@@ -232,7 +232,7 @@ struct MediaView: View {
 
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(media.probed?.title ?? "")
+            Text(media.displayTitle ?? media.probed?.title ?? "")
                 .font(.headline.weight(.heavy))
                 .lineLimit(1)
             NeoLinearBar(progress: media.progress)

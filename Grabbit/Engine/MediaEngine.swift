@@ -23,6 +23,10 @@ public final class MediaEngine {
     public var progress: Double = 0
     public var statusLine: String = ""
     public var errorMessage: String?
+    /// Display name override for extension captures (the page title). The
+    /// Media cards show this instead of yt-dlp's URL-derived title — a bare
+    /// master.m3u8 would otherwise read "master".
+    public var displayTitle: String?
     /// Phase 5 speed limiter: global cap in bytes/sec, 0 = unlimited.
     /// Synced from Settings by the UI before each download.
     public var speedLimitBytesPerSec: Int64 = 0
@@ -68,6 +72,7 @@ public final class MediaEngine {
         sourceURL = url
         probeHeaders = headers ?? [:]
         preferredTitle = nil
+        displayTitle = nil
 
         let ytDlp: URL
         switch MediaRuntimeResolver.resolve(.ytDlp) {
@@ -224,6 +229,7 @@ public final class MediaEngine {
         errorMessage = nil
         probeHeaders = [:]
         preferredTitle = nil
+        displayTitle = nil
     }
 
     // MARK: - Helpers
@@ -333,6 +339,7 @@ public final class MediaEngine {
         }
         // Name the file after the page when we have it.
         preferredTitle = (trimmedName?.isEmpty == false) ? trimmedName : nil
+        displayTitle = preferredTitle
         // Prefer "Best" preset, fall back to first available.
         let preset = media.presets.first(where: { $0.label == "Best" })
             ?? media.presets[0]

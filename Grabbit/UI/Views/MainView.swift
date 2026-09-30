@@ -38,12 +38,14 @@ private struct WindowFrameSaver: NSViewRepresentable {
 /// their own Add button; Media has its URL field), so there is no global
 /// toolbar add button.
 struct MainView: View {
-    @State private var selection: SidebarSelection = .downloads
+    @Environment(AppNavigation.self) private var navigation
     @Environment(SettingsStore.self) private var store: SettingsStore
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $selection)
+            Sidebar(selection: Binding(
+                get: { navigation.selection },
+                set: { navigation.selection = $0 }))
                 .navigationSplitViewColumnWidth(min: 210, ideal: 230)
         } detail: {
             detailView
@@ -83,7 +85,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        switch selection {
+        switch navigation.selection {
         case .downloads:
             DownloadsView()
         case .linkgrabber:
@@ -95,7 +97,9 @@ struct MainView: View {
         case .grabber:
             GrabberView()
         case .history:
-            HistoryView(selection: $selection)
+            HistoryView(selection: Binding(
+                get: { navigation.selection },
+                set: { navigation.selection = $0 }))
         case .scheduler:
             SchedulerView()
         case .settings:
