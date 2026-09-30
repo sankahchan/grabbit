@@ -34,9 +34,7 @@
   "name": "Grabbit Web Grabber",
   "permissions": [
     "activeTab",
-    "scripting",
     "contextMenus",
-    "nativeMessaging",
     "notifications",
     "webRequest",
     "cookies",
