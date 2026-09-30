@@ -74,3 +74,19 @@ This installs:
 - **Stale captures**: partial captures are kept for 30 minutes and cleaned
   up automatically; the **Discard** button in the popup removes one
   immediately.
+
+## Chrome Web Store publishing
+
+```bash
+./scripts/package-extension.sh
+# → dist/grabbit-extension-v<version>.zip
+```
+
+The package contains runtime files only and strips the development `key`
+field so the Web Store assigns the item ID. `STORE.md` has the listing copy,
+permission justifications, privacy-practice answers and reviewer test steps.
+After publishing, install the native helper for the **store** extension ID:
+
+```bash
+./GrabbitExtension/native-messaging/install-host.sh <store-extension-id>
+```

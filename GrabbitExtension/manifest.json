@@ -20,6 +20,7 @@
     }
   ],
   "description": "Send videos and files from any web page to the Grabbit download manager.",
+  "homepage_url": "https://github.com/sankahchan/grabbit",
   "host_permissions": [
     "<all_urls>"
   ],
@@ -29,6 +30,7 @@
     "48": "icons/icon48.png"
   },
   "manifest_version": 3,
+  "minimum_chrome_version": "116",
   "name": "Grabbit Web Grabber",
   "permissions": [
     "activeTab",
@@ -41,7 +43,7 @@
     "downloads",
     "storage"
   ],
-  "version": "0.3.6",
+  "version": "1.0.0",
   "web_accessible_resources": [
     {
       "resources": [
