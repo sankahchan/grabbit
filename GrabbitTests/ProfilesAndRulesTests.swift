@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 @testable import Grabbit
 
 /// Backlog #3 (per-host profiles) and #4 (packagizer rules): matching,
@@ -134,5 +135,72 @@ final class ProfilesAndRulesTests: XCTestCase {
         store.remove(id: rule.id)
         XCTAssertTrue(store.rules.isEmpty)
         try? FileManager.default.removeItem(at: dir)
+    }
+
+    // MARK: - Host profile secrets (Keychain)
+
+    /// CI runners (and locked-down environments) have no usable login
+    /// keychain for an unsigned test bundle — probe once and skip the
+    /// keychain-dependent tests instead.
+    private func requireKeychain() throws {
+        let probe = "grabbit-test-probe-\(UUID().uuidString)"
+        let saved = KeychainStore.save("probe", account: probe)
+        let loaded = try? KeychainStore.load(account: probe).get()
+        KeychainStore.delete(account: probe)
+        try XCTSkipUnless(
+            saved && loaded == "probe",
+            "Keychain unavailable in this environment")
+    }
+
+    func testHostProfilePasswordLivesInKeychainNotJSON() throws {
+        try requireKeychain()
+        let dir = tempDir()
+        let profile = HostProfile(host: "example.com", username: "u", password: "s3cret")
+        let account = HostProfile.keychainAccount(for: profile.id)
+        defer {
+            KeychainStore.delete(account: account)
+            try? FileManager.default.removeItem(at: dir)
+        }
+
+        let store = HostProfileStore(directory: dir)
+        store.add(profile)
+        let raw = try String(
+            contentsOf: dir.appendingPathComponent("hostprofiles.json"), encoding: .utf8)
+        XCTAssertFalse(raw.contains("s3cret"), "plaintext password must not be persisted")
+
+        let reloaded = HostProfileStore(directory: dir)
+        XCTAssertEqual(reloaded.profiles.first?.password, "s3cret")
+
+        // Clearing the password deletes the Keychain item.
+        var cleared = profile
+        cleared.password = ""
+        store.update(cleared)
+        XCTAssertEqual(
+            KeychainStore.load(account: account),
+            .failure(KeychainStore.LoadError.notFound))
+    }
+
+    func testHostProfileLegacyPlaintextIsMigrated() throws {
+        try requireKeychain()
+        let dir = tempDir()
+        let id = UUID()
+        let account = HostProfile.keychainAccount(for: id)
+        defer {
+            KeychainStore.delete(account: account)
+            try? FileManager.default.removeItem(at: dir)
+        }
+
+        let legacy = """
+        [{"id":"\(id.uuidString)","host":"example.com","isEnabled":true,\
+        "username":"u","password":"legacy-pass"}]
+        """
+        let file = dir.appendingPathComponent("hostprofiles.json")
+        try legacy.write(to: file, atomically: true, encoding: .utf8)
+
+        let store = HostProfileStore(directory: dir)
+        XCTAssertEqual(store.profiles.first?.password, "legacy-pass")
+        let raw = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertFalse(raw.contains("legacy-pass"), "migration must scrub the file")
+        XCTAssertEqual(try? KeychainStore.load(account: account).get(), "legacy-pass")
     }
 }

@@ -73,6 +73,46 @@ final class ArchiveExtractorTests: XCTestCase {
             fileURLWithPath: "/nonexistent-\(UUID().uuidString)/a.zip")))
     }
 
+    // MARK: - Zip-slip
+
+    /// An entry named "../escaped.txt" must never land outside the
+    /// extraction destination. Refusing the archive outright is fine; a
+    /// file outside the destination is not.
+    func testMaliciousTarCannotEscapeDestination() throws {
+        let tmp = try makeTempDir()
+        let tarURL = tmp.appendingPathComponent("evil.tar")
+        let script = """
+        import io, sys, tarfile
+        info = tarfile.TarInfo("../escaped.txt")
+        payload = b"evil"
+        info.size = len(payload)
+        with tarfile.open(sys.argv[1], "w") as archive:
+            archive.addfile(info, io.BytesIO(payload))
+        """
+        try run("/usr/bin/python3", ["-c", script, tarURL.path])
+        try assertNoEscape(archive: tarURL, in: tmp)
+    }
+
+    func testMaliciousZipCannotEscapeDestination() throws {
+        let tmp = try makeTempDir()
+        let zipURL = tmp.appendingPathComponent("evil.zip")
+        let script = """
+        import sys, zipfile
+        with zipfile.ZipFile(sys.argv[1], "w") as archive:
+            archive.writestr("../escaped.txt", b"evil")
+        """
+        try run("/usr/bin/python3", ["-c", script, zipURL.path])
+        try assertNoEscape(archive: zipURL, in: tmp)
+    }
+
+    private func assertNoEscape(archive: URL, in tmp: URL) throws {
+        _ = try? ArchiveExtractor.extract(archiveURL: archive)
+        let escaped = tmp.appendingPathComponent("escaped.txt")
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: escaped.path),
+            "archive entry escaped the extraction destination")
+    }
+
     // MARK: - Helpers
 
     private func makeTempDir() throws -> URL {

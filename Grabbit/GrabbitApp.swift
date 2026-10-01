@@ -185,6 +185,12 @@ struct GrabbitApp: App {
                        url.host?.lowercased() == "import"
                     {
                         guard let request = GrabbitURLScheme.parseImport(url) else { return }
+                        // The payload carried captured metadata (URLs, page
+                        // titles); it has served its purpose — remove it so
+                        // nothing lingers in the Inbox.
+                        if let payloadURL = request.payloadURL {
+                            try? FileManager.default.removeItem(at: payloadURL)
+                        }
                         navigation.selection = .downloads
                         Task { @MainActor in
                             await downloadEngine.importCompletedFile(
@@ -202,6 +208,11 @@ struct GrabbitApp: App {
                     guard let request = GrabbitURLScheme.parse(url) else {
                         NSLog("[Grabbit] URL parse failed")
                         return
+                    }
+                    // The payload carried captured request headers (cookies
+                    // included) — delete it now that it is decoded.
+                    if let payloadURL = request.payloadURL {
+                        try? FileManager.default.removeItem(at: payloadURL)
                     }
                     Task { @MainActor in
                         // Stream playlists (m3u8/mpd) go to the media engine

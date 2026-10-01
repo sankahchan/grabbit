@@ -28,6 +28,9 @@ struct GrabbitURLRequest {
     /// Request headers the browser captured for this download (Cookie,
     /// Referer, …). Sent verbatim on every segment connection.
     var headers: [String: String]
+    /// Inbox JSON file this request was decoded from. The caller deletes it
+    /// after use — captured cookie headers must not linger on disk.
+    var payloadURL: URL?
 }
 
 /// Parsed form of a `grabbit://import` URL: a file that already exists on
@@ -43,6 +46,9 @@ struct GrabbitImportRequest {
     var source: String?
     var title: String?
     var mimeType: String?
+    /// Inbox JSON file this request was decoded from. The caller deletes it
+    /// after use.
+    var payloadURL: URL?
 }
 
 enum GrabbitURLScheme {
@@ -89,7 +95,8 @@ enum GrabbitURLScheme {
                 url: target,
                 filename: payload.filename.flatMap { $0.isEmpty ? nil : $0 },
                 title: payload.title.flatMap { $0.isEmpty ? nil : $0 },
-                headers: payload.headers ?? [:])
+                headers: payload.headers ?? [:],
+                payloadURL: URL(fileURLWithPath: payloadPath))
         }
 
         guard let rawTarget = value("url"),
@@ -114,7 +121,9 @@ enum GrabbitURLScheme {
         }
         let filename = value("filename").flatMap { $0.isEmpty ? nil : $0 }
         let title = value("title").flatMap { $0.isEmpty ? nil : $0 }
-        return GrabbitURLRequest(url: target, filename: filename, title: title, headers: headers)
+        return GrabbitURLRequest(
+            url: target, filename: filename, title: title, headers: headers,
+            payloadURL: nil)
     }
 
     // MARK: - grabbit://import
@@ -148,7 +157,8 @@ enum GrabbitURLScheme {
             pageURL: pageURL,
             source: payload.source,
             title: payload.title.flatMap { $0.isEmpty ? nil : $0 },
-            mimeType: payload.mime.flatMap { $0.isEmpty ? nil : $0 })
+            mimeType: payload.mime.flatMap { $0.isEmpty ? nil : $0 },
+            payloadURL: URL(fileURLWithPath: payloadPath))
     }
 
     // MARK: - Payload schema

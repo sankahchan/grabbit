@@ -38,6 +38,10 @@ from urllib.parse import quote
 APP_SUPPORT = Path.home() / "Library" / "Application Support" / "Grabbit"
 INBOX = APP_SUPPORT / "Inbox"
 STALE_SECONDS = 6 * 60 * 60
+# grab-/import- JSON payloads carry captured request headers (cookies
+# included). The app deletes them right after reading; this is only the
+# safety net for payloads the app never consumed.
+PAYLOAD_STALE_SECONDS = 5 * 60
 CAPTURE_IDLE_SECONDS = 30 * 60
 META_PREFIX = "meta-"
 
@@ -306,7 +310,9 @@ def cleanup_stale():
         try:
             if not entry.is_file():
                 continue
-            if now - entry.stat().st_mtime <= STALE_SECONDS:
+            is_payload = entry.name.startswith(("grab-", "import-"))
+            limit = PAYLOAD_STALE_SECONDS if is_payload else STALE_SECONDS
+            if now - entry.stat().st_mtime <= limit:
                 continue
             if entry.name.startswith(META_PREFIX):
                 capture_id = entry.stem[len(META_PREFIX):]
@@ -540,11 +546,36 @@ def handle_stream_finalize(msg):
 # --- main loop --------------------------------------------------------------
 
 
+# Redaction for diagnostic lines: signed URLs and header dumps must not
+# leave long-lived tokens in the Inbox log.
+REDACT_URL_RE = re.compile(r'(https?://[^\s"\\]+?)[?#][^\s"\\]*')
+REDACT_FIELD_RE = re.compile(
+    r'("(?:cookie|set-cookie|authorization|token|sig|signature)"\s*:\s*")[^"]*',
+    re.IGNORECASE,
+)
+DEBUG_LOG_MAX_BYTES = 1_000_000
+
+
+def redact_secrets(line):
+    line = REDACT_URL_RE.sub(r"\1?(redacted)", line)
+    line = REDACT_FIELD_RE.sub(r"\1(redacted)", line)
+    return line
+
+
 def handle_debug(msg):
     try:
         INBOX.mkdir(parents=True, exist_ok=True)
-        with open(INBOX / "telegram-debug.log", "a", encoding="utf-8") as handle:
-            handle.write((msg.get("line") or "") + "\n")
+        log_path = INBOX / "telegram-debug.log"
+        try:
+            if log_path.exists() and log_path.stat().st_size > DEBUG_LOG_MAX_BYTES:
+                rotated = INBOX / "telegram-debug.log.1"
+                unlink_quiet(str(rotated))
+                os.replace(log_path, rotated)
+        except Exception:
+            pass
+        line = redact_secrets(msg.get("line") or "")
+        with open(log_path, "a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
     except Exception:
         pass
     return True
