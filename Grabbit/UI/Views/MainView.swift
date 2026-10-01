@@ -91,9 +91,9 @@ struct MainView: View {
         // The system toolbar material paints a white band over the paper in
         // light mode (and a mismatched band in dark). Tint the window toolbar
         // and the titlebar strip to the same paper as the content.
-        .toolbarBackground(Neo.paper(scheme), for: .windowToolbar)
+        .toolbarBackground(Neo.paper(effectiveScheme), for: .windowToolbar)
         .toolbarBackground(.visible, for: .windowToolbar)
-        .background(WindowPaper(color: NSColor(Neo.paper(scheme))))
+        .background(WindowPaper(color: NSColor(Neo.paper(effectiveScheme))))
         // Completion/failure cards now render inline at the top of the
         // Downloads / Torrents tabs (inside each tab's own card) instead
         // of a floating overlay.
@@ -115,14 +115,28 @@ struct MainView: View {
     }
 
     /// Quick appearance control in the titlebar: cycles System → Light → Dark.
+    ///
+    /// The toolbar context does not reliably inherit the app-applied
+    /// appearance (`NSApp.appearance`), so `@Environment(\.colorScheme)` can
+    /// report the system scheme and render the button inverted. Derive the
+    /// effective scheme from the setting instead.
     private var themeToggle: some View {
         Button {
             cycleTheme()
         } label: {
             Image(systemName: themeIcon)
         }
-        .neoIconButton(bg: Neo.paper(scheme))
+        .neoIconButton(bg: Neo.paper(effectiveScheme))
         .help(NSLocalizedString("settings.section.appearance", comment: ""))
+    }
+
+    /// Concrete scheme, resolving "System" through the environment.
+    private var effectiveScheme: ColorScheme {
+        switch store.settings.theme {
+        case .light: .light
+        case .dark: .dark
+        case .system: scheme
+        }
     }
 
     private var themeIcon: String {

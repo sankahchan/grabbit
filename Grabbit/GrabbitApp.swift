@@ -245,6 +245,13 @@ struct GrabbitApp: App {
                 }
                 .onAppear {
                     applyRunMode(initial: true)
+                    // Keep the browser native-messaging pieces current: the
+                    // bundled helper is copied into App Support and the host
+                    // manifests are (re)written, so app updates deliver
+                    // helper fixes without a manual install-host.sh run.
+                    DispatchQueue.global(qos: .utility).async {
+                        NativeHostInstaller.installIfNeeded()
+                    }
                     // Durable finalize: complete any journal left by a crash
                     // (file moved but completion never persisted) before the
                     // resume logic sees the items.
