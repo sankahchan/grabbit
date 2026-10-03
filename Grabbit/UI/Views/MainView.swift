@@ -83,11 +83,6 @@ struct MainView: View {
             }
         }
         .navigationTitle("Grabbit")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                themeToggle
-            }
-        }
         // The system toolbar material paints a white band over the paper in
         // light mode (and a mismatched band in dark). Tint the window toolbar
         // and the titlebar strip to the same paper as the content.
@@ -114,50 +109,15 @@ struct MainView: View {
         .id(store.settings.language.rawValue)
     }
 
-    /// Quick appearance control in the titlebar: cycles System → Light → Dark.
-    ///
-    /// Deliberately a flat icon — a bordered/shadowed neo button renders as
-    /// a visible block over the paper titlebar in both modes, and the
-    /// toolbar does not reliably inherit the app-applied appearance. The
-    /// icon color derives from the Appearance setting instead of the
-    /// environment so it can never invert.
-    private var themeToggle: some View {
-        Button {
-            cycleTheme()
-        } label: {
-            Image(systemName: themeIcon)
-                .font(.system(size: 15, weight: .semibold))
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(Neo.ink(effectiveScheme))
-        .help(NSLocalizedString("settings.section.appearance", comment: ""))
-    }
-
-    /// Concrete scheme, resolving "System" through the environment.
+    /// Concrete scheme, resolving "System" through the environment. The
+    /// toolbar does not reliably inherit the app-applied appearance, so the
+    /// titlebar tint derives from the Appearance setting instead.
     private var effectiveScheme: ColorScheme {
         switch store.settings.theme {
         case .light: .light
         case .dark: .dark
         case .system: scheme
         }
-    }
-
-    private var themeIcon: String {
-        switch store.settings.theme {
-        case .system: "circle.lefthalf.filled"
-        case .light: "sun.max.fill"
-        case .dark: "moon.fill"
-        }
-    }
-
-    private func cycleTheme() {
-        switch store.settings.theme {
-        case .system: store.settings.theme = .light
-        case .light: store.settings.theme = .dark
-        case .dark: store.settings.theme = .system
-        }
-        store.save()
-        applyAppearance()
     }
 
     /// Maps the saved theme onto the app-wide AppKit appearance.

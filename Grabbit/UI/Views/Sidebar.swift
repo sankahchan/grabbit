@@ -63,6 +63,7 @@ struct Sidebar: View {
                 sidebarRow(for: item)
             }
             Spacer()
+            appearanceRow
             NeoDivider()
             ForEach(SidebarSelection.bottomTabs, id: \.self) { item in
                 sidebarRow(for: item)
@@ -96,6 +97,66 @@ struct Sidebar: View {
         }
         .foregroundStyle(Neo.ink(scheme))
         .padding(.vertical, 2)
+    }
+
+    /// Cycles System → Light → Dark. Lives in the sidebar because the system
+    /// draws a capsule around toolbar items, which clashes with the paper
+    /// chrome; here it matches the other rows. The appearance itself is
+    /// applied by MainView, which observes the same SettingsStore.
+    private var appearanceRow: some View {
+        Button {
+            cycleTheme()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: appearanceIcon)
+                    .frame(width: 22)
+                Text(NSLocalizedString("settings.section.appearance", comment: ""))
+                    .font(.headline)
+                Spacer()
+                Text(appearanceName)
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Neo.paper(scheme))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2))
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(Neo.ink(scheme))
+            .background(Neo.paper(scheme))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Neo.ink(scheme), lineWidth: 2))
+        }
+        .buttonStyle(.plain)
+        .help(NSLocalizedString("sidebar.appearance.help", comment: ""))
+    }
+
+    private var appearanceIcon: String {
+        switch settings.settings.theme {
+        case .system: "circle.lefthalf.filled"
+        case .light: "sun.max.fill"
+        case .dark: "moon.fill"
+        }
+    }
+
+    private var appearanceName: String {
+        switch settings.settings.theme {
+        case .system: NSLocalizedString("settings.theme.system", comment: "")
+        case .light: NSLocalizedString("settings.theme.light", comment: "")
+        case .dark: NSLocalizedString("settings.theme.dark", comment: "")
+        }
+    }
+
+    private func cycleTheme() {
+        switch settings.settings.theme {
+        case .system: settings.settings.theme = .light
+        case .light: settings.settings.theme = .dark
+        case .dark: settings.settings.theme = .system
+        }
+        settings.save()
     }
 
     private func sidebarRow(for item: SidebarSelection) -> some View {
