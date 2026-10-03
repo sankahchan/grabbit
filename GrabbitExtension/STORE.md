@@ -118,31 +118,30 @@ is needed. `install-host.sh` remains a manual fallback:
 
 If the dashboard shows "Resubmission for this item is currently blocked due
 to a non-rectifiable violation", only an appeal can lift it: Dashboard →
-the item → Build → Status → Appeal. Paste this text:
+the item → Build → Status → Appeal.
+
+In the appeal dialog:
+
+- **Reason for appeal:** "The action against my item was a mistake"
+- **Country of residence:** required — pick your country
+- **Additional appeal notes** (1,000-character limit — this text is 917):
 
 ```
-I am appealing the "Malicious and Prohibited Products" (Blue Zinc)
-enforcement against Grabbit Web Grabber. It appears to have been applied to
-an older submission (v0.1.0) and does not reflect the current item.
-
 Grabbit Web Grabber is the companion extension for Grabbit, an open-source
-download manager for macOS. Its single purpose is to hand URLs of files the
-user explicitly chooses to the local desktop app over Chrome's native
-messaging API. The extension:
+macOS download manager. It performs no downloading itself and contains no
+YouTube-specific code. Its single purpose is to hand URLs the user
+explicitly chooses to the local desktop app over Chrome's native messaging
+API. It does not bypass DRM, paywalls, or access controls (DRM-protected
+media cannot be downloaded). No data is sent to any server; no analytics, no
+tracking.
 
-- Performs no downloading itself and contains no YouTube-specific code.
-- Does not bypass DRM, paywalls, or access controls — DRM-protected media
-  cannot be downloaded by the companion app.
-- Never sends data to any server: URLs and page metadata go only to the
-  user's local Mac. No analytics, no tracking.
-- In the current build (v1.0.8), capture is explicitly disabled on YouTube
-  and its CDN (youtube.com, youtu.be, youtube-nocookie.com, googlevideo.com),
-  and the store listing now states this in a dedicated Compliance section.
-
-I am not asking for an exception to any policy — the extension and listing
-have been updated so the item fully complies. Please lift the non-rectifiable
-block so v1.0.8 can be submitted for review. I am happy to provide any
-additional information.
+The enforcement appears to be based on an older submission (v0.1.0). The
+current build (v1.0.8) explicitly disables capture on YouTube and its CDN
+(youtube.com, youtu.be, youtube-nocookie.com, googlevideo.com), and the
+store listing now states this in a dedicated Compliance section. I am not
+requesting an exception to any policy - the extension and listing have been
+updated so the item fully complies. Please lift the block so v1.0.8 can be
+submitted for review.
 ```
 
 ## Assets needed (dashboard)
