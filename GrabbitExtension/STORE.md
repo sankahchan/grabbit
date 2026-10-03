@@ -9,7 +9,8 @@ Everything the Web Store dashboard asks for, pre-drafted. Package with
 - **Summary:** read-only in the dashboard — it comes from the package's
   manifest `description` (`GrabbitExtension/manifest.json`, ≤132 chars):
   Send files and page media you have the right to download from your browser to the Grabbit app for macOS.
-- **Category:** Productivity
+- **Category:** Tools (listed under the dashboard's "Productivity" group —
+  the group label itself is not selectable)
 - **Language:** English
 - **Homepage:** https://github.com/sankahchan/grabbit
 - **Privacy policy URL:** https://github.com/sankahchan/grabbit/blob/main/PRIVACY.md
