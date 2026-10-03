@@ -6,7 +6,8 @@ Everything the Web Store dashboard asks for, pre-drafted. Package with
 ## Listing
 
 - **Name:** Grabbit Web Grabber
-- **Summary (132 chars max):**
+- **Summary:** read-only in the dashboard — it comes from the package's
+  manifest `description` (`GrabbitExtension/manifest.json`, ≤132 chars):
   Send files and page media you have the right to download from your browser to the Grabbit app for macOS.
 - **Category:** Productivity
 - **Language:** English

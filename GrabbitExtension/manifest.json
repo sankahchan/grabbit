@@ -19,7 +19,7 @@
       "run_at": "document_idle"
     }
   ],
-  "description": "Send videos and files from any web page to the Grabbit download manager.",
+  "description": "Send files and page media you have the right to download from your browser to the Grabbit app for macOS.",
   "homepage_url": "https://github.com/sankahchan/grabbit",
   "host_permissions": [
     "<all_urls>"
