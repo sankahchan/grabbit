@@ -127,5 +127,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.0/Grabbit-v1.5.0.dmg" sparkle:version="1.5.0" sparkle:shortVersionString="1.5.0" sparkle:edSignature="twa8AiRM2hwGVY+LJPhiv4T8poC0ft8yqS/pVUv5N/Go9Wkt1BMNc9pFvcxKB08KXSSCjm7xTsTkzhsF0hM9DA==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.5.1</title>
+      <pubDate>Sat, 03 Oct 2026 15:02:23 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">Release v1.5.1: fix the update loop (build number now tracks the version)<br/><br/>- Sparkle compares the appcast&#x27;s sparkle:version against the app&#x27;s<br/>  CFBundleVersion. That build number was hardcoded to &quot;1&quot;, so every<br/>  check reported an update even right after installing one (the dialog<br/>  said &quot;you have 1.5.0 (1)&quot;). CFBundleVersion now tracks the release<br/>  version, and the release workflow forces both plist keys from the tag<br/>  before signing so they can never drift again.<br/><br/>410 tests / 0 failures.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.1/Grabbit-v1.5.1.dmg" sparkle:version="1.5.1" sparkle:shortVersionString="1.5.1" sparkle:edSignature="vqIF8DKyaNhiKz5VUvunuAZ+V9waZ37ReR1cs0AfkbFRoakS59ri6NcYxMXdiRc4Sp7RADp/tW3SWvnhJSQDDQ==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
