@@ -120,5 +120,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.4.2/Grabbit-v1.4.2.dmg" sparkle:version="1.4.2" sparkle:shortVersionString="1.4.2" sparkle:edSignature="PY278TIbTb5jsB2Y8hotGlFLTObESfO5wlHVDtA4QoMfzDB8W9zfjlTEwe5fcZu9ef+ufP2GdWWBFEf+gbZWAw==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.5.0</title>
+      <pubDate>Sat, 03 Oct 2026 14:55:06 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">Release v1.5.0: What&#x27;s New sheet after every update<br/><br/>- After an update, Grabbit shows a What&#x27;s New sheet with the release<br/>  highlights. The notes are bundled at build time from the release<br/>  commit, so it works offline and appears exactly once per version.<br/>- Sparkle&#x27;s update dialog now shows the same release notes: the appcast<br/>  item carries a description built from the tagged commit message, and<br/>  the GitHub release notes come from the same text.<br/>- The notes parser drops the &quot;N tests / 0 failures.&quot; trailer.<br/><br/>410 tests / 0 failures.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.0/Grabbit-v1.5.0.dmg" sparkle:version="1.5.0" sparkle:shortVersionString="1.5.0" sparkle:edSignature="twa8AiRM2hwGVY+LJPhiv4T8poC0ft8yqS/pVUv5N/Go9Wkt1BMNc9pFvcxKB08KXSSCjm7xTsTkzhsF0hM9DA==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
