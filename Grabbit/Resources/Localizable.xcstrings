@@ -6393,6 +6393,499 @@
           }
         }
       }
+    },
+    "settings.section.media": {
+      "comment": "Settings card header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ"
+          }
+        }
+      }
+    },
+    "settings.media.embedMetadata": {
+      "comment": "Settings toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embed title & artist metadata"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခေါင်းစဉ်နှင့် အနုပညာရှင် metadata ထည့်သွင်း"
+          }
+        }
+      }
+    },
+    "settings.media.embedThumbnail": {
+      "comment": "Settings toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embed thumbnail as cover art"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thumbnail ကို cover art အဖြစ် ထည့်သွင်း"
+          }
+        }
+      }
+    },
+    "settings.media.embedChapters": {
+      "comment": "Settings toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep chapter markers (video)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chapter အမှတ်အသားများ ထားရှိ (ဗီဒီယို)"
+          }
+        }
+      }
+    },
+    "settings.media.embedSubtitles": {
+      "comment": "Settings toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embed subtitles (video)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စာတန်းထိုး ထည့်သွင်း (ဗီဒီယို)"
+          }
+        }
+      }
+    },
+    "settings.media.subtitleLangs": {
+      "comment": "Settings field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle languages"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စာတန်းထိုး ဘာသာစကားများ"
+          }
+        }
+      }
+    },
+    "settings.media.subtitleLangs.note": {
+      "comment": "Settings caption",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comma-separated yt-dlp patterns, e.g. en.*,my.*"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yt-dlp pattern များကို comma နဲ့ ခြားပါ၊ ဥပမာ en.*,my.*"
+          }
+        }
+      }
+    },
+    "settings.media.cookies": {
+      "comment": "Settings label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cookies file"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cookies ဖိုင်"
+          }
+        }
+      }
+    },
+    "settings.media.cookies.none": {
+      "comment": "Settings value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မရှိ"
+          }
+        }
+      }
+    },
+    "settings.media.cookies.note": {
+      "comment": "Settings caption",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netscape cookies.txt for sites that require login (yt-dlp --cookies)."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login လိုတဲ့ site များအတွက် Netscape cookies.txt (yt-dlp --cookies)။"
+          }
+        }
+      }
+    },
+    "settings.media.cookies.prompt": {
+      "comment": "File picker message",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a Netscape cookies.txt file"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netscape cookies.txt ဖိုင် ရွေးပါ"
+          }
+        }
+      }
+    },
+    "common.choose": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွေးချယ်…"
+          }
+        }
+      }
+    },
+    "common.clear": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှင်းလင်း"
+          }
+        }
+      }
+    },
+    "nav.rss": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RSS"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RSS"
+          }
+        }
+      }
+    },
+    "page.rss.sticker": {
+      "comment": "Page header sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTO DOWNLOAD"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အော်တို ဒေါင်းလုဒ်"
+          }
+        }
+      }
+    },
+    "rss.subtitle": {
+      "comment": "RSS page subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New episodes from your feeds download automatically."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့် feed များမှ အသစ်များကို အလိုအလျောက် ဒေါင်းလုဒ်လုပ်သည်။"
+          }
+        }
+      }
+    },
+    "rss.add": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add feed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feed ထည့်"
+          }
+        }
+      }
+    },
+    "rss.checkAll": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check all"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး စစ်"
+          }
+        }
+      }
+    },
+    "rss.checkNow": {
+      "comment": "Tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check now"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယခု စစ်ဆေး"
+          }
+        }
+      }
+    },
+    "rss.add.title": {
+      "comment": "Sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add RSS feed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RSS feed ထည့်"
+          }
+        }
+      }
+    },
+    "rss.add.placeholder": {
+      "comment": "Field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://example.com/feed.xml"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://example.com/feed.xml"
+          }
+        }
+      }
+    },
+    "rss.empty": {
+      "comment": "Empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No feeds yet. Add an RSS/Atom feed URL — new episodes download automatically."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feed မရှိသေးပါ။ RSS/Atom feed URL ထည့်ပါ — အသစ်များ အလိုအလျောက် ဒေါင်းလုဒ်ဖြစ်မည်။"
+          }
+        }
+      }
+    },
+    "rss.enabled": {
+      "comment": "Toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖွင့်ထား"
+          }
+        }
+      }
+    },
+    "rss.autoDownload": {
+      "comment": "Toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-download new items"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသစ်များ အလိုအလျောက် ဒေါင်းလုဒ်"
+          }
+        }
+      }
+    },
+    "rss.latestOnly": {
+      "comment": "Toggle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latest item only"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ဆုံးတစ်ခုသာ"
+          }
+        }
+      }
+    },
+    "rss.keywords": {
+      "comment": "Field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keywords (comma-separated, empty = all)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyword များ (comma နဲ့ခြား၊ ဗလာဆို အားလုံး)"
+          }
+        }
+      }
+    },
+    "rss.lastChecked": {
+      "comment": "Status label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last checked"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ဆုံးစစ်ချိန်"
+          }
+        }
+      }
+    },
+    "rss.never": {
+      "comment": "Status value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "never"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မရှိသေး"
+          }
+        }
+      }
+    },
+    "rss.remove.title": {
+      "comment": "Confirm title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this feed?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒီ feed ကို ဖျက်မလား?"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

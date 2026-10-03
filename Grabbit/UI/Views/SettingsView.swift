@@ -34,6 +34,7 @@ struct SettingsView: View {
                 // ultra-wide displays). Update controls live in the About tab.
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
+                mediaCard(settings: settings)
                 automationCard
                 torrentsCard(settings: settings)
             }
@@ -50,6 +51,7 @@ struct SettingsView: View {
             onLanguageChange: handleLanguageChange,
             onOpenAtLogin: applyOpenAtLogin))
         .modifier(ProxyChangeHandlers())
+        .modifier(MediaChangeHandlers())
     }
 
     // MARK: - Change handlers
@@ -302,6 +304,95 @@ struct SettingsView: View {
             proxySection(settings: settings)
         }
         .neoCard()
+    }
+
+    /// yt-dlp post-processing: embedded metadata/thumbnail/chapters/subtitles
+    /// and the cookies.txt used for authenticated sites.
+    private func mediaCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(NSLocalizedString("settings.section.media", comment: ""))
+            Toggle(NSLocalizedString("settings.media.embedMetadata", comment: ""),
+                   isOn: settings.mediaEmbedMetadata)
+                .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.media.embedThumbnail", comment: ""),
+                   isOn: settings.mediaEmbedThumbnail)
+                .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.media.embedChapters", comment: ""),
+                   isOn: settings.mediaEmbedChapters)
+                .toggleStyle(NeoToggleStyle())
+            Toggle(NSLocalizedString("settings.media.embedSubtitles", comment: ""),
+                   isOn: settings.mediaEmbedSubtitles)
+                .toggleStyle(NeoToggleStyle())
+            TextField(NSLocalizedString("settings.media.subtitleLangs", comment: ""),
+                      text: settings.mediaSubtitleLanguages)
+                .neoTextField()
+            Text(NSLocalizedString("settings.media.subtitleLangs.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            NeoDivider()
+            cookiesFileRow(settings: settings)
+            Text(NSLocalizedString("settings.media.cookies.note", comment: ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .neoCard()
+    }
+
+    /// Netscape cookies.txt picker (yt-dlp `--cookies` for authenticated
+    /// sites that the browser extension cannot capture).
+    private func cookiesFileRow(settings: Binding<AppSettings>) -> some View {
+        HStack(spacing: 10) {
+            Text(NSLocalizedString("settings.media.cookies", comment: ""))
+                .font(.headline)
+            Spacer()
+            Text(settings.wrappedValue.cookiesFilePath.isEmpty
+                 ? NSLocalizedString("settings.media.cookies.none", comment: "")
+                 : (settings.wrappedValue.cookiesFilePath as NSString).lastPathComponent)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Button(NSLocalizedString("common.choose", comment: "")) {
+                chooseCookiesFile(settings: settings)
+            }
+            .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+            if !settings.wrappedValue.cookiesFilePath.isEmpty {
+                Button(NSLocalizedString("common.clear", comment: "")) {
+                    settings.wrappedValue.cookiesFilePath = ""
+                    store.save()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+            }
+        }
+    }
+
+    private func chooseCookiesFile(settings: Binding<AppSettings>) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.message = NSLocalizedString("settings.media.cookies.prompt", comment: "")
+        panel.prompt = NSLocalizedString("common.choose", comment: "")
+        if panel.runModal() == .OK, let url = panel.url {
+            settings.wrappedValue.cookiesFilePath = url.path
+            store.save()
+        }
+    }
+
+    /// Saves changes to the media post-processing fields (the main handler
+    /// chain is already at the type-checker's limit).
+    private struct MediaChangeHandlers: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: store.settings.mediaEmbedMetadata) { _, _ in store.save() }
+                .onChange(of: store.settings.mediaEmbedThumbnail) { _, _ in store.save() }
+                .onChange(of: store.settings.mediaEmbedChapters) { _, _ in store.save() }
+                .onChange(of: store.settings.mediaEmbedSubtitles) { _, _ in store.save() }
+                .onChange(of: store.settings.mediaSubtitleLanguages) { _, _ in store.save() }
+                .onChange(of: store.settings.cookiesFilePath) { _, _ in store.save() }
+        }
     }
 
     /// Ordering aids that act on the download pipeline (host profiles,

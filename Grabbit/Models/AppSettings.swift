@@ -91,6 +91,20 @@ public struct AppSettings: Codable {
     public var proxyUsername: String = ""
     /// Stored in Grabbit's own settings file, like the rest of AppSettings.
     public var proxyPassword: String = ""
+    // Media post-processing (yt-dlp).
+    /// Embed title/artist metadata into finished media files.
+    public var mediaEmbedMetadata = true
+    /// Embed the video thumbnail as cover art.
+    public var mediaEmbedThumbnail = true
+    /// Keep chapter markers inside the container (video presets).
+    public var mediaEmbedChapters = true
+    /// Download and embed subtitles (video presets).
+    public var mediaEmbedSubtitles = true
+    /// Subtitle languages requested from yt-dlp (comma-separated patterns).
+    public var mediaSubtitleLanguages = "en.*,my.*"
+    /// Netscape cookies.txt used by yt-dlp for authenticated sites.
+    /// Empty = none.
+    public var cookiesFilePath = ""
 
     public static var `default`: AppSettings {
         AppSettings(folders: [
@@ -119,6 +133,8 @@ extension AppSettings {
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
         case proxyMode, proxyHost, proxyPort, proxyUsername, proxyPassword
+        case mediaEmbedMetadata, mediaEmbedThumbnail, mediaEmbedChapters
+        case mediaEmbedSubtitles, mediaSubtitleLanguages, cookiesFilePath
     }
 
     public init(from decoder: Decoder) throws {
@@ -157,6 +173,12 @@ extension AppSettings {
         proxyPort = try c.decodeIfPresent(Int.self, forKey: .proxyPort) ?? 8080
         proxyUsername = try c.decodeIfPresent(String.self, forKey: .proxyUsername) ?? ""
         proxyPassword = try c.decodeIfPresent(String.self, forKey: .proxyPassword) ?? ""
+        mediaEmbedMetadata = try c.decodeIfPresent(Bool.self, forKey: .mediaEmbedMetadata) ?? true
+        mediaEmbedThumbnail = try c.decodeIfPresent(Bool.self, forKey: .mediaEmbedThumbnail) ?? true
+        mediaEmbedChapters = try c.decodeIfPresent(Bool.self, forKey: .mediaEmbedChapters) ?? true
+        mediaEmbedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .mediaEmbedSubtitles) ?? true
+        mediaSubtitleLanguages = try c.decodeIfPresent(String.self, forKey: .mediaSubtitleLanguages) ?? "en.*,my.*"
+        cookiesFilePath = try c.decodeIfPresent(String.self, forKey: .cookiesFilePath) ?? ""
     }
 }
 

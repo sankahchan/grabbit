@@ -24,6 +24,9 @@ struct GrabbitApp: App {
     /// Backlog #3/#4: per-host profiles and packagizer rules.
     @State private var hostProfileStore: HostProfileStore
     @State private var packagizerStore: PackagizerStore
+    /// RSS subscriptions: persisted feeds + the polling monitor.
+    @State private var rssStore = RSSStore()
+    @State private var rssMonitor = RSSMonitor()
     /// Phase 5 watch folders: plain let — it owns no UI state itself.
     private let watchMonitor = WatchFolderMonitor()
     @State private var updater: SPUStandardUpdaterController?
@@ -157,6 +160,8 @@ struct GrabbitApp: App {
                 .environment(completionCenter)
                 .environment(hostProfileStore)
                 .environment(packagizerStore)
+                .environment(rssStore)
+                .environment(rssMonitor)
                 .environment(navigation)
                 .onOpenURL { url in
                     NSLog("[Grabbit] onOpenURL: %@", url.absoluteString)
@@ -277,6 +282,14 @@ struct GrabbitApp: App {
                         store: watchFolderStore,
                         engine: downloadEngine,
                         history: historyStore)
+                    // RSS subscriptions: poll feeds on a timer and
+                    // auto-download new matching items (media enclosures go
+                    // to the direct engine, page links to yt-dlp).
+                    rssMonitor.start(
+                        store: rssStore,
+                        settings: settings,
+                        downloadEngine: downloadEngine,
+                        mediaEngine: mediaEngine)
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
                     if CommandLine.arguments.contains("--native-messaging") {

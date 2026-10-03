@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, grabber, linkgrabber, scheduler, history, settings, about
+    case downloads, torrents, media, rss, grabber, linkgrabber, scheduler, history, settings, about
 
     /// Main tabs, top-to-bottom order. History is content (the record of
     /// finished work), so it lives with the work areas rather than with the
     /// app-level utilities pinned to the bottom.
     static let mainTabs: [SidebarSelection] = [
-        .downloads, .torrents, .media, .grabber, .linkgrabber, .scheduler, .history,
+        .downloads, .torrents, .media, .rss, .grabber, .linkgrabber, .scheduler, .history,
     ]
     /// Utility buttons pinned to the sidebar bottom (macOS convention).
     static let bottomTabs: [SidebarSelection] = [.settings, .about]
@@ -18,6 +18,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .linkgrabber: "link"
         case .torrents: "arrow.triangle.2.circlepath" // "magnet" is not a real SF Symbol — renders blank
         case .media: "play.rectangle"
+        case .rss: "dot.radiowaves.left.and.right"
         case .grabber: "globe"
         case .history: "clock.arrow.circlepath"
         case .scheduler: "clock"
@@ -32,6 +33,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .linkgrabber: NSLocalizedString("nav.linkgrabber", comment: "")
         case .torrents: NSLocalizedString("nav.torrents", comment: "")
         case .media: NSLocalizedString("nav.media", comment: "")
+        case .rss: NSLocalizedString("nav.rss", comment: "")
         case .grabber: NSLocalizedString("nav.grabber", comment: "")
         case .history: NSLocalizedString("nav.history", comment: "")
         case .scheduler: NSLocalizedString("nav.scheduler", comment: "")
@@ -148,7 +150,7 @@ struct Sidebar: View {
             n = active ? 1 : 0
         case .linkgrabber:
             n = linkGrabberStore.stagedCount
-        case .grabber, .history, .scheduler, .settings, .about:
+        case .grabber, .rss, .history, .scheduler, .settings, .about:
             return nil
         }
         return n > 0 ? n : nil

@@ -98,6 +98,45 @@ public final class MediaEngine {
         }
     }
 
+    // MARK: - Post-processing arguments
+
+    /// yt-dlp post-processing flags derived from Settings: embed metadata,
+    /// thumbnail, chapters and subtitles, plus the optional cookies.txt for
+    /// authenticated sites. Pure so tests can assert the exact flags — the
+    /// cookies flag is only emitted when the file still exists on disk
+    /// (yt-dlp hard-fails on a missing cookies file).
+    static func postProcessArguments(
+        settings: AppSettings, isAudioOnly: Bool
+    ) -> [String] {
+        var args: [String] = []
+        if settings.mediaEmbedMetadata {
+            args.append("--embed-metadata")
+        }
+        if settings.mediaEmbedThumbnail {
+            args.append("--embed-thumbnail")
+        }
+        // Chapters and subtitles are video-only; embedding them into an
+        // audio extraction adds noise (or fails on containers without
+        // chapter support).
+        if settings.mediaEmbedChapters, !isAudioOnly {
+            args.append("--embed-chapters")
+        }
+        if settings.mediaEmbedSubtitles, !isAudioOnly {
+            args.append("--embed-subs")
+            let languages = settings.mediaSubtitleLanguages
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !languages.isEmpty {
+                args += ["--sub-langs", languages]
+            }
+        }
+        let cookies = settings.cookiesFilePath
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cookies.isEmpty, FileManager.default.fileExists(atPath: cookies) {
+            args += ["--cookies", cookies]
+        }
+        return args
+    }
+
     // MARK: - Download
 
     /// Downloads the probed media with the chosen preset into `directory`.
@@ -160,6 +199,11 @@ public final class MediaEngine {
         if speedLimitBytesPerSec > 0 {
             args += ["--limit-rate", Self.rateString(speedLimitBytesPerSec)]
         }
+        // Post-processing: embedded metadata/thumbnail/chapters/subtitles and
+        // the optional cookies.txt for authenticated sites.
+        args += Self.postProcessArguments(
+            settings: settingsStore?.settings ?? .default,
+            isAudioOnly: preset.isAudioOnly)
         args.append(source.absoluteString)
 
         let proc = ManagedProcess()

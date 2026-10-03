@@ -116,17 +116,20 @@ struct MainView: View {
 
     /// Quick appearance control in the titlebar: cycles System → Light → Dark.
     ///
-    /// The toolbar context does not reliably inherit the app-applied
-    /// appearance (`NSApp.appearance`), so `@Environment(\.colorScheme)` can
-    /// report the system scheme and render the button inverted. Derive the
-    /// effective scheme from the setting instead.
+    /// Deliberately a flat icon — a bordered/shadowed neo button renders as
+    /// a visible block over the paper titlebar in both modes, and the
+    /// toolbar does not reliably inherit the app-applied appearance. The
+    /// icon color derives from the Appearance setting instead of the
+    /// environment so it can never invert.
     private var themeToggle: some View {
         Button {
             cycleTheme()
         } label: {
             Image(systemName: themeIcon)
+                .font(.system(size: 15, weight: .semibold))
         }
-        .neoIconButton(bg: Neo.paper(effectiveScheme))
+        .buttonStyle(.plain)
+        .foregroundStyle(Neo.ink(effectiveScheme))
         .help(NSLocalizedString("settings.section.appearance", comment: ""))
     }
 
@@ -180,6 +183,8 @@ struct MainView: View {
             TorrentsView()
         case .media:
             MediaView()
+        case .rss:
+            RSSFeedsView()
         case .grabber:
             GrabberView()
         case .history:
