@@ -95,7 +95,12 @@
         '.MediaViewerContent .title',
         '[class*="FileTitle"]',
         '[class*="media-viewer"] [class*="name"]',
+        // WebK exposes the file name via generic title/name nodes inside
+        // the viewer rather than a dedicated class.
+        '[class*="media-viewer"] [class*="title"]',
+        '[class*="MediaViewer"] [class*="title"]',
         '[class*="DocumentName"]',
+        '[class*="document-name"]',
       ];
       for (const selector of selectors) {
         try {
@@ -217,6 +222,58 @@
         tag: item.kind,
         duration: item.duration,
       });
+    }
+    // Telegram photos / story images: <img> elements only inside the media
+    // viewer or the stories overlay, so chat thumbnails and avatars never
+    // flood the list. GIFs are muted <video> elements (covered above).
+    // Both webapps are matched via the "media-viewer" class substring
+    // (WebA `.media-viewer`, WebK `.media-viewer-whole`).
+    if (IS_TELEGRAM) {
+      const selectors = [
+        '[class*="media-viewer"] img',
+        '[class*="MediaViewer"] img',
+        '[class*="stories"] img',
+        '[class*="Stories"] img',
+        '[class*="story"] img',
+        '[class*="Story"] img',
+      ];
+      const images = new Set();
+      for (const selector of selectors) {
+        try {
+          for (const el of document.querySelectorAll(selector)) images.add(el);
+        } catch {
+          // Selector unsupported on this webapp version — skip it.
+        }
+      }
+      for (const el of images) {
+        const url = el.currentSrc || el.src;
+        if (!url || SEEN.has(url)) continue;
+        // Skip small inline images (emoji, icons, avatars).
+        const width = el.naturalWidth || el.width || 0;
+        const height = el.naturalHeight || el.height || 0;
+        if (width > 0 && height > 0 && width < 200 && height < 200) continue;
+        SEEN.add(url);
+        const item = {
+          url,
+          title: document.title,
+          pageUrl: location.href,
+          site: SITE,
+          isBlob: url.startsWith('blob:'),
+          isMse: false,
+          telegramStream: false,
+          kind: 'image',
+          duration: 0,
+        };
+        items.push(item);
+        sendDebug('media-item', {
+          url: url.slice(0, 400),
+          isBlob: item.isBlob,
+          isMse: false,
+          telegramStream: false,
+          tag: 'image',
+          duration: 0,
+        });
+      }
     }
     return items;
   }

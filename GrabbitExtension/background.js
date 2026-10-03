@@ -508,17 +508,42 @@ async function runPageMediaDownload(tabId, frameId, url, fileType, title) {
             return src === videoUrl;
           }) || null;
         const listActionButtons = () => {
-          const actions = document.getElementsByClassName('MediaViewerActions')[0];
-          if (!actions) return [];
-          return [...actions.querySelectorAll('.Button, button, [role="button"], a')].map(
-            (el) => ({
-              el,
-              aria: el.getAttribute('aria-label') || '',
-              title: el.getAttribute('title') || '',
-              className: String(el.className || '').slice(0, 80),
-              text: (el.textContent || '').trim().slice(0, 20),
-            })
-          );
+          // WebA exposes a dedicated actions container; WebK uses the
+          // generic media-viewer topbar. Collect from every candidate and
+          // dedupe by element.
+          const containers = [
+            document.getElementsByClassName('MediaViewerActions')[0],
+            document.querySelector('.media-viewer-topbar'),
+            document.querySelector('.media-viewer-whole'),
+            document.querySelector('[class*="media-viewer"]'),
+          ].filter(Boolean);
+          const seen = new Set();
+          const collected = [];
+          const push = (el) => {
+            if (seen.has(el)) return;
+            seen.add(el);
+            collected.push(el);
+          };
+          for (const root of containers) {
+            for (const el of root.querySelectorAll('.Button, button, [role="button"], a')) {
+              push(el);
+            }
+          }
+          // WebK fallback: while a media viewer is open, accept any visible
+          // button whose label names the download action (findDownloadButton
+          // filters non-download labels out).
+          if (collected.length === 0 && document.querySelector('[class*="media-viewer"]')) {
+            for (const el of document.querySelectorAll('button, [role="button"]')) {
+              push(el);
+            }
+          }
+          return collected.map((el) => ({
+            el,
+            aria: el.getAttribute('aria-label') || '',
+            title: el.getAttribute('title') || '',
+            className: String(el.className || '').slice(0, 80),
+            text: (el.textContent || '').trim().slice(0, 20),
+          }));
         };
         // The viewer's action-bar order varies between Telegram versions
         // (Close used to be last, now it is not), so identify the Download

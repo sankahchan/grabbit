@@ -212,7 +212,10 @@ function mediaRow(item, tabId) {
   const via = item.via === 'network' ? ' · via network' : '';
   div.innerHTML = `<div class="url"></div><div class="meta"></div><div class="actions"></div>`;
   div.querySelector('.url').textContent = shortUrl(item.url);
-  div.querySelector('.meta').textContent = (item.site || '') + via + (item.kind === 'audio' ? ' · audio' : '');
+  const kindLabel =
+    item.kind === 'audio' ? ' · audio' : item.kind === 'image' ? ' · image' : '';
+  div.querySelector('.meta').textContent =
+    (item.site || '') + via + kindLabel;
   const actions = div.querySelector('.actions');
   // Telegram document URLs (web.telegram.org/document...) are not directly
   // downloadable via HTTP — they require Telegram's internal API.
