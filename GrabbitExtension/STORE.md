@@ -114,6 +114,37 @@ is needed. `install-host.sh` remains a manual fallback:
 ./GrabbitExtension/native-messaging/install-host.sh <store-extension-id>
 ```
 
+## Appeal (non-rectifiable violation block)
+
+If the dashboard shows "Resubmission for this item is currently blocked due
+to a non-rectifiable violation", only an appeal can lift it: Dashboard →
+the item → Build → Status → Appeal. Paste this text:
+
+```
+I am appealing the "Malicious and Prohibited Products" (Blue Zinc)
+enforcement against Grabbit Web Grabber. It appears to have been applied to
+an older submission (v0.1.0) and does not reflect the current item.
+
+Grabbit Web Grabber is the companion extension for Grabbit, an open-source
+download manager for macOS. Its single purpose is to hand URLs of files the
+user explicitly chooses to the local desktop app over Chrome's native
+messaging API. The extension:
+
+- Performs no downloading itself and contains no YouTube-specific code.
+- Does not bypass DRM, paywalls, or access controls — DRM-protected media
+  cannot be downloaded by the companion app.
+- Never sends data to any server: URLs and page metadata go only to the
+  user's local Mac. No analytics, no tracking.
+- In the current build (v1.0.8), capture is explicitly disabled on YouTube
+  and its CDN (youtube.com, youtu.be, youtube-nocookie.com, googlevideo.com),
+  and the store listing now states this in a dedicated Compliance section.
+
+I am not asking for an exception to any policy — the extension and listing
+have been updated so the item fully complies. Please lift the non-rectifiable
+block so v1.0.8 can be submitted for review. I am happy to provide any
+additional information.
+```
+
 ## Assets needed (dashboard)
 
 - **Store icon:** 128×128 PNG (reuse `icons/icon128.png`).
