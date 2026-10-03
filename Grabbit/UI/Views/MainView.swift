@@ -68,6 +68,9 @@ struct MainView: View {
     @Environment(AppNavigation.self) private var navigation
     @Environment(SettingsStore.self) private var store: SettingsStore
     @Environment(\.colorScheme) private var scheme
+    /// Bundled release notes shown once after an update.
+    @State private var whatsNew: ReleaseNotes.Digest?
+    @State private var whatsNewVersion = ""
 
     var body: some View {
         NavigationSplitView {
@@ -98,8 +101,21 @@ struct MainView: View {
         // we set NSApp.appearance directly instead — nil follows the
         // system, and the SwiftUI colorScheme environment follows the
         // effective appearance automatically.
-        .onAppear { applyAppearance() }
+        .onAppear {
+            applyAppearance()
+            presentWhatsNewIfNeeded()
+        }
         .onChange(of: store.settings.theme) { _, _ in applyAppearance() }
+        .sheet(isPresented: Binding(
+            get: { whatsNew != nil },
+            set: { if !$0 { whatsNew = nil } })
+        ) {
+            if let digest = whatsNew {
+                WhatsNewView(digest: digest, version: whatsNewVersion) {
+                    whatsNew = nil
+                }
+            }
+        }
         // Persists the window's size/position across launches when enabled
         // in Settings > Basic > Startup.
         .background(WindowFrameSaver(enabled: store.settings.keepWindowFrame))
@@ -107,6 +123,22 @@ struct MainView: View {
         // NSLocalizedString re-evaluate (instant language switch). Theme
         // needs no rebuild — NSApp.appearance applies immediately.
         .id(store.settings.language.rawValue)
+    }
+
+    /// Shows the bundled release notes once per update. The version is
+    /// recorded immediately so the sheet never reappears on the next launch.
+    private func presentWhatsNewIfNeeded() {
+        let key = "com.sankahchan.grabbit.lastSeenVersion"
+        guard let current = ReleaseNotes.currentVersion() else { return }
+        let lastSeen = UserDefaults.standard.string(forKey: key)
+        UserDefaults.standard.set(current, forKey: key)
+        guard ReleaseNotes.shouldPresent(lastSeen: lastSeen, current: current),
+              let text = ReleaseNotes.bundledText()
+        else { return }
+        let digest = ReleaseNotes.parse(text)
+        guard !digest.isEmpty else { return }
+        whatsNewVersion = current
+        whatsNew = digest
     }
 
     /// Concrete scheme, resolving "System" through the environment. The

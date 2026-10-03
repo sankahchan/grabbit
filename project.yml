@@ -30,7 +30,7 @@ targets:
     info:
       path: Grabbit/Info.plist
       properties:
-        CFBundleShortVersionString: 1.4.2
+        CFBundleShortVersionString: 1.5.0
         CFBundleVersion: "1"
         NSHumanReadableCopyright: Copyright © 2026 sankahchan
         LSMinimumSystemVersion: "14.0"
@@ -66,6 +66,12 @@ targets:
           # updates refresh the installed copy (NativeHostInstaller).
           HELPER_SRC="${SRCROOT}/GrabbitExtension/native-messaging/grabbit-native-helper.py"
           if [ -f "$HELPER_SRC" ]; then cp -f "$HELPER_SRC" "$RES_DST/grabbit-native-helper.py"; fi
+          # Bundle this build's release notes (the commit message at HEAD —
+          # the tagged release commit on CI) so the app can show a
+          # "What's New" sheet after an update without any network access.
+          if git -C "$SRCROOT" rev-parse --git-dir >/dev/null 2>&1; then
+            git -C "$SRCROOT" log -1 --format=%B > "$RES_DST/ReleaseNotes.txt" 2>/dev/null || true
+          fi
   GrabbitTests:
     type: bundle.unit-test
     platform: macOS

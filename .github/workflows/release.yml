@@ -122,14 +122,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
+          # The tagged commit's message doubles as the release notes — it is
+          # also embedded in the appcast so Sparkle's update dialog shows
+          # the same feature list.
+          NOTES=$(git log -1 --format=%B "$TAG")
+          printf '%s\n\n---\nmacOS 14+ (Apple Silicon). Download the DMG below, drag Grabbit.app to Applications.\nFirst launch: Right-click Grabbit.app → Open → click Open.\n(Unsigned build — this one-time step bypasses Gatekeeper.)\nAuto-updates are delivered via Sparkle once this version is installed.\n' "$NOTES" > /tmp/release-notes.md
           gh release create "$TAG" "dist/Grabbit-${TAG}.dmg" \
             --title "$TAG" \
-            --notes "Grabbit $TAG — macOS 14+ (Apple Silicon).
-
-          Download the DMG below, drag Grabbit.app to Applications.
-          First launch: Right-click Grabbit.app → Open → click Open.
-          (Unsigned build — this one-time step bypasses Gatekeeper.)
-          Auto-updates are delivered via Sparkle once this version is installed."
+            --notes-file /tmp/release-notes.md
 
       - name: Sign DMG with Sparkle EdDSA key
         env:
@@ -160,20 +160,30 @@ jobs:
           VERSION="${TAG#v}"
           DMG_URL="https://github.com/sankahchan/grabbit/releases/download/${TAG}/Grabbit-${TAG}.dmg"
           PUBDATE=$(date -u +"%a, %d %b %Y %H:%M:%S %z")
+          # Same notes as the GitHub release: Sparkle's update dialog shows
+          # them under Release Notes.
+          NOTES=$(git log -1 --format=%B "$TAG")
           # Empty when SPARKLE_PRIVATE_KEY is missing; the attribute is then
           # omitted and Sparkle (with SUPublicEDKey configured) will reject the
           # update, which is the safe failure mode.
           SIG="${EDSIGNATURE:-}"
           cat > /tmp/update_appcast.py <<'PYEOF'
-          import re, sys
-          tag, version, dmg_url, pubdate, signature = sys.argv[1:6]
+          import html, re, sys
+          tag, version, dmg_url, pubdate, signature, notes = sys.argv[1:7]
           path = "appcast.xml"
           src = open(path).read()
           sig_attr = f' sparkle:edSignature="{signature}"' if signature else ""
+          notes_html = html.escape(notes).replace("\n", "<br/>")
+          description = (
+              "      <description><![CDATA["
+              f'<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">{notes_html}</pre>'
+              "]]></description>\n"
+          )
           item = (
               "    <item>\n"
               f"      <title>{tag}</title>\n"
               f"      <pubDate>{pubdate}</pubDate>\n"
+              f"{description}"
               f'      <enclosure url="{dmg_url}" sparkle:version="{version}" '
               f'sparkle:shortVersionString="{version}"{sig_attr} type="application/octet-stream"/>\n'
               "      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>\n"
@@ -184,7 +194,7 @@ jobs:
           open(path, "w").write(new)
           print(f"appcast.xml updated for {tag} (edSignature: {'yes' if signature else 'NO — set SPARKLE_PRIVATE_KEY!'})")
           PYEOF
-          python3 /tmp/update_appcast.py "$TAG" "$VERSION" "$DMG_URL" "$PUBDATE" "$SIG"
+          python3 /tmp/update_appcast.py "$TAG" "$VERSION" "$DMG_URL" "$PUBDATE" "$SIG" "$NOTES"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add appcast.xml

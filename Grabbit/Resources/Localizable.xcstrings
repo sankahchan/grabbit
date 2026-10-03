@@ -6886,6 +6886,40 @@
           }
         }
       }
+    },
+    "whatsnew.title": {
+      "comment": "What's New sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's New"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသစ်များ"
+          }
+        }
+      }
+    },
+    "whatsnew.ok": {
+      "comment": "What's New sheet button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရပါပြီ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
