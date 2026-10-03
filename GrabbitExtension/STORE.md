@@ -117,6 +117,17 @@ is needed. `install-host.sh` remains a manual fallback:
 ## Assets needed (dashboard)
 
 - **Store icon:** 128×128 PNG (reuse `icons/icon128.png`).
-- **Screenshots:** at least one 1280×800 (or 640×400) PNG — capture the popup
-  over a page with detected media.
+- **Screenshots:** upload `store-assets/screenshot-1280x800.png` (exactly
+  1280×800). It is rendered from `store-assets/screenshot.html` with the real
+  popup styles over a neutral example page — no YouTube/streaming content, per
+  the compliance requirements. Re-render with:
+
+  ```bash
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --headless=new --disable-gpu --hide-scrollbars \
+    --force-device-scale-factor=1 --window-size=1280,800 \
+    --screenshot="$PWD/GrabbitExtension/store-assets/screenshot-1280x800.png" \
+    "file://$PWD/GrabbitExtension/store-assets/screenshot.html"
+  ```
+
 - **Small promo tile (optional):** 440×280 PNG.
