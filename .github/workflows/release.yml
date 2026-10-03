@@ -85,6 +85,19 @@ jobs:
             -name "Grabbit.app" -maxdepth 6 -type d | head -n 1)
           echo "path=$APP_PATH" >> "$GITHUB_OUTPUT"
 
+      # Sparkle compares the appcast's sparkle:version against the app's
+      # CFBundleVersion. A stale build number ("1") made every check report
+      # an update forever, so both plist keys are forced from the tag before
+      # signing: appcast (sparkle:version = tag) and app now always match.
+      - name: Align bundle versions with the tag
+        run: |
+          APP_PATH="${{ steps.app.outputs.path }}"
+          VERSION="${GITHUB_REF_NAME#v}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_PATH/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP_PATH/Contents/Info.plist"
+          echo "short: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
+          echo "build: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
+
       # The unsigned build's executable is only linker-signed, which leaves
       # the app bundle with an INVALID code signature ("code has no resources
       # but signature indicates they must be present"). Sparkle 2 rejects
