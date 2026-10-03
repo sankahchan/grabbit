@@ -14,6 +14,22 @@
 const NATIVE_HOST = 'com.sankahchan.grabbit';
 const detectedTabs = new Map(); // tabId -> Array<{url, title, pageUrl, site, ...}>
 
+// Web Store compliance: the packaged store build disables capture on YouTube
+// and its CDN. scripts/package-extension.sh flips this flag to true in the
+// store ZIP; the GitHub build keeps every site enabled.
+const GRABBIT_STORE_BUILD = false;
+const RESTRICTED_HOST_RE =
+  /(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com|googlevideo\.com)$/i;
+
+function isStoreRestrictedURL(raw) {
+  if (!GRABBIT_STORE_BUILD || typeof raw !== 'string') return false;
+  try {
+    return RESTRICTED_HOST_RE.test(new URL(raw).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function itemKey(item) {
   return item.url;
 }
@@ -805,7 +821,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg?.type === 'grabbit-send-url' && typeof msg.url === 'string') {
-    if (!/^https?:\/\//i.test(msg.url)) {
+    if (!/^https?:\/\//i.test(msg.url) || isStoreRestrictedURL(msg.url)) {
       sendResponse({ ok: false });
       return true;
     }
@@ -821,6 +837,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg?.type === 'grabbit-send-media' && typeof msg.url === 'string') {
+    if (isStoreRestrictedURL(msg.url)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     const items = detectedTabs.get(msg.tabId) || [];
     const item = items.find((i) => i.url === msg.url) || { url: msg.url };
     sendToApp({
@@ -839,6 +859,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     typeof msg.url === 'string' &&
     typeof msg.tabId === 'number'
   ) {
+    if (isStoreRestrictedURL(msg.url)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     debugLog('blob-request', { url: msg.url.slice(0, 300), kind: msg.kind || '' });
     const isTelegramMedia = /web\.telegram\.org\/a\/(stream|progressive)\//i.test(msg.url);
     if (isTelegramMedia) {
@@ -893,6 +917,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const tabId = sender.tab.id;
 
   if (msg?.type === 'grabbit-page-fetch-exec' && typeof msg.url === 'string' && msg.requestId) {
+    if (isStoreRestrictedURL(msg.url)) {
+      sendResponse({ ok: false });
+      return true;
+    }
     // Content scripts can't run main-world code; do it from here so the
     // service worker owns the injection.
     runPageFetch(tabId, sender.frameId ?? 0, msg.url, msg.requestId).then((ok) =>
@@ -1015,6 +1043,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'grabbit-download') return;
   const url = info.srcUrl || info.linkUrl;
   if (!url) return;
+  // Store build: no capture on YouTube — the browser handles it normally.
+  if (isStoreRestrictedURL(url)) return;
   if (url.startsWith('blob:') && tab?.id != null) {
     // blob: URLs are page-scoped; recover them in-page instead of handing a
     // dead URL to the app.
@@ -1066,6 +1096,9 @@ try {
     try {
       const url = item.finalUrl || item.url;
       if (!url) return;
+
+      // Store build: YouTube downloads are left to the browser itself.
+      if (isStoreRestrictedURL(url)) return;
 
       // Telegram service-worker downloads (anchor clicks or the page's own
       // download button) are imported on completion regardless of the

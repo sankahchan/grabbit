@@ -17,6 +17,15 @@
   const SEEN = new Set();
   const SITE = location.hostname.replace(/^www\./, '');
   const IS_TELEGRAM = /(^|\.)web\.telegram\.org$/.test(location.hostname);
+
+  // Web Store compliance: the packaged store build disables capture on
+  // YouTube and its CDN. scripts/package-extension.sh flips this flag to true
+  // in the store ZIP; the GitHub build keeps every site enabled.
+  const GRABBIT_STORE_BUILD = false;
+  const YOUTUBE_HOST_RE =
+    /(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com|googlevideo\.com)$/i;
+  const storeRestricted = () =>
+    GRABBIT_STORE_BUILD && YOUTUBE_HOST_RE.test(location.hostname);
   const CHUNK_SIZE = 256 * 1024; // 256 KB per chunk to the native host
   const MAX_QUEUED_BYTES = 512 * 1024 * 1024; // per-stream in-memory cap
 
@@ -181,6 +190,7 @@
   // ---------- media discovery ----------------------------------------------
 
   function collect() {
+    if (storeRestricted()) return [];
     const items = [];
     for (const el of document.querySelectorAll('video, audio')) {
       const url = videoSource(el);
@@ -490,6 +500,7 @@
     if (event.source !== window) return;
     const msg = event.data;
     if (!msg || msg.source !== 'grabbit-page-hook') return;
+    if (storeRestricted()) return;
 
     if (msg.type === 'grabbit-network-media') {
       if (!msg.url || SEEN.has(msg.url)) return;
@@ -839,6 +850,10 @@
       return true;
     }
     if (msg?.type === 'grabbit-fetch-blob' && typeof msg.url === 'string') {
+      if (storeRestricted()) {
+        sendResponse({ ok: false });
+        return true;
+      }
       sendDebug('fetch-blob-request', {
         url: msg.url.slice(0, 300),
         requestId: msg.requestId,

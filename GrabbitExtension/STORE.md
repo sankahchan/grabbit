@@ -7,7 +7,7 @@ Everything the Web Store dashboard asks for, pre-drafted. Package with
 
 - **Name:** Grabbit Web Grabber
 - **Summary (132 chars max):**
-  Send videos, music and files from any website to the Grabbit download manager for macOS — one click, full quality.
+  Send files and page media you have the right to download from your browser to the Grabbit app for macOS.
 - **Category:** Productivity
 - **Language:** English
 - **Homepage:** https://github.com/sankahchan/grabbit
@@ -16,32 +16,32 @@ Everything the Web Store dashboard asks for, pre-drafted. Package with
 ### Detailed description
 
 ```
-Grabbit Web Grabber detects videos, music and downloadable files on the pages
+Grabbit Web Grabber detects downloadable files and page media on the pages
 you visit and hands them to the Grabbit download manager app on your Mac.
 
 FEATURES
-• Detects <video>/<audio> media and file links on any page
+• Detects downloadable links and <video>/<audio> media on any page
 • Captures HLS/DASH streams and direct downloads with the browser's own
   cookies and Referer headers, so hotlink-protected files just work
-• Telegram Web videos — including channels with "restrict saving content"
-  disabled downloads — are captured from the page and imported into Grabbit
-• Auto-grab browser downloads: downloads you start in Chrome are routed into
-  Grabbit automatically (toggle in the popup)
-• Right-click → "Download with Grabbit" on any video, audio or link
+• Auto-grab browser downloads: downloads you start in Chrome can be routed
+  into Grabbit automatically (toggle in the popup)
+• Right-click → "Download with Grabbit" on a link or media element
 • Live capture progress notifications
+
+COMPLIANCE
+• The extension performs no downloading itself — it simply hands URLs you
+  choose to the local Grabbit app.
+• It does not bypass DRM, paywalls or access controls. Capture is disabled
+  on YouTube and other streaming services in this build.
+• Nothing is sent to any server: URLs, page metadata and (for protected
+  downloads) login cookies go only to the Grabbit app on your Mac through
+  Chrome's native messaging API. No analytics, no tracking.
 
 REQUIREMENTS
 • macOS 14+ on Apple Silicon
 • The free Grabbit app (open source):
   https://github.com/sankahchan/grabbit
-• One-time helper install to connect the extension to the app:
-  ./GrabbitExtension/native-messaging/install-host.sh <extension-id>
-
-PRIVACY
-No data ever leaves your computer. URLs, page metadata and (for protected
-downloads) login cookies are transmitted only to the Grabbit app on your Mac
-through Chrome's native messaging API. No analytics, no tracking, no remote
-servers. See PRIVACY.md.
+  Installing the app connects this extension automatically on first launch.
 ```
 
 ## Single purpose
@@ -89,17 +89,24 @@ manager app.
    https://www.w3schools.com/html/html5_video.asp
 2. Click the toolbar icon → the popup lists detected media.
 3. Right-click a video → "Download with Grabbit" (on a machine without the
-   Grabbit app, the extension shows "native host: unavailable" and a
-   notification with the one-time helper install step — detection and popup
-   behavior are fully testable without the app).
+   Grabbit app, the extension shows "native host: unavailable" — detection and
+   popup behavior are fully testable without the app).
 4. The "Auto-grab browser downloads" toggle (on by default) cancels browser
    downloads of media and reroutes them; turn it off to let Chrome download
    normally.
 
+Compliance note: this store build deliberately disables capture on YouTube
+and its CDN (`youtube.com`, `youtu.be`, `youtube-nocookie.com`,
+`googlevideo.com`). The extension does not download, decrypt or bypass
+anything itself — it only forwards user-chosen URLs to a local desktop app.
+The GitHub build (used for development) keeps every site enabled.
+
 ## After publishing
 
 The Web Store assigns its own extension ID (shown in the dashboard). The
-one-time helper must be installed for that ID, not the development ID:
+Grabbit app (v1.3.0+) installs the helper and writes host manifests for both
+the store ID and the development ID automatically on launch — no manual step
+is needed. `install-host.sh` remains a manual fallback:
 
 ```bash
 ./GrabbitExtension/native-messaging/install-host.sh <store-extension-id>
