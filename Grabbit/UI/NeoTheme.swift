@@ -134,6 +134,24 @@ struct NeoCardModifier: ViewModifier {
                 .overlay(
                     rect.stroke(Neo.ink(scheme), lineWidth: shape.cardBorder)
                 )
+        } else if shape.cardEdgeGlow {
+            // Pulse: the card is lit from its own accent edge — a colored
+            // border glow instead of a neutral drop shadow.
+            let charge = accent ?? Neo.ink(scheme)
+            content
+                .padding(14)
+                .background(bg ?? Neo.card(scheme))
+                .clipShape(rect)
+                .shadow(color: charge.opacity(scheme == .dark ? 0.38 : 0.22), radius: 14)
+                .shadow(
+                    color: .black.opacity(
+                        scheme == .dark ? shape.cardShadowDark : shape.cardShadowLight),
+                    radius: shape.cardShadowRadius,
+                    y: shape.cardShadowY
+                )
+                .overlay(
+                    rect.stroke(charge.opacity(0.45), lineWidth: shape.cardBorder)
+                )
         } else {
             // Modern themes: soft shadow, hairline (or accent-tinted)
             // border, no hard offset.
@@ -271,7 +289,7 @@ struct SegmentedProgressBar: View {
 
     @ViewBuilder
     var body: some View {
-        if Neo.shape.segmentedMeters {
+        if Neo.shape.progress == .blocks {
             HStack(spacing: 3) {
                 ForEach(segments) { segment in
                     GeometryReader { geo in
@@ -291,16 +309,9 @@ struct SegmentedProgressBar: View {
             }
             .frame(height: 14)
         } else {
-            // Modern: one smooth capsule, colored by overall progress.
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Neo.ink(scheme).opacity(0.09))
-                    Capsule()
-                        .fill(overallComplete ? Neo.green : Neo.blue)
-                        .frame(width: max(0, geo.size.width * overallFraction))
-                }
-            }
-            .frame(height: 8)
+            NeoProgressTrack(
+                fraction: overallFraction,
+                color: overallComplete ? Neo.green : Neo.blue)
         }
     }
 
@@ -333,24 +344,26 @@ struct NeoLinearBar: View {
     var fill: Color = Neo.blue
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     var body: some View {
-        let shape = Neo.shape
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
-                    .fill(shape.brutalist ? Neo.paper(scheme) : Neo.ink(scheme).opacity(0.09))
-                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
-                    .fill(fill)
-                    .frame(width: geo.size.width * min(1, max(0, progress)))
+        if Neo.shape.progress == .blocks {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Neo.paper(scheme))
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(fill)
+                        .frame(width: geo.size.width * min(1, max(0, progress)))
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                )
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
-                    .stroke(
-                        Neo.ink(scheme),
-                        lineWidth: shape.brutalist ? 2 : 0)
-            )
+            .frame(height: 12)
+        } else {
+            NeoProgressTrack(fraction: progress, color: fill)
         }
-        .frame(height: shape.brutalist ? 12 : 8)
     }
 }
 
@@ -616,41 +629,140 @@ struct NeoDotBackground: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let shape = Neo.shape
+        let tokens = ThemeRuntime.tokens
+        let shape = tokens.shape
         ZStack {
-            Neo.paper(scheme)
+            // Liquid's wallpaper is a full-canvas gradient; everything
+            // else starts from the theme paper.
+            if tokens.canvasGradient(scheme).isEmpty {
+                Neo.paper(scheme)
+            } else {
+                LinearGradient(
+                    colors: tokens.canvasGradient(scheme),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing)
+            }
+            // Soft ambient washes (Aura's aurora, Pulse's neon spill, …).
+            ForEach(Array(tokens.backgroundGlows.enumerated()), id: \.offset) { _, glow in
+                RadialGradient(
+                    colors: [
+                        glow.color.opacity(
+                            scheme == .dark ? glow.opacityDark : glow.opacityLight),
+                        .clear,
+                    ],
+                    center: UnitPoint(x: glow.x, y: glow.y),
+                    startRadius: 0,
+                    endRadius: glow.radius)
+            }
             if shape.dotGridLight > 0 || shape.dotGridDark > 0 {
-            Canvas { context, size in
-                let opacity: Double
-                let color: Color
-                if scheme == .dark {
-                    opacity = shape.dotGridDark
-                    color = .white
-                } else {
-                    opacity = shape.dotGridLight
-                    color = .black
-                }
-                let grid = color.opacity(opacity)
-                let cols = Int(size.width / spacing) + 2
-                let rows = Int(size.height / spacing) + 2
-                for row in 0..<rows {
-                    for col in 0..<cols {
-                        let origin = CGPoint(
-                            x: CGFloat(col) * spacing + spacing / 2,
-                            y: CGFloat(row) * spacing + spacing / 2
-                        )
-                        let rect = CGRect(
-                            x: origin.x, y: origin.y,
-                            width: dotSize, height: dotSize
-                        )
-                        context.fill(Path(ellipseIn: rect), with: .color(grid))
+                Canvas { context, size in
+                    let opacity: Double
+                    let color: Color
+                    if scheme == .dark {
+                        opacity = shape.dotGridDark
+                        color = .white
+                    } else {
+                        opacity = shape.dotGridLight
+                        color = .black
+                    }
+                    let grid = color.opacity(opacity)
+                    let cols = Int(size.width / spacing) + 2
+                    let rows = Int(size.height / spacing) + 2
+                    for row in 0..<rows {
+                        for col in 0..<cols {
+                            let origin = CGPoint(
+                                x: CGFloat(col) * spacing + spacing / 2,
+                                y: CGFloat(row) * spacing + spacing / 2
+                            )
+                            let rect = CGRect(
+                                x: origin.x, y: origin.y,
+                                width: dotSize, height: dotSize
+                            )
+                            context.fill(Path(ellipseIn: rect), with: .color(grid))
+                        }
                     }
                 }
-            }
             }
         }
         .ignoresSafeArea()
     }
+}
+
+/// Shared progress rendering for the non-classic styles. The classic
+/// block meter keeps its per-segment color logic in
+/// `SegmentedProgressBar` below.
+struct NeoProgressTrack: View {
+    var fraction: Double
+    var color: Color
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let shape = Neo.shape
+        let trackColor = Neo.ink(scheme).opacity(0.10)
+        switch shape.progress {
+        case .blocks:
+            EmptyView()
+        case .smooth:
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(trackColor)
+                    Capsule()
+                        .fill(color)
+                        .frame(width: max(0, geo.size.width * clamped))
+                }
+            }
+            .frame(height: 8)
+        case .dotted:
+            Canvas { context, size in
+                let y = size.height / 2
+                let step: CGFloat = 9
+                let r: CGFloat = 1.5
+                let filledTo = size.width * clamped
+                var x: CGFloat = r + 1
+                while x < size.width {
+                    let dot = CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)
+                    context.fill(
+                        Path(ellipseIn: dot),
+                        with: .color(x <= filledTo ? color : trackColor))
+                    x += step
+                }
+                // End knob, like the reference measurement lines.
+                if clamped > 0.01 {
+                    let knob = CGRect(
+                        x: max(5, min(size.width - 5, filledTo)) - 5,
+                        y: y - 5, width: 10, height: 10)
+                    context.fill(Path(ellipseIn: knob), with: .color(color))
+                }
+            }
+            .frame(height: 16)
+        case .segments:
+            Canvas { context, size in
+                let count = 40
+                let gap: CGFloat = 3
+                let block = max(2, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
+                let lit = Int((clamped * Double(count)).rounded())
+                let top = (size.height - 7) / 2
+                for index in 0..<count {
+                    let rect = CGRect(
+                        x: CGFloat(index) * (block + gap), y: top,
+                        width: block, height: 7)
+                    context.fill(
+                        Path(roundedRect: rect, cornerRadius: 2.5),
+                        with: .color(index < lit ? color : trackColor))
+                }
+                if shape.progressMarker, clamped > 0, clamped < 1 {
+                    let x = CGFloat(lit) * (block + gap) - gap / 2
+                    let marker = CGRect(x: x - 1.25, y: 0, width: 2.5, height: size.height)
+                    context.fill(
+                        Path(roundedRect: marker, cornerRadius: 1.25),
+                        with: .color(scheme == .dark ? .white : .black))
+                }
+            }
+            .frame(height: 16)
+        }
+    }
+
+    private var clamped: Double { min(1, max(0, fraction)) }
 }
 
 /// Big heavy page title with a small uppercase accent sticker above it —

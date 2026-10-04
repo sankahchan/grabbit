@@ -88,11 +88,18 @@ struct Sidebar: View {
         VStack(alignment: .leading, spacing: 1) {
             Text("Grabbit")
                 .font(.headline.weight(.black))
-            Text(NSLocalizedString("sidebar.subtitle", comment: ""))
-                .font(.system(size: 9, weight: .bold))
-                .textCase(.uppercase)
-                .tracking(0.6)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 5) {
+                if let dot = ThemeRuntime.tokens.brandDot {
+                    Circle()
+                        .fill(dot)
+                        .frame(width: 5, height: 5)
+                }
+                Text(NSLocalizedString("sidebar.subtitle", comment: ""))
+                    .font(.system(size: 9, weight: .bold))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .foregroundStyle(.secondary)
+            }
         }
         .foregroundStyle(Neo.ink(scheme))
         .padding(.vertical, 2)
@@ -104,8 +111,24 @@ struct Sidebar: View {
             selection = item
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: item.icon)
-                    .frame(width: 22)
+                if let tint = iconTileColor(for: item) {
+                    Image(systemName: item.icon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(tint)
+                        .frame(width: 26, height: 26)
+                        .background(
+                            tint.opacity(0.10),
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(tint.opacity(0.45), lineWidth: 1))
+                        .shadow(
+                            color: tint.opacity(isSelected ? 0.55 : 0.30),
+                            radius: isSelected ? 8 : 5)
+                } else {
+                    Image(systemName: item.icon)
+                        .frame(width: 22)
+                }
                 Text(item.localizedTitle)
                     .font(.headline)
                 Spacer()
@@ -145,6 +168,23 @@ struct Sidebar: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Sidebar icon tiles (Pulse): each row gets its own neon tile.
+    private func iconTileColor(for item: SidebarSelection) -> Color? {
+        guard Neo.shape.sidebarIconTiles else { return nil }
+        switch item {
+        case .downloads: return Neo.blue
+        case .torrents: return Neo.green
+        case .media: return Neo.orange
+        case .rss: return Neo.red
+        case .grabber: return Neo.ink(scheme)
+        case .linkgrabber: return Neo.blue
+        case .scheduler: return Neo.orange
+        case .history: return Neo.ink(scheme)
+        case .settings: return Neo.orange
+        case .about: return Neo.blue
+        }
     }
 
     private func selectionForeground(_ isSelected: Bool) -> Color {

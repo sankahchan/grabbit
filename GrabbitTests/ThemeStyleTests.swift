@@ -51,11 +51,25 @@ final class ThemeStyleTests: XCTestCase {
         }
     }
 
-    func testOnlyClassicUsesSegmentedMeters() {
-        XCTAssertTrue(ThemeCatalog.tokens(for: .classic).shape.segmentedMeters)
-        for style in ThemeStyle.allCases where style != .classic {
-            XCTAssertFalse(ThemeCatalog.tokens(for: style).shape.segmentedMeters)
-        }
+    func testProgressStylesMatchThePreviews() {
+        XCTAssertEqual(ThemeCatalog.tokens(for: .classic).shape.progress, .blocks)
+        XCTAssertEqual(ThemeCatalog.tokens(for: .aura).shape.progress, .dotted)
+        XCTAssertEqual(ThemeCatalog.tokens(for: .pulse).shape.progress, .segments)
+        XCTAssertEqual(ThemeCatalog.tokens(for: .velvet).shape.progress, .segments)
+        XCTAssertEqual(ThemeCatalog.tokens(for: .grove).shape.progress, .smooth)
+        XCTAssertEqual(ThemeCatalog.tokens(for: .liquid).shape.progress, .smooth)
+        XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.progressMarker)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .velvet).shape.progressMarker)
+    }
+
+    func testSignatureThemeDetailsArePresent() {
+        XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.cardEdgeGlow)
+        XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.sidebarIconTiles)
+        XCTAssertNotNil(ThemeCatalog.tokens(for: .aura).brandDot)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .aura).backgroundGlows.isEmpty)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .liquid).canvasGradientDark.isEmpty)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .liquid).canvasGradientLight.isEmpty)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .velvet).backgroundGlows.isEmpty)
     }
 
     func testRuntimeResolvesAssignedStyle() {

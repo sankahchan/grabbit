@@ -27,6 +27,31 @@ public enum ThemeStyle: String, Codable, CaseIterable, Sendable {
     }
 }
 
+// MARK: - Background + progress styles
+
+/// A soft radial color wash painted on the page backdrop.
+struct AmbientGlow: Sendable {
+    var color: Color
+    /// Unit position of the glow's center (0…1 of the canvas).
+    var x: CGFloat
+    var y: CGFloat
+    var radius: CGFloat
+    var opacityLight: Double
+    var opacityDark: Double
+}
+
+/// Progress bar language per theme.
+enum ProgressStyle: Sendable {
+    /// Classic bordered block per download segment.
+    case blocks
+    /// Aura: dotted measure line with an end knob.
+    case dotted
+    /// Pulse/Velvet: lit blocks with a "now" marker (marker optional).
+    case segments
+    /// Grove/Liquid: smooth capsule.
+    case smooth
+}
+
 // MARK: - Shape tokens
 
 /// Geometry/material tokens that differ per theme. The classic theme keeps
@@ -62,9 +87,15 @@ struct ThemeShape: Sendable {
     /// Divider / step button / spinner stroke width.
     var hairline: CGFloat = 2
 
-    /// Classic renders the segmented block meter; modern themes use the
-    /// smooth capsule bar.
-    var segmentedMeters = true
+    /// Concrete progress-bar rendering for this theme.
+    var progress: ProgressStyle = .blocks
+    /// Pulse: draw the white "now" marker on segmented bars.
+    var progressMarker = false
+
+    /// Pulse: cards glow from their own accent edge.
+    var cardEdgeGlow = false
+    /// Pulse: sidebar icons sit in colored, glowing rounded tiles.
+    var sidebarIconTiles = false
 
     var dotGridLight: Double = 0.14
     var dotGridDark: Double = 0.09
@@ -97,6 +128,18 @@ struct ThemeTokens: Sendable {
     var red: Color
 
     var shape: ThemeShape
+
+    /// Optional canvas gradient (Liquid's wallpaper). Empty = solid paper.
+    var canvasGradientLight: [Color] = []
+    var canvasGradientDark: [Color] = []
+    /// Soft ambient washes painted over the canvas (Aura/Pulse/Grove/Velvet).
+    var backgroundGlows: [AmbientGlow] = []
+    /// Aura's little green status dot next to the brand subtitle.
+    var brandDot: Color?
+
+    func canvasGradient(_ scheme: ColorScheme) -> [Color] {
+        scheme == .dark ? canvasGradientDark : canvasGradientLight
+    }
 
     func paper(_ scheme: ColorScheme) -> Color { scheme == .dark ? paperDark : paperLight }
     func card(_ scheme: ColorScheme) -> Color { scheme == .dark ? cardDark : cardLight }
@@ -174,8 +217,17 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 12, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            segmentedMeters: false,
-            dotGridLight: 0.06, dotGridDark: 0.045))
+            progress: .dotted,
+            dotGridLight: 0.06, dotGridDark: 0.045),
+        backgroundGlows: [
+            AmbientGlow(color: Color(hex: 0xED4714), x: 0.06, y: -0.08, radius: 700,
+                        opacityLight: 0.13, opacityDark: 0.09),
+            AmbientGlow(color: Color(hex: 0x2BA2C3), x: 0.94, y: -0.10, radius: 720,
+                        opacityLight: 0.14, opacityDark: 0.10),
+            AmbientGlow(color: Color(hex: 0x0EBE82), x: 0.80, y: 1.12, radius: 760,
+                        opacityLight: 0.12, opacityDark: 0.09),
+        ],
+        brandDot: Color(hex: 0x0EBE82))
 
     // MARK: Pulse — neon energy console
 
@@ -202,8 +254,17 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            segmentedMeters: false,
-            dotGridLight: 0, dotGridDark: 0))
+            progress: .segments, progressMarker: true, cardEdgeGlow: true,
+            sidebarIconTiles: true,
+            dotGridLight: 0, dotGridDark: 0),
+        backgroundGlows: [
+            AmbientGlow(color: Color(hex: 0x25E3FF), x: 0.08, y: 0.06, radius: 640,
+                        opacityLight: 0.07, opacityDark: 0.12),
+            AmbientGlow(color: Color(hex: 0xA8FF35), x: 0.82, y: -0.10, radius: 520,
+                        opacityLight: 0.04, opacityDark: 0.06),
+            AmbientGlow(color: Color(hex: 0xFFB020), x: 0.95, y: 1.05, radius: 660,
+                        opacityLight: 0.05, opacityDark: 0.08),
+        ])
 
     // MARK: Grove — earthy olive command console, warm gold
 
@@ -230,8 +291,16 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            segmentedMeters: false,
-            dotGridLight: 0, dotGridDark: 0))
+            progress: .smooth,
+            dotGridLight: 0, dotGridDark: 0),
+        backgroundGlows: [
+            AmbientGlow(color: Color(hex: 0xE0A94E), x: 0.92, y: 1.08, radius: 620,
+                        opacityLight: 0.05, opacityDark: 0.09),
+            AmbientGlow(color: Color(hex: 0x8FA05A), x: 0.06, y: -0.06, radius: 560,
+                        opacityLight: 0.05, opacityDark: 0.08),
+            AmbientGlow(color: Color(hex: 0x5B7FA6), x: 0.95, y: 0.05, radius: 520,
+                        opacityLight: 0.03, opacityDark: 0.05),
+        ])
 
     // MARK: Velvet — luxe plum, silver & coral
 
@@ -258,8 +327,14 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            segmentedMeters: false,
-            dotGridLight: 0, dotGridDark: 0))
+            progress: .segments,
+            dotGridLight: 0, dotGridDark: 0),
+        backgroundGlows: [
+            AmbientGlow(color: Color(hex: 0xA8456B), x: 0.86, y: -0.10, radius: 700,
+                        opacityLight: 0.10, opacityDark: 0.18),
+            AmbientGlow(color: Color(hex: 0xF27E93), x: 0.08, y: 1.10, radius: 620,
+                        opacityLight: 0.05, opacityDark: 0.10),
+        ])
 
     // MARK: Liquid — Apple Liquid Glass
 
@@ -286,6 +361,16 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 10, controlBorder: 1, controlDivider: 0,
             fieldRadius: 10, fieldBorder: 1, hairline: 1,
-            segmentedMeters: false,
-            dotGridLight: 0, dotGridDark: 0))
+            progress: .smooth,
+            dotGridLight: 0, dotGridDark: 0),
+        // The wallpaper behind the glass: pastel swirls in light, the
+        // vivid blue-violet flow in dark.
+        canvasGradientLight: [
+            Color(hex: 0xDDEAF8), Color(hex: 0xE5E5F7),
+            Color(hex: 0xEFE4F3), Color(hex: 0xFBE9E4),
+        ],
+        canvasGradientDark: [
+            Color(hex: 0x1C2C5B), Color(hex: 0x3A3A9E),
+            Color(hex: 0x6A35A8), Color(hex: 0xA84590),
+        ])
 }
