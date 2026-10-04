@@ -29,7 +29,7 @@
     --mauve: #9A8F9E;
     --champagne: #E8E4DA;
     --red: #E06C5B;
-    --shadow-card: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 16px 40px rgba(0, 0, 0, .5);
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 14px 38px rgba(12, 5, 10, .55);
     --shadow-window: 0 60px 140px rgba(0, 0, 0, .82), 0 0 130px rgba(122, 46, 79, .16);
   }
 
@@ -60,7 +60,9 @@
   /* ---------- Sidebar ---------- */
   .sidebar {
     width: 234px; flex: none;
-    background: var(--sidebar);
+    background:
+      radial-gradient(260px 170px at 30% -6%, rgba(122, 46, 79, .38), transparent 72%),
+      var(--sidebar);
     border-right: 1px solid var(--line);
     padding: 14px 12px 12px;
     display: flex; flex-direction: column;
@@ -218,7 +220,7 @@
 
   /* ---------- Task rows (chevron list style) ---------- */
   .task {
-    background: var(--glass); border: 1px solid var(--line); border-radius: 20px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 22px;
     box-shadow: var(--shadow-card); padding: 13px 16px; margin-bottom: 10px;
   }
   .task .row1 { display: flex; align-items: center; gap: 12px; }
@@ -236,17 +238,25 @@
     font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
     padding: 3.5px 11px; border-radius: 999px; margin-left: auto;
   }
-  .status.coral { color: #FFD9E3; background: rgba(242, 126, 147, .18); border: 1px solid rgba(242, 126, 147, .4); }
+  .status.coral {
+    color: #FFF4F8; border: none;
+    background: linear-gradient(135deg, #F1859A, #D95C77);
+    box-shadow: 0 6px 16px rgba(242, 126, 147, .35);
+  }
   .status.mauve { color: #CFC5D2; background: rgba(154, 143, 158, .12); border: 1px solid rgba(154, 143, 158, .35); }
   .status.silver { color: rgba(23,21,26,.8); background: linear-gradient(180deg, var(--silver-1), var(--silver-2)); border: 1px solid rgba(255,255,255,.5); }
   .status.red { color: #FFD2CC; background: rgba(224, 108, 91, .14); border: 1px solid rgba(224, 108, 91, .4); }
 
-  .task .row2 { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
-  .bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .07); overflow: hidden; }
-  .bar i { display: block; height: 100%; border-radius: 999px; }
-  .bar.coral i { background: linear-gradient(90deg, #E98A8A, var(--coral)); box-shadow: 0 0 14px rgba(242, 126, 147, .35); }
-  .bar.mauve i { background: var(--mauve); }
-  .bar.silver i { background: linear-gradient(90deg, #FFFFFF, var(--champagne)); }
+  .task .row2 { display: flex; align-items: center; gap: 13px; margin-top: 10px; }
+  /* Segmented progress meter (Vaulta portfolio-bar style) */
+  .segs { display: flex; gap: 3px; flex: 1; height: 10px; }
+  .segs i { flex: 1; border-radius: 3px; background: rgba(255, 255, 255, .06); }
+  .segs.coral i.on {
+    background: linear-gradient(180deg, #F7AAB9, #D95C77);
+    box-shadow: 0 0 9px rgba(242, 126, 147, .4);
+  }
+  .segs.mauve i.on { background: linear-gradient(180deg, #C6BBC9, #8F8493); }
+  .segs.silver i.on { background: linear-gradient(180deg, #FFFFFF, #CBC5B8); }
   .task .pct { font: 700 11.5px ui-monospace, "SF Mono", monospace; min-width: 40px; text-align: right; color: var(--coral); }
   .task .pct.mauve { color: var(--mauve); }
   .task .pct.silver { color: var(--champagne); }
@@ -400,7 +410,7 @@
           <span class="status coral">Downloading</span>
         </div>
         <div class="row2">
-          <div class="bar coral"><i style="width:64%"></i></div>
+          <div class="segs coral" data-fill="64"></div>
           <div class="pct">64%</div>
         </div>
         <div class="meta">
@@ -427,7 +437,7 @@
           <span class="status mauve">Paused</span>
         </div>
         <div class="row2">
-          <div class="bar mauve"><i style="width:41%"></i></div>
+          <div class="segs mauve" data-fill="41"></div>
           <div class="pct mauve">41%</div>
         </div>
         <div class="meta">
@@ -457,7 +467,7 @@
           </span>
         </div>
         <div class="row2">
-          <div class="bar silver"><i style="width:100%"></i></div>
+          <div class="segs silver" data-fill="100"></div>
           <div class="pct silver">100%</div>
         </div>
         <div class="meta">
@@ -471,5 +481,18 @@
       </div>
     </main>
   </div>
+  <script>
+    // Segmented meters: 38 segments, lit up to data-fill percent.
+    document.querySelectorAll('.segs').forEach((meter) => {
+      const fill = Math.max(0, Math.min(100, parseInt(meter.dataset.fill || '0', 10)));
+      const count = 38;
+      const lit = Math.round((count * fill) / 100);
+      for (let i = 0; i < count; i += 1) {
+        const seg = document.createElement('i');
+        if (i < lit) seg.className = 'on';
+        meter.appendChild(seg);
+      }
+    });
+  </script>
 </body>
 </html>

@@ -177,9 +177,11 @@ rows, and a plum-gradient app mark.
 | Card shadow | `inset 0 1px 0 rgba(255,255,255,.04), 0 16px 40px rgba(0,0,0,.5)` |
 | Window shadow | `0 60px 140px rgba(0,0,0,.82), 0 0 130px rgba(122,46,79,.16)` |
 
-Radii: window 26 · cards 20–22 · icon tiles 12 · pills 999. Signature
-elements: plum-gradient active pill and brand mark, coral file-icon
-tiles and progress fill, silver completed row with a chevron.
+Radii: window 26 · cards 22 · icon tiles 12 · pills 999. Signature
+elements: plum-gradient active pill and brand mark, **segmented progress
+meters** (Vaulta portfolio-bar style: 38 segments, lit ones in a coral
+gradient with a soft glow; mauve for paused, champagne for completed),
+gradient coral status pills, and a silver completed row with a chevron.
 
 ### Files
 
