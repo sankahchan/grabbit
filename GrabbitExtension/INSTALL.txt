@@ -42,3 +42,40 @@ downloads) login cookies go only to the Grabbit app on your Mac through
 Chrome's native messaging API. No analytics, no tracking.
 
 Grabbit is open source (MIT): https://github.com/sankahchan/grabbit
+
+မြန်မာဘာသာ
+===========
+
+ထည့်သွင်းနည်း (Chrome / Edge / Brave)
+1. Browser မှာ chrome://extensions (သို့) edge://extensions ဖွင့်ပါ။
+2. ညာဘက်အပေါ်ထောင့်က "Developer mode" ကို ဖွင့်ပါ။
+3. "Load unpacked" ကို နှိပ်ပြီး ဒီဖိုင် (INSTALL.txt) ပါတဲ့ ဖိုဒါကို ရွေးပါ။
+4. Grabbit app ကို ဖွင့်ပါ — app က extension ကို အလိုအလျောက် ချိတ်ပေးမယ်
+   (Grabbit 1.3.0+)။
+
+Update လုပ်နည်း
+- အလွယ်ဆုံး: Grabbit app -> Grabber tab -> "Update extension" ကို နှိပ်ပါ။
+  App က package အသစ်ကို download လုပ်ပြီး အစားထိုးပေးမယ်; ပြီးရင်
+  chrome://extensions မှာ Reload (↻) ကို နှိပ်ပါ။
+- ကိုယ်တိုင်လုပ်ရန်: ဒီဖိုဒါထဲက ဖိုင်တွေကို ZIP အသစ်နဲ့ အစားထိုးပါ
+  (https://github.com/sankahchan/grabbit/releases -> grabbit-extension-latest.zip)
+  ပြီးရင် chrome://extensions မှာ Reload (↻) ကို နှိပ်ပါ။
+
+ပြဿနာဖြေရှင်း
+- Popup မှာ "native host: unavailable" ပြနေရင်
+  -> Grabbit app ကို update လုပ်ပါ (1.3.0+)။ App က native helper နဲ့ browser
+     host manifest ကို အလိုအလျောက် ထည့်ပေးမယ်။ Extension ID ကို ကိုယ်တိုင်
+     သတ်မှတ်ထားရင်:
+     ./GrabbitExtension/native-messaging/install-host.sh <extension-id>
+- Page မှာ ဘာမှ မတွေ့ရင်
+  -> ဗီဒီယို/ဓာတ်ပုံကို ဖွင့်ထားပြီး popup ကို ပြန်ဖွင့်ကြည့်ပါ။
+     Telegram Web ဆိုရင် media ကို viewer ထဲ ဖွင့်ပါ။
+- ဖိုင်တွေ update လုပ်ပြီးလည်း မပြောင်းလဲရင်
+  -> chrome://extensions -> Grabbit card မှာ Reload (↻) ကို နှိပ်ပါ။
+
+ကိုယ်ရေးကိုယ်တာ လုံခြုံမှု
+- သင့်ကွန်ပျူတာကနေ ဘယ်ဒေတာမှ မထွက်ပါ။ URL, page metadata နဲ့ (protected
+  download တွေအတွက်) login cookie တွေဟာ Chrome native messaging ကနေတစ်ဆင့်
+  သင့် Mac ပေါ်က Grabbit app ဆီကိုပဲ ရောက်ပါတယ်။ Analytics မရှိ၊ tracking မရှိ။
+
+Grabbit က open source (MIT): https://github.com/sankahchan/grabbit
