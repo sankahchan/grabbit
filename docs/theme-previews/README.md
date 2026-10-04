@@ -211,3 +211,64 @@ Re-render:
   --screenshot="$PWD/docs/theme-previews/velvet-light.png" \
   "file://$PWD/docs/theme-previews/velvet.html#light"
 ```
+
+## Liquid
+
+Apple's Liquid Glass skin, built from the official material guides
+([Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/liquid-glass),
+[Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass),
+[WidgetKit — Implementing Liquid Glass](https://github.com/artemnovichkov/xcode-27-system-prompts/blob/main/AdditionalDocumentation/WidgetKit-Implementing-Liquid-Glass-Design.md))
+plus Behance studies ([CodePrism UI Kit](https://www.behance.net/gallery/233250457/CodePrism-Liquid-Glass-UI-Kit-Modern-UI-Components),
+[Liquid Glass wallpapers](https://www.behance.net/gallery/242895321/80-Liquid-Glass-Wallpapers-(Phone-Desktop)),
+[icon library](https://www.behance.net/gallery/233555941/Liquid-Glass-icons-library-ios-26-Apple-Liquid-Glass),
+[iOS 26 recreation](https://www.behance.net/gallery/228170241/Recreated-Liquid-Glass-Apples-iOS-26-Design)).
+Name: **Liquid**. Ships in **dark (default)** and **light** (`#light` on
+the URL).
+
+Style language, per Apple's guidance: Liquid Glass is a functional layer
+for navigation and controls that floats above content — used sparingly,
+with content kept clean and in focus. Glass chrome (window, sidebar,
+toolbar, search, buttons, segmented control) sits over a wallpaper that
+blurs through it; content is a readable sheet beneath. Radii are
+concentric with their containers.
+
+### Tokens (as rendered)
+
+| Token | Value |
+| --- | --- |
+| Wallpaper (dark) | `linear-gradient(140deg,#1C2C5B,#3A3A9E 30%,#6A35A8 58%,#A84590 82%,#C85A76)` + cyan/violet/coral/teal blobs |
+| Wallpaper (light) | `linear-gradient(140deg,#DDEAF8,#E5E5F7 32%,#EFE4F3 58%,#F8E7EA 82%,#FBE9E4)` + pastel blobs |
+| Window glass (dark) | `rgba(28,28,38,.42)` + blur 64 / sat 170%, border `rgba(255,255,255,.34)` |
+| Window glass (light) | `rgba(255,255,255,.52)`, border `rgba(255,255,255,.80)` |
+| Sidebar glass | dark `rgba(255,255,255,.15 → .05)` / light `.55 → .26` |
+| Content sheet | dark `rgba(23,24,30,.88)` / light `rgba(255,255,255,.74)`, radius 18 |
+| Text (dark) | `#FFFFFF` / `.62` / `.38` |
+| Text (light) | `#1C1C1E` / `rgba(60,60,67,.62)` / `.34` |
+| Accent / completed | `#0A84FF` (prominent tinted-glass CTA) / `#30D158` |
+| Hairlines | dark `rgba(255,255,255,.07)` / light `rgba(60,60,67,.10)` |
+
+Radii: window 26 · content 18 · cards 16 · tiles 10 · pills 999. Signature
+elements: floating glass window over the wallpaper, two-layer sheen and
+edge highlight across the chrome, prominent tinted-glass CTA, glass
+segmented control, and flat two-line queue rows with hairline separators.
+
+### Files
+
+- `liquid.html` — the mockup (`#light` on the URL switches appearance)
+- `liquid-dark.png`, `liquid-light.png` — 2560×1600 renders
+
+Re-render:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/liquid-dark.png" \
+  "file://$PWD/docs/theme-previews/liquid.html"
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/liquid-light.png" \
+  "file://$PWD/docs/theme-previews/liquid.html#light"
+```

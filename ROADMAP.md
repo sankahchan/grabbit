@@ -6,13 +6,15 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
 
 - 🔨 **New app icon(s)** — a fresh icon for Grabbit (AppIcon set, and the
   extension icons where relevant). Design TBD.
-- 🔨 **New themes** — four designs reviewed and approved (saved in
+- 🔨 **New themes** — five designs reviewed and approved (saved in
   `docs/theme-previews/`):
   - **Aura** — clean airy SaaS, light + dark (FacilityFlow-inspired)
   - **Pulse** — dark neon download console, lime accent (Volta-inspired)
   - **Grove** — dark olive command console, warm gold accent (TERA-inspired)
   - **Velvet** — luxe plum-on-black with silver/coral materials, dark +
     light, segmented progress meters (Vaulta-inspired)
+  - **Liquid** — Apple Liquid Glass skin: wallpaper-through glass chrome
+    floating over clean content, dark + light (Apple HIG-inspired)
 
   Implementation is deferred: it needs a selectable theme-style system
   (palette + shape/shadow tokens) wired through Settings → Appearance.

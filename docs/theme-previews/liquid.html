@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Grabbit — Liquid theme preview</title>
+<style>
+  /* ===== Liquid — Grabbit wearing Apple's Liquid Glass =====
+     Per Apple's guidance: Liquid Glass is a distinct *functional*
+     layer for navigation + controls that floats above content.
+     Content stays clean and shines through; glass is used sparingly.
+     - Glass chrome: window, sidebar, toolbar, search, buttons
+     - Clean content: flat rows, hairline separators, plain cards
+     - Concentric radii: window 26 > content 18 > cards 16 > pills */
+  :root {
+    --text: #FFFFFF;
+    --text-2: rgba(255, 255, 255, .62);
+    --text-3: rgba(255, 255, 255, .38);
+    --hair-soft: rgba(255, 255, 255, .07);
+    --accent: #0A84FF;
+    --green: #30D158;
+    --orange: #FF9F0A;
+    --red: #FF453A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--text);
+    background: linear-gradient(140deg, #1C2C5B 0%, #3A3A9E 30%, #6A35A8 58%, #A84590 82%, #C85A76 100%);
+    display: flex; align-items: center; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  svg { display: block; }
+
+  /* Desktop wallpaper: flowing colors, softly blurred */
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .95; }
+  .blob.b1 { width: 640px; height: 640px; left: -180px; top: -220px; background: radial-gradient(circle, #3D9BE9, transparent 70%); }
+  .blob.b2 { width: 560px; height: 560px; right: -140px; top: -160px; background: radial-gradient(circle, #A05CE8, transparent 70%); }
+  .blob.b3 { width: 680px; height: 680px; left: 30%; bottom: -320px; background: radial-gradient(circle, #E86A8A, transparent 70%); }
+  .blob.b4 { width: 460px; height: 460px; right: 6%; bottom: -180px; background: radial-gradient(circle, #2EC5C5, transparent 70%); }
+
+  /* ---------- Window: glass pane over the wallpaper ---------- */
+  .window {
+    position: relative;
+    width: 1200px; height: 744px;
+    background: rgba(28, 28, 38, .42);
+    backdrop-filter: blur(64px) saturate(170%);
+    -webkit-backdrop-filter: blur(64px) saturate(170%);
+    border: 1px solid rgba(255, 255, 255, .34);
+    border-radius: 26px;
+    box-shadow:
+      0 1.5px 0 rgba(255, 255, 255, .45) inset,
+      0 -1px 0 rgba(255, 255, 255, .10) inset,
+      0 40px 110px rgba(5, 8, 30, .55);
+    display: flex;
+    overflow: hidden;
+  }
+  .window::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3; border-radius: inherit;
+    background:
+      linear-gradient(112deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 62%, rgba(255,255,255,.07) 100%),
+      linear-gradient(100deg, rgba(255,255,255,0) 34%, rgba(255,255,255,.08) 45%, rgba(255,255,255,0) 57%);
+  }
+
+  /* ---------- Functional glass layer: sidebar ---------- */
+  .sidebar {
+    width: 228px; flex: none; position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    padding: 14px 12px 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .05));
+    border-right: 1px solid rgba(255, 255, 255, .18);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .30) inset,
+      1px 0 0 rgba(255, 255, 255, .06);
+    backdrop-filter: blur(40px) saturate(160%);
+    -webkit-backdrop-filter: blur(40px) saturate(160%);
+  }
+  .traffic { display: flex; gap: 7px; padding: 2px 6px 18px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 18px; }
+  .brand .mark {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    background: linear-gradient(160deg, rgba(90, 160, 255, .55), rgba(10, 100, 220, .45));
+    border: 1px solid rgba(255, 255, 255, .30);
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand h1 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .brand small { display: block; font-size: 8.5px; font-weight: 500; letter-spacing: .12em; color: var(--text-3); text-transform: uppercase; margin-top: 1px; }
+
+  .nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); padding: 8px 10px 7px; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7.5px 11px; border-radius: 999px;
+    color: var(--text-2); text-decoration: none; font-weight: 500; font-size: 12.5px;
+    border: 1px solid transparent;
+  }
+  .nav a svg { color: var(--text-2); }
+  .nav a .count { margin-left: auto; font: 600 10px ui-monospace, "SF Mono", monospace; color: var(--text-3); }
+  .nav a.active {
+    color: var(--text); font-weight: 600;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .12));
+    border-color: rgba(255, 255, 255, .26);
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 6px 16px rgba(10, 15, 45, .22);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .nav a.active svg { color: var(--text); }
+  .nav a.active .count { color: var(--text-2); }
+  .spacer { flex: 1; }
+  .side-divider { height: 1px; background: rgba(255,255,255,.10); margin: 10px 6px 8px; }
+
+  /* ---------- Functional glass layer: toolbar ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .toolbar {
+    height: 54px; flex: none; position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 14px 0 16px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .02));
+    border-bottom: 1px solid rgba(255, 255, 255, .09);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .20) inset;
+    backdrop-filter: blur(36px) saturate(160%);
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+  }
+  .main { position: relative; z-index: 1; }
+  .search {
+    width: 340px; height: 32px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .08));
+    border: 1px solid rgba(255, 255, 255, .22);
+    box-shadow: 0 1px 0 rgba(255,255,255,.30) inset;
+    border-radius: 999px;
+    display: flex; align-items: center; gap: 8px; padding: 0 13px;
+    color: var(--text-3); font-size: 12px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .search .kbd { margin-left: auto; font: 600 10px ui-monospace, "SF Mono", monospace; color: var(--text-3); }
+  .toolbar .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .iconbtn {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, .08));
+    border: 1px solid rgba(255, 255, 255, .24);
+    box-shadow: 0 1px 0 rgba(255,255,255,.34) inset;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  /* Prominent glass: tinted, keeps the blue identity */
+  .primary {
+    height: 32px; padding: 0 15px; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(64, 156, 255, .70), rgba(10, 122, 245, .62));
+    border: 1px solid rgba(150, 205, 255, .65);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .55) inset, 0 8px 22px rgba(10, 90, 220, .40);
+    display: flex; align-items: center; gap: 7px;
+    font-weight: 600; font-size: 12.5px; color: #FFFFFF;
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .16);
+    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+    display: flex; align-items: center; justify-content: center;
+    font: 600 12px ui-monospace, "SF Mono", monospace;
+  }
+
+  /* ---------- Content: clean, opaque, in focus ---------- */
+  .content {
+    flex: 1; min-height: 0;
+    margin: 0 10px 10px 10px;
+    background: rgba(23, 24, 30, .88);
+    backdrop-filter: blur(44px) saturate(150%);
+    -webkit-backdrop-filter: blur(44px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, .11);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .12) inset;
+    border-radius: 18px;
+    padding: 20px 24px;
+    overflow: hidden;
+  }
+  .pagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .pagehead h2 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .pagehead .sub { color: var(--text-2); font-size: 12px; }
+
+  /* Plain cards — content, not glass */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat {
+    background: linear-gradient(160deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .04));
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, .13);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .20) inset;
+    border-radius: 16px;
+    padding: 12px 15px 11px;
+  }
+  .stat .label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  .stat .value { font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+  .stat .value .unit { font-size: 12px; font-weight: 600; color: var(--text-2); margin-left: 3px; }
+  .stat .value .accent { color: var(--accent); }
+  .stat .delta { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .stat .delta.up { color: #7FE0A2; }
+
+  /* Segmented control — a control, so it gets the glass */
+  .tabsrow { display: flex; align-items: center; margin-bottom: 6px; }
+  .tabsrow .title { font-size: 15px; font-weight: 700; margin-right: 12px; }
+  .tabs {
+    display: inline-flex; padding: 2.5px; gap: 2px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .05));
+    border: 1px solid rgba(255, 255, 255, .17);
+    border-radius: 999px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.24) inset;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .tabs .tab {
+    padding: 5px 13px; border-radius: 999px;
+    font-weight: 500; font-size: 11.5px; color: var(--text-2);
+    border: 1px solid transparent;
+  }
+  .tabs .tab .n { opacity: .75; margin-left: 4px; font-weight: 600; }
+  .tabs .tab.active {
+    color: var(--text); font-weight: 600;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .14));
+    border-color: rgba(255, 255, 255, .28);
+    box-shadow: 0 1px 0 rgba(255,255,255,.40) inset, 0 5px 14px rgba(8, 12, 40, .28);
+  }
+
+  /* Rows — flat content, generous height, hairline separators */
+  .row { padding: 14px 2px 15px; border-bottom: 1px solid var(--hair-soft); }
+  .row:last-child { border-bottom: none; }
+  .rowtop { display: flex; align-items: center; gap: 12px; }
+  .rowbottom { display: flex; align-items: center; gap: 12px; margin: 10px 0 0 48px; }
+  .tile {
+    width: 36px; height: 36px; border-radius: 10px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tile.blue { background: rgba(10, 132, 255, .18); color: #6DB6FF; }
+  .tile.gray { background: rgba(255, 255, 255, .08); color: var(--text-2); }
+  .tile.green { background: rgba(48, 209, 88, .16); color: #6EE7A0; }
+  .file { font-size: 13.5px; font-weight: 600; letter-spacing: -.005em; }
+  .host { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+  .status { margin-left: auto; font-size: 11.5px; font-weight: 600; }
+  .status.blue { color: #6DB6FF; }
+  .status.gray { color: var(--text-2); }
+  .status.green { color: #6EE7A0; }
+  .bar { width: 420px; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .10); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; }
+  .bar.blue i { background: var(--accent); }
+  .bar.gray i { background: rgba(255, 255, 255, .35); }
+  .bar.green i { background: var(--green); }
+  .pct { font: 600 11px ui-monospace, "SF Mono", monospace; color: var(--text-2); width: 40px; }
+  .meta { font-size: 11px; color: var(--text-3); }
+  .meta b { color: var(--text-2); font-weight: 600; margin-left: 4px; }
+  .acts { display: flex; gap: 2px; margin-left: 12px; }
+  .act {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .act.danger { color: var(--red); }
+
+  /* ---------- Light appearance (add #light to the URL) ---------- */
+  body.light {
+    --text: #1C1C1E;
+    --text-2: rgba(60, 60, 67, .62);
+    --text-3: rgba(60, 60, 67, .34);
+    --hair-soft: rgba(60, 60, 67, .10);
+    background: linear-gradient(140deg, #DDEAF8 0%, #E5E5F7 32%, #EFE4F3 58%, #F8E7EA 82%, #FBE9E4 100%);
+  }
+  body.light .blob { opacity: .6; }
+  body.light .blob.b1 { background: radial-gradient(circle, #9CC8F0, transparent 70%); }
+  body.light .blob.b2 { background: radial-gradient(circle, #C7A8EE, transparent 70%); }
+  body.light .blob.b3 { background: radial-gradient(circle, #F3A8BC, transparent 70%); }
+  body.light .blob.b4 { background: radial-gradient(circle, #8FD9D9, transparent 70%); }
+  body.light .window {
+    background: rgba(255, 255, 255, .52);
+    border-color: rgba(255, 255, 255, .80);
+    box-shadow:
+      0 1.5px 0 rgba(255, 255, 255, .95) inset,
+      0 -1px 0 rgba(255, 255, 255, .45) inset,
+      0 40px 110px rgba(60, 70, 110, .28);
+  }
+  body.light .window::after {
+    background:
+      linear-gradient(112deg, rgba(255,255,255,.40) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 62%, rgba(255,255,255,.20) 100%),
+      linear-gradient(100deg, rgba(255,255,255,0) 34%, rgba(255,255,255,.24) 45%, rgba(255,255,255,0) 57%);
+  }
+  body.light .sidebar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .26));
+    border-right-color: rgba(255, 255, 255, .70);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .95) inset,
+      1px 0 0 rgba(60, 60, 67, .05);
+  }
+  body.light .nav a.active {
+    background: linear-gradient(180deg, #FFFFFF, rgba(255, 255, 255, .78));
+    border-color: rgba(255, 255, 255, .98);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 8px 20px rgba(60, 70, 110, .16);
+  }
+  body.light .side-divider { background: rgba(60, 60, 67, .10); }
+  body.light .toolbar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .48), rgba(255, 255, 255, .14));
+    border-bottom-color: rgba(60, 60, 67, .08);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .90) inset;
+  }
+  body.light .search, body.light .iconbtn {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .58));
+    border-color: rgba(255, 255, 255, .98);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 4px 12px rgba(60, 70, 110, .10);
+  }
+  body.light .search .kbd { background: rgba(60, 60, 67, .06); }
+  body.light .avatar {
+    background: rgba(255, 255, 255, .78);
+    border-color: rgba(255, 255, 255, .98);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 4px 12px rgba(60, 70, 110, .12);
+  }
+  body.light .primary {
+    border-color: rgba(255, 255, 255, .90);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .85) inset, 0 8px 20px rgba(10, 90, 220, .30);
+  }
+  body.light .content {
+    background: rgba(255, 255, 255, .74);
+    border-color: rgba(255, 255, 255, .92);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 14px 36px rgba(60, 70, 110, .10);
+  }
+  body.light .stat {
+    background: linear-gradient(160deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .52));
+    border-color: rgba(255, 255, 255, .98);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 10px 26px rgba(60, 70, 110, .09);
+  }
+  body.light .stat .delta.up { color: #1B9E45; }
+  body.light .tabs {
+    background: linear-gradient(180deg, rgba(120, 120, 128, .13), rgba(120, 120, 128, .08));
+    border-color: rgba(60, 60, 67, .08);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .65) inset;
+  }
+  body.light .tabs .tab.active {
+    background: linear-gradient(180deg, #FFFFFF, rgba(255, 255, 255, .82));
+    border-color: rgba(255, 255, 255, .98);
+    box-shadow: 0 1px 0 #FFFFFF inset, 0 4px 12px rgba(60, 70, 110, .16);
+  }
+  body.light .tile.blue { background: rgba(10, 132, 255, .12); color: #0A6CDB; }
+  body.light .tile.gray { background: rgba(120, 120, 128, .12); }
+  body.light .tile.green { background: rgba(48, 209, 88, .14); color: #1B9E45; }
+  body.light .status.blue { color: #0A6CDB; }
+  body.light .status.green { color: #1B9E45; }
+  body.light .bar { background: rgba(120, 120, 128, .20); }
+  body.light .bar.gray i { background: rgba(60, 60, 67, .32); }
+  body.light .act.danger { color: #E5484D; }
+
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+
+  <div class="window">
+    <aside class="sidebar">
+      <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+
+      <div class="brand">
+        <div class="mark">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v7m0 0L5.2 7.2M8 10l2.8-2.8M4 13.2h8"/></svg>
+        </div>
+        <div>
+          <h1>Grabbit</h1>
+          <small>Download Manager</small>
+        </div>
+      </div>
+
+      <div class="nav-label">Main</div>
+      <nav class="nav">
+        <a class="active">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13.5h10"/></svg>
+          Downloads <span class="count">3</span>
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.8v3h-3"/></svg>
+          Torrents
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg>
+          Media
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="4" cy="12" r="1.6"/><path d="M3.5 8.5a4 4 0 0 1 4 4M3.5 4.5a8 8 0 0 1 8 8"/></svg>
+          RSS
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><ellipse cx="8" cy="8" rx="2.6" ry="6"/><path d="M2.4 6h11.2M2.4 10h11.2"/></svg>
+          Grabber
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+          LinkGrabber
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></svg>
+          Scheduler
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 8a5.5 5.5 0 1 0 1.6-3.9M2.5 1.8v3h3"/><path d="M8 5.5V8l1.8 1.2"/></svg>
+          History
+        </a>
+      </nav>
+
+      <div class="spacer"></div>
+      <div class="side-divider"></div>
+      <nav class="nav">
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4"/></svg>
+          Settings
+        </a>
+        <a>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11"/><circle cx="8" cy="4.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          About
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="toolbar">
+        <div class="search">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M13.5 13.5L10.3 10.3"/></svg>
+          Search downloads…
+          <span class="kbd">⌘K</span>
+        </div>
+        <div class="right">
+          <div class="iconbtn">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v10M5 13l-2.4-2.4M5 13l2.4-2.4M11 13V3M11 3L8.6 5.4M11 3l2.4 2.4"/></svg>
+          </div>
+          <div class="primary">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>
+            New Download
+          </div>
+          <div class="avatar">G</div>
+        </div>
+      </div>
+
+      <main class="content">
+        <div class="pagehead">
+          <h2>Downloads</h2>
+          <div class="sub">3 active tasks · 4.2 MB/s total</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Active transfers</div>
+            <div class="value">3</div>
+            <div class="delta up">+1 today</div>
+          </div>
+          <div class="stat">
+            <div class="label">Completed today</div>
+            <div class="value">12</div>
+            <div class="delta">Most recent 2m ago</div>
+          </div>
+          <div class="stat">
+            <div class="label">Total speed</div>
+            <div class="value"><span class="accent">4.2</span><span class="unit">MB/s</span></div>
+            <div class="delta up">+0.8 over average</div>
+          </div>
+        </div>
+
+        <div class="tabsrow">
+          <div class="title">Queue</div>
+          <div class="tabs">
+            <span class="tab active">All <span class="n">3</span></span>
+            <span class="tab">Downloading <span class="n">1</span></span>
+            <span class="tab">Paused <span class="n">1</span></span>
+            <span class="tab">Failed <span class="n">0</span></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="rowtop">
+            <div class="tile blue">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v7m0 0L5.2 6.7M8 9.5l2.8-2.8M4 13.2h8"/></svg>
+            </div>
+            <div>
+              <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
+              <div class="host">media.example.com · 1.24 GB</div>
+            </div>
+            <span class="status blue">Downloading</span>
+            <div class="acts">
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 3.5V13M10 3.5V13"/></svg></div>
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+              <div class="act danger"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+            </div>
+          </div>
+          <div class="rowbottom">
+            <div class="bar blue"><i style="width:64%"></i></div>
+            <div class="pct">64%</div>
+            <div class="meta">Speed <b>3.1 MB/s</b> · ETA <b>2m 40s</b> · 16 connections</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="rowtop">
+            <div class="tile gray">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5V13M10 3.5V13"/></svg>
+            </div>
+            <div>
+              <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
+              <div class="host">cdn.example.com · 84.5 MB</div>
+            </div>
+            <span class="status gray">Paused</span>
+            <div class="acts">
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg></div>
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+              <div class="act danger"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+            </div>
+          </div>
+          <div class="rowbottom">
+            <div class="bar gray"><i style="width:41%"></i></div>
+            <div class="pct">41%</div>
+            <div class="meta">Speed <b>—</b> · ETA <b>—</b> · 8 connections</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="rowtop">
+            <div class="tile green">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>
+            </div>
+            <div>
+              <div class="file">SM03_KaWai Font.zip</div>
+              <div class="host">netpanchi.com · 28.0 KB</div>
+            </div>
+            <span class="status green">Completed</span>
+            <div class="acts">
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5a1 1 0 0 1 1-1h3l1.2 1.5h4.8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></div>
+              <div class="act"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+              <div class="act danger"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+            </div>
+          </div>
+          <div class="rowbottom">
+            <div class="bar green"><i style="width:100%"></i></div>
+            <div class="pct">100%</div>
+            <div class="meta">Saved to <b>Downloads/Grabbit/Other</b></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+<script>if (location.hash === '#light') document.body.classList.add('light');</script>
+</body>
+</html>
