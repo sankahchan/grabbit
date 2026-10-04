@@ -36,33 +36,48 @@
 
   /* ---------- Light variant (add #light to the URL) ---------- */
   body.light {
-    --backdrop: #EAE6E1;
-    --canvas: #F4F1ED;
-    --sidebar: #EFEBE6;
+    --backdrop: #E7E2DC;
+    --canvas: #EFEAE3;
+    --sidebar: #F8F5F0;
     --glass: #FFFFFF;
     --line: rgba(90, 60, 80, .12);
-    --line-strong: rgba(90, 60, 80, .18);
+    --line-strong: rgba(90, 60, 80, .20);
     --text: #1A151A;
-    --text-2: #6E646C;
-    --text-3: #9A8F96;
-    --coral: #E0637F;
-    --coral-deep: #C74D6A;
+    --text-2: #6B6169;
+    --text-3: #968B93;
+    --coral: #DB5A78;
+    --coral-deep: #C24765;
     --mauve: #A99DAE;
     --champagne: #B5AD9C;
-    --shadow-card: 0 1px 0 rgba(255, 255, 255, .9) inset, 0 14px 34px rgba(70, 40, 60, .10);
-    --shadow-window: 0 40px 100px rgba(70, 40, 60, .22), 0 0 90px rgba(122, 46, 79, .08);
+    --shadow-card: 0 1px 2px rgba(70, 40, 60, .06), 0 16px 40px rgba(70, 40, 60, .10);
+    --shadow-window: 0 50px 110px rgba(70, 40, 60, .24), 0 0 90px rgba(122, 46, 79, .08);
     background:
-      radial-gradient(950px 540px at 88% -12%, rgba(122, 46, 79, .12), transparent 66%),
-      radial-gradient(900px 520px at 6% 112%, rgba(242, 126, 147, .07), transparent 65%),
+      radial-gradient(950px 540px at 88% -12%, rgba(122, 46, 79, .14), transparent 66%),
+      radial-gradient(900px 520px at 6% 112%, rgba(219, 90, 120, .08), transparent 65%),
       var(--backdrop);
   }
-  body.light .window { background: linear-gradient(180deg, #F9F6F2 0%, var(--canvas) 34%); }
+  body.light .window {
+    background: linear-gradient(180deg, #F6F2EC 0%, var(--canvas) 34%);
+    border-radius: 28px;
+  }
+  /* Silver sidebar panel: lighter than the canvas, plum wash behind the brand */
   body.light .sidebar {
     background:
-      radial-gradient(260px 170px at 30% -6%, rgba(122, 46, 79, .10), transparent 72%),
-      var(--sidebar);
+      radial-gradient(280px 180px at 30% -6%, rgba(122, 46, 79, .14), transparent 72%),
+      linear-gradient(180deg, #FBF8F4 0%, var(--sidebar) 60%, #F2EEE8 100%);
+    border-right: 1px solid rgba(90, 60, 80, .14);
   }
-  body.light .stat.silver { background: linear-gradient(180deg, #FFFFFF, #F1EEE8); }
+  body.light .stat, body.light .task { border-radius: 24px; }
+  body.light .stat.silver {
+    background: linear-gradient(180deg, #FFFFFF, #EFEBE3);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .95) inset, 0 16px 40px rgba(70, 40, 60, .10);
+  }
+  body.light .stat.glass, body.light .task {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .95) inset, 0 16px 40px rgba(70, 40, 60, .10);
+  }
+  body.light .nav a.active {
+    box-shadow: 0 10px 28px rgba(122, 46, 79, .35), 0 1px 0 rgba(255, 255, 255, .3) inset;
+  }
   body.light .segs i { background: rgba(90, 60, 80, .10); }
   body.light .segs.silver i.on { background: linear-gradient(180deg, #DCD6C8, #B5AD9C); box-shadow: none; }
   body.light .segs.mauve i.on { background: linear-gradient(180deg, #C6BBC9, #A99DAE); }
@@ -76,7 +91,7 @@
   body.light .iconbtn, body.light .search { background: #FFFFFF; }
   body.light .mini { background: #F4F1ED; }
   body.light .nav a .count, body.light .brand .ver, body.light .search .kbd {
-    background: rgba(90, 60, 80, .06);
+    background: rgba(90, 60, 80, .07);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }

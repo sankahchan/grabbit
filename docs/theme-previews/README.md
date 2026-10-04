@@ -184,8 +184,10 @@ meters** (Vaulta portfolio-bar style: 38 segments, lit ones in a coral
 gradient with a soft glow; mauve for paused, champagne for completed),
 gradient coral status pills, and a silver completed row with a chevron.
 
-Light variant tokens: backdrop `#EAE6E1`, canvas `#F4F1ED`, white cards
-with soft plum shadows, ink `#1A151A`; plum and coral stay identical, and
+Light variant tokens: backdrop `#E7E2DC`, canvas `#EFEAE3`, a lighter
+silver sidebar panel (`#F8F5F0` with a plum wash behind the brand), white
+cards with two-layer plum shadows and a white inset sheen, ink `#1A151A`,
+coral deepened to `#DB5A78`; radii grow to 28 (window) / 24 (cards), and
 completed segments turn antique silver (`#DCD6C8 → #B5AD9C`) so they read
 on white.
 
