@@ -19,15 +19,16 @@
     --text: #EDF2F5;
     --text-2: #93A3AD;
     --text-3: #5E6C76;
-    --lime: #A8FF3B;
+    --lime: #B6FF4A;
+    --lime-deep: #8FE62E;
     --lime-ink: #0A1006;
-    --lime-glow: rgba(168, 255, 59, .45);
+    --lime-glow: rgba(182, 255, 74, .38);
     --cyan: #4FC3E8;
     --gold: #F5B54A;
     --red: #FF6B6B;
     --mono: "SF Mono", ui-monospace, Menlo, monospace;
-    --shadow-card: 0 1px 0 rgba(255,255,255,.03) inset, 0 14px 40px rgba(0,0,0,.45);
-    --shadow-window: 0 50px 130px rgba(0,0,0,.75), 0 0 90px rgba(79,195,232,.07);
+    --shadow-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 10px 30px rgba(0,0,0,.5);
+    --shadow-window: 0 60px 140px rgba(0,0,0,.8), 0 0 120px rgba(79,195,232,.07);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +49,7 @@
     width: 1236px; height: 768px;
     background: linear-gradient(180deg, #0D1218 0%, var(--canvas) 30%);
     border: 1px solid var(--line);
-    border-radius: 22px;
+    border-radius: 24px;
     box-shadow: var(--shadow-window);
     overflow: hidden;
     display: flex;
@@ -66,17 +67,23 @@
   .dot { width: 12px; height: 12px; border-radius: 50%; }
   .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
 
-  .brand { padding: 0 8px 16px; display: flex; align-items: center; gap: 8px; }
+  .brand { padding: 0 8px 16px; display: flex; align-items: center; gap: 9px; }
+  .brand .bolt {
+    width: 26px; height: 26px; border-radius: 8px; flex: none;
+    background: linear-gradient(180deg, #CBFF74, var(--lime) 55%, var(--lime-deep));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 18px var(--lime-glow), 0 1px 0 rgba(255,255,255,.5) inset;
+  }
   .brand h1 { font-size: 16px; font-weight: 800; letter-spacing: .04em; }
-  .brand h1 i { font-style: normal; color: var(--lime); }
   .brand .ver {
     font: 700 9.5px var(--mono); color: var(--text-2);
     background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
     padding: 2px 7px; border-radius: 999px;
   }
   .brand small {
-    display: block; font-size: 8.5px; font-weight: 700; letter-spacing: .16em;
+    display: block; font-size: 8px; font-weight: 700; letter-spacing: .12em;
     color: var(--text-3); text-transform: uppercase; margin-top: 2px;
+    white-space: nowrap;
   }
 
   .nav-label {
@@ -96,8 +103,9 @@
     color: var(--text-2); padding: 1.5px 7px; border-radius: 999px;
   }
   .nav a.active {
-    background: var(--lime); color: var(--lime-ink);
-    box-shadow: 0 0 26px var(--lime-glow), 0 1px 0 rgba(255,255,255,.35) inset;
+    background: linear-gradient(180deg, #CBFF74, var(--lime) 55%, var(--lime-deep));
+    color: var(--lime-ink);
+    box-shadow: 0 0 22px var(--lime-glow), 0 1px 0 rgba(255,255,255,.5) inset, 0 -1px 0 rgba(0,0,0,.12) inset;
   }
   .nav a.active svg { color: var(--lime-ink); }
   .nav a.active .count {
@@ -157,9 +165,13 @@
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
   .stat {
     background: var(--card); backdrop-filter: blur(12px);
-    border: 1px solid var(--line); border-radius: 20px;
+    border: 1px solid var(--line); border-radius: 18px;
     box-shadow: var(--shadow-card); padding: 14px 17px 13px;
   }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 24px; margin-top: 10px; }
+  .spark i { flex: 1; border-radius: 3px; background: var(--lime); opacity: .8; box-shadow: 0 0 10px rgba(182, 255, 74, .22); }
+  .spark i.dim { opacity: .2; box-shadow: none; }
+  .spark i.cy { background: var(--cyan); box-shadow: 0 0 10px rgba(79, 195, 232, .3); }
   .stat .label { margin-bottom: 8px; }
   .stat .value {
     font: 500 24px var(--mono); letter-spacing: .04em;
@@ -179,16 +191,25 @@
     padding: 3.5px 10px; border-radius: 999px;
     background: rgba(255, 255, 255, .04); border: 1px solid var(--line); color: var(--text-2);
   }
-  .chip.lime { background: rgba(168, 255, 59, .12); border-color: rgba(168, 255, 59, .35); color: var(--lime); }
+  .chip.lime { background: rgba(182, 255, 74, .12); border-color: rgba(182, 255, 74, .35); color: var(--lime); box-shadow: 0 0 14px rgba(182, 255, 74, .16); }
   .chip.gold { background: rgba(245, 181, 74, .12); border-color: rgba(245, 181, 74, .35); color: var(--gold); }
   .chip.cyan { background: rgba(79, 195, 232, .12); border-color: rgba(79, 195, 232, .35); color: var(--cyan); }
   .chip.red { background: rgba(255, 107, 107, .12); border-color: rgba(255, 107, 107, .35); color: var(--red); }
 
   .task {
+    position: relative; overflow: hidden;
     background: var(--card); backdrop-filter: blur(12px);
-    border: 1px solid var(--line); border-radius: 20px;
-    box-shadow: var(--shadow-card); padding: 14px 17px; margin-bottom: 11px;
+    border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--shadow-card); padding: 14px 17px 14px 20px; margin-bottom: 11px;
   }
+  .task::before {
+    content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px;
+    border-radius: 999px; background: var(--line);
+  }
+  .task.lime::before { background: linear-gradient(180deg, #D8FF69, var(--lime)); box-shadow: 0 0 12px var(--lime-glow); }
+  .task.gold::before { background: var(--gold); box-shadow: 0 0 10px rgba(245, 181, 74, .4); }
+  .task.cyan::before { background: var(--cyan); box-shadow: 0 0 10px rgba(79, 195, 232, .4); }
+  .task.lime { border-color: rgba(182, 255, 74, .22); box-shadow: 0 0 34px rgba(182, 255, 74, .06), var(--shadow-card); }
   .task .row1 { display: flex; align-items: center; gap: 10px; }
   .task .file { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
   .task .host { font: 500 11px var(--mono); color: var(--text-3); margin-top: 2px; }
@@ -197,8 +218,8 @@
   .bar { flex: 1; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .06); overflow: hidden; }
   .bar i {
     display: block; height: 100%; border-radius: 999px;
-    background: linear-gradient(90deg, #C4FF70, var(--lime));
-    box-shadow: 0 0 16px var(--lime-glow);
+    background: linear-gradient(90deg, #D8FF69, var(--lime) 60%, var(--lime-deep));
+    box-shadow: 0 0 14px var(--lime-glow);
   }
   .bar.gold i { background: linear-gradient(90deg, #FFD37A, var(--gold)); box-shadow: 0 0 14px rgba(245, 181, 74, .4); }
   .bar.cyan i { background: linear-gradient(90deg, #7BD8F5, var(--cyan)); box-shadow: 0 0 14px rgba(79, 195, 232, .35); }
@@ -226,8 +247,11 @@
       <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
 
       <div class="brand">
+        <div class="bolt">
+          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M9.4 1.4L3.6 9h3.3l-.9 5.6L11.9 7H8.6z" fill="#0A1006"/></svg>
+        </div>
         <div>
-          <h1>Gr<i>a</i>bbit</h1>
+          <h1>Grabbit</h1>
           <small>Download Console</small>
         </div>
         <span class="ver">v1.6</span>
@@ -321,7 +345,12 @@
         <div class="stat">
           <div class="label micro">/ Total speed ///</div>
           <div class="value lime">4.2<span class="unit">MB/S</span></div>
-          <div class="dots"><i style="background:var(--gold)"></i><i style="background:var(--text)"></i><i style="background:var(--lime);box-shadow:0 0 8px var(--lime-glow)"></i><i style="background:var(--cyan)"></i></div>
+          <div class="spark">
+            <i style="height:30%"></i><i style="height:48%"></i><i class="dim" style="height:26%"></i>
+            <i style="height:62%"></i><i style="height:42%"></i><i class="cy" style="height:76%"></i>
+            <i class="dim" style="height:34%"></i><i style="height:56%"></i><i class="cy" style="height:88%"></i>
+            <i style="height:64%"></i><i class="dim" style="height:44%"></i><i style="height:96%"></i>
+          </div>
         </div>
       </div>
 
@@ -333,7 +362,7 @@
         <span class="chip red">FAILED</span>
       </div>
 
-      <div class="task">
+      <div class="task lime">
         <div class="row1">
           <div>
             <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
@@ -357,7 +386,7 @@
         </div>
       </div>
 
-      <div class="task">
+      <div class="task gold">
         <div class="row1">
           <div>
             <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
@@ -381,7 +410,7 @@
         </div>
       </div>
 
-      <div class="task">
+      <div class="task cyan">
         <div class="row1">
           <div>
             <div class="file">SM03_KaWai Font.zip</div>
