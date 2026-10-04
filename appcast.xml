@@ -134,5 +134,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.1/Grabbit-v1.5.1.dmg" sparkle:version="1.5.1" sparkle:shortVersionString="1.5.1" sparkle:edSignature="vqIF8DKyaNhiKz5VUvunuAZ+V9waZ37ReR1cs0AfkbFRoakS59ri6NcYxMXdiRc4Sp7RADp/tW3SWvnhJSQDDQ==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.5.2</title>
+      <pubDate>Sun, 04 Oct 2026 10:23:35 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">Release v1.5.2: GitHub-first extension distribution<br/><br/>- Every release now also attaches grabbit-extension-latest.zip, giving a<br/>  stable download URL:<br/>  releases/latest/download/grabbit-extension-latest.zip<br/>- README + GrabbitExtension/README document the release-ZIP install<br/>  (unzip -&gt; Load unpacked -&gt; the app connects it automatically since<br/>  v1.3.0); install-host.sh stays as the development fallback.<br/>- The Grabber tab shows a Get the extension button opening the latest<br/>  release when no host manifest is installed.<br/><br/>410 tests / 0 failures.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.2/Grabbit-v1.5.2.dmg" sparkle:version="1.5.2" sparkle:shortVersionString="1.5.2" sparkle:edSignature="aXpNk+E5g3TyMn6T190ICAmXciALsXDEektPEl6NPbHK1eWWI8WVTs7TAB+rDCaLit7rKrJd4QoE9CPwoa8PAA==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
