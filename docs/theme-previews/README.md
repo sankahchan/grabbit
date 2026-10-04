@@ -97,3 +97,51 @@ Re-render:
   --screenshot="$PWD/docs/theme-previews/pulse-dark.png" \
   "file://$PWD/docs/theme-previews/pulse.html"
 ```
+
+## Grove
+
+An earthy "command console" skin inspired by
+[TERA — Farm Management SaaS](https://www.behance.net/gallery/251337883/Farm-Management-SaaS-Platform-UIUX-Design-TERA)
+on Behance. Name: **Grove** — short, green, grounded. Dark-first.
+
+Style language: dark olive/charcoal panels on a deep green-black canvas,
+chartreuse accent, amber secondary, blue "water" accent card, metric
+chips with tiny icons, circular gauges, pill tab navigation (pale lime
+active), lowercase chunky logotype.
+
+### Tokens (as rendered)
+
+| Token | Value |
+| --- | --- |
+| Backdrop | `#0B0D08` + olive/blue ambient glows |
+| Canvas | `#14170F` (window gradient from `#171B11`) |
+| Sidebar | `#12150D` |
+| Card | `#1B1F14` |
+| Border | `rgba(232,242,206,.10)` / strong `.16` |
+| Text / secondary / tertiary | `#F2F2E8` / `#A9AF9A` / `#6F7663` |
+| Accent (chartreuse) | `#D6F24E`, pale pill `#E6F8A6`, ink `#14170F` |
+| Amber (paused) | `#D9A94A` |
+| Blue (water card) | `#5B8CFF` over `linear-gradient(120deg,#16233F,#1B2A4A,#101A2E)` |
+| Danger | `#E06C5B` |
+| Card shadow | `inset 0 1px 0 rgba(255,255,255,.03), 0 14px 36px rgba(0,0,0,.45)` |
+| Window shadow | `0 56px 130px rgba(0,0,0,.78), 0 0 110px rgba(214,242,78,.05)` |
+
+Radii: window 22 · cards 18 · chips 10 · pills 999. Signature elements:
+filled lime gauge circles (dark % text), amber ring gauge for paused,
+check gauge for completed, and tiny-icon metric chips
+(`⚡ 3.1 MB/s · 🕐 2m 40s · 🔗 16`).
+
+### Files
+
+- `grove.html` — the mockup (dark only)
+- `grove-dark.png` — 2560×1600 render
+
+Re-render:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/grove-dark.png" \
+  "file://$PWD/docs/theme-previews/grove.html"
+```

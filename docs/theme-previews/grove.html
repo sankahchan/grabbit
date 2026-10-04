@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Grabbit — Grove theme preview</title>
+<style>
+  /* ===== Grove — an earthy "command console" Grabbit theme =====
+     TERA-inspired: dark olive/charcoal panels, chartreuse accent,
+     amber secondary, metric chips with tiny icons, gauge circles,
+     pill tab navigation. Dark-first. */
+  :root {
+    --backdrop: #0B0D08;
+    --canvas: #14170F;
+    --sidebar: #12150D;
+    --card: #1B1F14;
+    --card-2: #202518;
+    --line: rgba(232, 242, 206, .10);
+    --line-strong: rgba(232, 242, 206, .16);
+    --text: #F2F2E8;
+    --text-2: #A9AF9A;
+    --text-3: #6F7663;
+    --lime: #D6F24E;
+    --lime-soft: #E6F8A6;
+    --lime-ink: #14170F;
+    --lime-dim: rgba(214, 242, 78, .16);
+    --amber: #D9A94A;
+    --amber-dim: rgba(217, 169, 74, .14);
+    --blue: #5B8CFF;
+    --red: #E06C5B;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 14px 36px rgba(0, 0, 0, .45);
+    --shadow-window: 0 56px 130px rgba(0, 0, 0, .78), 0 0 110px rgba(214, 242, 78, .05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 520px at 10% -10%, rgba(214, 242, 78, .10), transparent 65%),
+      radial-gradient(1100px 560px at 95% 110%, rgba(91, 140, 255, .07), transparent 65%),
+      var(--backdrop);
+    display: flex; align-items: center; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .window {
+    width: 1236px; height: 768px;
+    background: linear-gradient(180deg, #171B11 0%, var(--canvas) 34%);
+    border: 1px solid var(--line-strong);
+    border-radius: 22px;
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 232px; flex: none;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 14px 12px 12px;
+    display: flex; flex-direction: column;
+  }
+  .traffic { display: flex; gap: 7px; padding: 2px 6px 16px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+
+  .brand { padding: 0 8px 16px; display: flex; align-items: center; gap: 8px; }
+  .brand h1 { font-size: 19px; font-weight: 900; letter-spacing: -.03em; }
+  .brand .ver {
+    font: 700 9.5px var(--mono); color: var(--text-2);
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    padding: 2px 7px; border-radius: 999px;
+  }
+  .brand small {
+    display: block; font-size: 8px; font-weight: 700; letter-spacing: .14em;
+    color: var(--text-3); text-transform: uppercase; margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .nav-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-3); padding: 10px 12px 7px;
+  }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 13px; border-radius: 999px;
+    color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  .nav a svg { color: var(--text-3); }
+  .nav a .count {
+    margin-left: auto; font: 700 10px var(--mono);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    color: var(--text-2); padding: 1.5px 7px; border-radius: 999px;
+  }
+  .nav a.active {
+    background: var(--lime-soft); color: var(--lime-ink);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset, 0 6px 18px rgba(214, 242, 78, .12);
+  }
+  .nav a.active svg { color: var(--lime-ink); }
+  .nav a.active .count {
+    background: rgba(20, 23, 15, .14); border-color: transparent; color: var(--lime-ink);
+  }
+  .spacer { flex: 1; }
+  .side-divider { height: 1px; background: var(--line); margin: 10px 8px 8px; }
+
+  /* ---------- Content ---------- */
+  .content { flex: 1; padding: 20px 26px; overflow: hidden; }
+  .micro {
+    font: 700 9px var(--mono); letter-spacing: .2em; text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .search {
+    flex: 1; max-width: 400px; height: 36px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    display: flex; align-items: center; gap: 9px; padding: 0 15px;
+    color: var(--text-3); font-size: 12px;
+  }
+  .search svg { color: var(--text-3); }
+  .search .kbd {
+    margin-left: auto; font: 700 10px var(--mono); color: var(--text-3);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .iconbtn {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .primary {
+    height: 36px; padding: 0 17px; border-radius: 999px;
+    background: var(--lime); color: var(--lime-ink);
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 800; font-size: 12.5px; letter-spacing: -.005em;
+    box-shadow: 0 8px 24px rgba(214, 242, 78, .18), 0 1px 0 rgba(255,255,255,.5) inset;
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--card-2); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 12.5px var(--mono); color: var(--lime);
+  }
+
+  .pagehead { display: flex; align-items: baseline; gap: 13px; margin-bottom: 12px; }
+  .pagehead h2 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  .pagehead .sub { color: var(--text-2); font-size: 12px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .stat {
+    position: relative;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--shadow-card); padding: 12px 15px 12px;
+  }
+  .stat .label { margin-bottom: 8px; }
+  .stat .value { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+  .stat .value .unit { font-size: 12px; font-weight: 700; color: var(--text-2); margin-left: 3px; }
+  .stat .delta { font-size: 11px; color: var(--lime); font-weight: 700; margin-left: 7px; }
+  .stat .arrow {
+    position: absolute; top: 13px; right: 14px;
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid var(--line-strong); color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat .ring {
+    position: absolute; top: 13px; right: 14px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--lime); color: var(--lime-ink);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 10.5px var(--mono);
+    box-shadow: 0 0 20px rgba(214, 242, 78, .25);
+  }
+  /* The water-style accent card (blue gradient) */
+  .stat.water {
+    background:
+      radial-gradient(340px 150px at 88% -30%, rgba(91, 140, 255, .35), transparent 70%),
+      linear-gradient(120deg, #16233F 0%, #1B2A4A 55%, #101A2E 100%);
+    border-color: rgba(91, 140, 255, .28);
+  }
+  .stat.water .value { color: #EAF1FF; }
+  .stat.water .delta { color: #9FB6FF; }
+  .stat.water .arrow { border-color: rgba(91, 140, 255, .4); color: #C9D8FF; }
+
+  /* ---------- Queue pill tabs ---------- */
+  .tabs {
+    display: inline-flex; gap: 3px; align-items: center;
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px; margin: 2px 2px 10px;
+  }
+  .tabs .tab {
+    padding: 5px 13px; border-radius: 999px;
+    font-weight: 700; font-size: 11.5px; letter-spacing: .02em; color: var(--text-2);
+  }
+  .tabs .tab.active {
+    background: var(--lime-soft); color: var(--lime-ink);
+    box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+  }
+  .tabs .tab .n { opacity: .6; margin-left: 5px; font: 700 10px var(--mono); }
+  .tabs-title { font-size: 14px; font-weight: 800; margin-right: 10px; letter-spacing: -.01em; }
+
+  /* ---------- Task cards ---------- */
+  .task {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--shadow-card); padding: 12px 15px; margin-bottom: 10px;
+  }
+  .task .row1 { display: flex; align-items: center; gap: 12px; }
+  .task .file { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
+  .task .host { font-size: 11px; color: var(--text-3); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+  .task .host svg { color: var(--text-3); }
+  .task .status { margin-left: auto; }
+  .chip {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+    padding: 3.5px 11px; border-radius: 999px;
+    border: 1px solid var(--line-strong); color: var(--text-2);
+  }
+  .chip.lime { border-color: rgba(214, 242, 78, .5); color: var(--lime); background: var(--lime-dim); }
+  .chip.amber { border-color: rgba(217, 169, 74, .5); color: var(--amber); background: var(--amber-dim); }
+  .chip.plain { border-color: var(--line-strong); color: var(--text-2); }
+  .chip.red { border-color: rgba(224, 108, 91, .5); color: var(--red); background: rgba(224, 108, 91, .12); }
+
+  .task .row2 { display: flex; align-items: center; gap: 12px; margin-top: 9px; }
+  .bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; background: var(--lime); }
+  .bar.amber i { background: var(--amber); }
+  .bar.done i { background: rgba(242, 242, 232, .5); }
+
+  .gauge {
+    width: 40px; height: 40px; border-radius: 50%; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 11px var(--mono);
+  }
+  .gauge.lime { background: var(--lime); color: var(--lime-ink); box-shadow: 0 0 24px rgba(214, 242, 78, .22); }
+  .gauge.amber { border: 2px solid var(--amber); color: var(--amber); }
+  .gauge.done { border: 1.5px solid rgba(242, 242, 232, .35); color: var(--text-2); }
+
+  .metric { display: flex; gap: 7px; margin-top: 9px; align-items: center; }
+  .mchip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 4px 9px; font-size: 11px; color: var(--text-2);
+  }
+  .mchip svg { color: var(--text-3); }
+  .mchip b { color: var(--text); font-weight: 700; }
+  .mchip b.lime { color: var(--lime); }
+  .actions { display: flex; gap: 6px; margin-left: auto; }
+  .mini {
+    width: 29px; height: 29px; border-radius: 10px;
+    background: var(--card-2); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .mini.danger { color: var(--red); border-color: rgba(224, 108, 91, .3); }
+
+  .footnote { margin-top: 2px; font: 600 10.5px var(--mono); letter-spacing: .06em; color: var(--text-3); text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+  <div class="window">
+    <aside class="sidebar">
+      <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+
+      <div class="brand">
+        <div>
+          <h1>grabbit</h1>
+          <small>Download Manager</small>
+        </div>
+        <span class="ver">v1.6</span>
+      </div>
+
+      <div class="nav-label">Main</div>
+      <nav class="nav">
+        <a class="active">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13.5h10"/></svg>
+          Downloads <span class="count">3</span>
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.8v3h-3"/></svg>
+          Torrents
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg>
+          Media
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="4" cy="12" r="1.6"/><path d="M3.5 8.5a4 4 0 0 1 4 4M3.5 4.5a8 8 0 0 1 8 8"/></svg>
+          RSS
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><ellipse cx="8" cy="8" rx="2.6" ry="6"/><path d="M2.4 6h11.2M2.4 10h11.2"/></svg>
+          Grabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+          LinkGrabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></svg>
+          Scheduler
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 8a5.5 5.5 0 1 0 1.6-3.9M2.5 1.8v3h3"/><path d="M8 5.5V8l1.8 1.2"/></svg>
+          History
+        </a>
+      </nav>
+
+      <div class="spacer"></div>
+      <div class="side-divider"></div>
+      <nav class="nav">
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4"/></svg>
+          Settings
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11"/><circle cx="8" cy="4.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          About
+        </a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M13.5 13.5L10.3 10.3"/></svg>
+          Search downloads…
+          <span class="kbd">⌘K</span>
+        </div>
+        <div class="right">
+          <div class="iconbtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v10M5 13l-2.4-2.4M5 13l2.4-2.4M11 13V3M11 3L8.6 5.4M11 3l2.4 2.4"/></svg>
+          </div>
+          <div class="iconbtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg>
+          </div>
+          <div class="primary">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>
+            New Download
+          </div>
+          <div class="avatar">G</div>
+        </div>
+      </div>
+
+      <div class="pagehead">
+        <h2>Downloads</h2>
+        <div class="sub">3 active tasks · 4.2 MB/s total</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label micro">Active transfers</div>
+          <div class="value">3<span class="delta">+1 today</span></div>
+          <div class="ring">64%</div>
+        </div>
+        <div class="stat">
+          <div class="label micro">Completed today</div>
+          <div class="value">12</div>
+          <div class="arrow">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg>
+          </div>
+        </div>
+        <div class="stat water">
+          <div class="label micro" style="color:#8FA8E8">Total speed</div>
+          <div class="value">4.2<span class="unit">MB/s</span></div>
+          <div class="delta">+0.8 over average</div>
+          <div class="arrow">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center;">
+        <span class="tabs-title">Queue</span>
+        <div class="tabs">
+          <span class="tab active">All <span class="n">3</span></span>
+          <span class="tab">Downloading <span class="n">1</span></span>
+          <span class="tab">Paused <span class="n">1</span></span>
+          <span class="tab">Failed <span class="n">0</span></span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
+            <div class="host">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 14s5-4.2 5-8a5 5 0 1 0-10 0c0 3.8 5 8 5 8z"/><circle cx="8" cy="6" r="1.8"/></svg>
+              media.example.com · 1.24 GB
+            </div>
+          </div>
+          <span class="chip lime status">DOWNLOADING</span>
+        </div>
+        <div class="row2">
+          <div class="bar"><i style="width:64%"></i></div>
+          <div class="gauge lime">64%</div>
+        </div>
+        <div class="metric">
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8.8 1.5L3.5 9h3.6l-.9 5.5L11.5 7H8z"/></svg>
+            <b class="lime">3.1 MB/s</b>
+          </span>
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.5"/></svg>
+            <b>2m 40s</b>
+          </span>
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+            <b>16</b>
+          </span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 3.5V13M10 3.5V13"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
+            <div class="host">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 14s5-4.2 5-8a5 5 0 1 0-10 0c0 3.8 5 8 5 8z"/><circle cx="8" cy="6" r="1.8"/></svg>
+              cdn.example.com · 84.5 MB
+            </div>
+          </div>
+          <span class="chip amber status">PAUSED</span>
+        </div>
+        <div class="row2">
+          <div class="bar amber"><i style="width:41%"></i></div>
+          <div class="gauge amber">41%</div>
+        </div>
+        <div class="metric">
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8.8 1.5L3.5 9h3.6l-.9 5.5L11.5 7H8z"/></svg>
+            <b>—</b>
+          </span>
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.5"/></svg>
+            <b>—</b>
+          </span>
+          <span class="mchip">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+            <b>8</b>
+          </span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">SM03_KaWai Font.zip</div>
+            <div class="host">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 14s5-4.2 5-8a5 5 0 1 0-10 0c0 3.8 5 8 5 8z"/><circle cx="8" cy="6" r="1.8"/></svg>
+              netpanchi.com · 28.0 KB
+            </div>
+          </div>
+          <span class="chip plain status">COMPLETED</span>
+        </div>
+        <div class="row2">
+          <div class="bar done"><i style="width:100%"></i></div>
+          <div class="gauge done">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>
+          </div>
+        </div>
+        <div class="metric">
+          <span class="mchip">Saved to <b>Downloads/Grabbit/Other</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5a1 1 0 0 1 1-1h3l1.2 1.5h4.8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>
