@@ -8,7 +8,9 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
   extension icons where relevant). Design TBD.
 - 🔨 **New themes** — five designs reviewed and approved (saved in
   `docs/theme-previews/`):
-  - **Aura** — clean airy SaaS, light + dark (FacilityFlow-inspired)
+  - **Aura** — clean airy SaaS with a functional color system
+    (teal/green/orange/gray), dot-grid aurora backdrop, dotted progress
+    lines, light + dark (FacilityFlow-inspired)
   - **Pulse** — neon energy console: edge-lit cards, dot-matrix
     numerals, segmented progress strips, dark + light (energy-dashboard
     reference)

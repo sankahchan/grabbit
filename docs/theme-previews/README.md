@@ -7,33 +7,38 @@ explorations only — nothing here is wired into the app yet.
 
 A clean, airy Grabbit skin inspired by
 [FacilityFlow](https://www.behance.net/gallery/254898551/FacilityFlow-Facility-SaaS-UX-UI-Dashboard-Design)
-on Behance. Name: **Aura** — short and calm, matching the feel.
+on Behance. Name: **Aura** — short and calm, matching the feel. Ships in
+**light (default)** and **dark** (`#dark` on the URL).
 
-Style language: white cards on a warm off-white canvas, 1px hairline
-borders, two-layer soft shadows, pill navigation with a black active pill
-(white in dark mode), a deeper mint accent used sparingly, monochrome SVG
-icons, thin gradient progress bars and small uppercase labels.
+Style language: a functional color system where every color carries
+meaning — teal for data / system status (`#2BA2C3`), green for positive
+and completed states (`#0EBE82`), orange for alerts (`#ED4714`), gray
+for inactive states (`#D9D9D9`). Flat gray cards with large radii on a
+white canvas, a dot-grid backdrop with a soft aurora wash (peach › blue
+› mint), black pill actions, outline status orbs, halftone dot-fade
+blocks, and dotted measure-line progress bars ending in a solid knob.
 
 ### Tokens (as rendered)
 
 | Token | Light | Dark |
 | --- | --- | --- |
-| Backdrop | `#E9E9E4` + mint glow | `#0A0B0D` + mint glow |
-| Canvas | `#F5F5F2` | `#0F1113` |
-| Sidebar | `#FAFAF8` | `#14171A` |
-| Card | `#FFFFFF` | `#191C20` |
-| Border | `#E7E7E2` | `#272B30` |
-| Text / secondary / tertiary | `#16181A` / `#6D737C` / `#9AA0A6` | `#F3F4F5` / `#A3A9B1` / `#7A818A` |
-| Active pill | `#17181A` (white text) | `#F3F4F5` (dark text) |
-| Accent (mint) | `#2FA37A`, bar gradient `#4FC793 → #2FA37A` | `#6FCFA5`, gradient `#58B98D → #6FCFA5` |
-| Accent wash | `#E4F4EC` | `#1C2B25` |
-| Track | `#EEF0EE` | `#24282D` |
-| Warning amber | `#DFA03C` on `#FBF1DF` | `#E3AB55` on `#2C2517` |
-| Danger | `#DE5B4A` on `#FBEBE8` | `#E57A6E` on `#2C1E1C` |
-| Card shadow | `0 1px 2px rgba(22,24,26,.05), 0 10px 28px rgba(22,24,26,.06)` | `0 1px 2px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.42)` |
-| Window shadow | `0 40px 90px rgba(22,24,26,.20)` | `0 44px 100px rgba(0,0,0,.60)` |
+| Backdrop | `#F6F6F4` + dot grid `rgba(23,24,26,.06)` + aurora | `#0B0C0D` + dot grid `rgba(255,255,255,.045)` + aurora |
+| Canvas | `#FFFFFF` | `#141517` |
+| Sidebar | `#FCFCFB → #F6F6F4` | `#191A1E → #151619` |
+| Card | `#F1F1EF` (flat, radius 24) | `#1E1F22` (flat, radius 24) |
+| Text / secondary / tertiary | `#17181A` / `#6E747B` / `#9AA0A6` | `#F2F3F4` / `#A0A6AD` / `#71787F` |
+| Action pill / avatar | `#17181A` (white text) | `#F2F3F4` (dark text) |
+| Teal — data, system status | `#2BA2C3` on `rgba(43,162,195,.13)` | `#45B8D8` on `rgba(69,184,216,.15)` |
+| Green — positive, completed | `#0EBE82` on `rgba(14,190,130,.13)` | `#2ED196` on `rgba(46,209,150,.14)` |
+| Orange — alerts, failed | `#ED4714` on `rgba(237,71,20,.10)` | `#F0603A` on `rgba(240,96,58,.14)` |
+| Gray — inactive, paused | `#C9C9C5` on `#E4E4E0` | `#4A4D52` on `#26282C` |
+| Card shadow | `0 1px 2px rgba(20,22,24,.03), 0 12px 30px rgba(20,22,24,.05)` | `0 1px 2px rgba(0,0,0,.30), 0 14px 34px rgba(0,0,0,.35)` |
+| Window shadow | `0 48px 110px rgba(20,22,24,.18), 0 0 90px rgba(43,162,195,.07)` | `0 50px 120px rgba(0,0,0,.60), 0 0 90px rgba(69,184,216,.06)` |
 
-Radii scale: window 20 · cards 16 · inputs 12 · icon buttons 10 · pills 999.
+Radii: window 24 · cards 24 · controls 13 · rows 12 · mini 11 · pills
+999. Signature elements: green gradient brand mark, outline status orbs,
+a green status dot after the page title, halftone dot-fade stat block,
+and dotted measure-line progress bars ending in a solid knob.
 
 ### Files
 
@@ -48,6 +53,12 @@ Re-render:
   --force-device-scale-factor=2 --window-size=1280,800 \
   --screenshot="$PWD/docs/theme-previews/aura-light.png" \
   "file://$PWD/docs/theme-previews/aura.html"
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/aura-dark.png" \
+  "file://$PWD/docs/theme-previews/aura.html#dark"
 ```
 
 ## Pulse
