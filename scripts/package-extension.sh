@@ -45,6 +45,12 @@ cp "$SRC/popup.js" "$STAGE/popup.js"
 mkdir -p "$STAGE/icons"
 cp "$SRC/icons/"*.png "$STAGE/icons/"
 
+# The full (GitHub) build ships a user-facing install guide next to the
+# extension files; the store package stays runtime-only.
+if [[ $FULL_BUILD -eq 1 ]] && [[ -f "$SRC/INSTALL.txt" ]]; then
+  cp "$SRC/INSTALL.txt" "$STAGE/INSTALL.txt"
+fi
+
 # The store assigns its own item ID, so the development "key" field must be
 # stripped there. The full (GitHub) build keeps the key: unpacked loads then
 # get the stable development ID that the app's native-host manifest allows.

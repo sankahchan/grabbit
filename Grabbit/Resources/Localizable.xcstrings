@@ -6937,6 +6937,142 @@
           }
         }
       }
+    },
+    "grabber.updateExtension": {
+      "comment": "Grabber status card button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update extension"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension အပ်ဒိတ်လုပ်"
+          }
+        }
+      }
+    },
+    "grabber.extension.working": {
+      "comment": "Grabber update status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading the latest extension…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension အသစ် download လုပ်နေသည်…"
+          }
+        }
+      }
+    },
+    "grabber.extension.updated": {
+      "comment": "Grabber update status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension updated. Click Reload (↻) on chrome://extensions to activate it."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension update ပြီးပါပြီ။ အသက်သွင်းရန် chrome://extensions မှာ Reload (↻) ကို နှိပ်ပါ။"
+          }
+        }
+      }
+    },
+    "grabber.extension.saved": {
+      "comment": "Grabber update status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to Downloads/Grabbit (includes INSTALL.txt). Install it: chrome://extensions → Developer mode → Load unpacked."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads/Grabbit ထဲ သိမ်းပြီးပါပြီ (INSTALL.txt အပါအဝင်)။ ထည့်ရန် — chrome://extensions → Developer mode → Load unpacked။"
+          }
+        }
+      }
+    },
+    "grabber.extension.openExtensions": {
+      "comment": "Grabber update button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open chrome://extensions"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "chrome://extensions ဖွင့်"
+          }
+        }
+      }
+    },
+    "grabber.extension.openFolder": {
+      "comment": "Grabber update button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open folder"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုဒါ ဖွင့်"
+          }
+        }
+      }
+    },
+    "grabber.extension.failed": {
+      "comment": "Grabber update status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update failed:"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update မအောင်မြင်ပါ —"
+          }
+        }
+      }
+    },
+    "grabber.extension.invalid": {
+      "comment": "Grabber updater error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded package is not a valid extension."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download လုပ်ထားတာက extension package မမှန်ပါ။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

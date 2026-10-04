@@ -82,18 +82,102 @@ struct GrabberView: View {
 
     // MARK: - Status
 
+    /// Extension update flow state (direct download + install).
+    enum ExtensionUpdateState: Equatable {
+        case idle
+        case working
+        case updated
+        case saved(path: String)
+        case failed(String)
+    }
+
+    @State private var updateState: ExtensionUpdateState = .idle
+
+    /// One-click extension update: downloads the latest package straight
+    /// from the GitHub release (no browsing) and installs it over the
+    /// unpacked copy the browser loads; fresh installs are saved to
+    /// ~/Downloads/Grabbit with the bundled install guide.
+    private func runExtensionUpdate() {
+        updateState = .working
+        Task { @MainActor in
+            do {
+                let zip = try await ExtensionUpdater.downloadLatest()
+                defer { try? FileManager.default.removeItem(at: zip) }
+                let copies = ExtensionUpdater.findUnpackedCopies()
+                if copies.isEmpty {
+                    let base = try ExtensionUpdater.saveForManualInstall(zip: zip)
+                    updateState = .saved(path: base.path)
+                } else {
+                    for copy in copies {
+                        try ExtensionUpdater.install(zip: zip, into: copy.folder)
+                    }
+                    updateState = .updated
+                }
+            } catch {
+                updateState = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatusView: some View {
+        switch updateState {
+        case .idle:
+            EmptyView()
+        case .working:
+            HStack(spacing: 8) {
+                NeoSpinner(size: 16)
+                Text(NSLocalizedString("grabber.extension.working", comment: ""))
+                    .font(.subheadline.weight(.semibold))
+            }
+        case .updated:
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("grabber.extension.updated", comment: ""))
+                    .font(.subheadline.weight(.semibold))
+                Button(NSLocalizedString("grabber.extension.openExtensions", comment: "")) {
+                    ExtensionUpdater.openExtensionsPage()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+            }
+        case .saved(let path):
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("grabber.extension.saved", comment: ""))
+                    .font(.subheadline.weight(.semibold))
+                Button(NSLocalizedString("grabber.extension.openFolder", comment: "")) {
+                    NSWorkspace.shared.activateFileViewerSelecting(
+                        [URL(fileURLWithPath: path)])
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+            }
+        case .failed(let message):
+            Text("\(NSLocalizedString("grabber.extension.failed", comment: "")) \(message)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Neo.red)
+        }
+    }
+
     private var statusCard: some View {
         let bg = extensionConnected ? Neo.green : Neo.paper(scheme)
-        return HStack(spacing: 10) {
-            Circle()
-                .fill(extensionConnected ? Neo.green : Neo.red)
-                .frame(width: 14, height: 14)
-                .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
-            Text(extensionConnected
-                 ? NSLocalizedString("grabber.status.connected", comment: "")
-                 : NSLocalizedString("grabber.status.disconnected", comment: ""))
-                .font(.headline.weight(.bold))
-            Spacer()
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(extensionConnected ? Neo.green : Neo.red)
+                    .frame(width: 14, height: 14)
+                    .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
+                Text(extensionConnected
+                     ? NSLocalizedString("grabber.status.connected", comment: "")
+                     : NSLocalizedString("grabber.status.disconnected", comment: ""))
+                    .font(.headline.weight(.bold))
+                Spacer()
+                if extensionConnected {
+                    Button(NSLocalizedString("grabber.updateExtension", comment: "")) {
+                        runExtensionUpdate()
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+                    .disabled(updateState == .working)
+                }
+            }
+            updateStatusView
         }
         .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
         .neoCard(bg: bg, accent: extensionConnected ? Neo.green : Neo.red)
@@ -166,17 +250,15 @@ struct GrabberView: View {
                 .font(.subheadline)
             if !extensionConnected {
                 Button(NSLocalizedString("grabber.getExtension", comment: "")) {
-                    NSWorkspace.shared.open(Self.latestReleaseURL)
+                    runExtensionUpdate()
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
+                .disabled(updateState == .working)
             }
+            updateStatusView
         }
         .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
         .frame(maxWidth: .infinity, alignment: .leading)
         .neoCard(bg: Neo.yellow)
     }
-
-    /// The extension ships with every GitHub release (no Web Store listing).
-    private static let latestReleaseURL =
-        URL(string: "https://github.com/sankahchan/grabbit/releases/latest")!
 }
