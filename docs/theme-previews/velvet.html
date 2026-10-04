@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Grabbit — Velvet theme preview</title>
+<style>
+  /* ===== Velvet — a luxe plum-on-black Grabbit skin =====
+     Vaulta-inspired: deep black canvas with plum/coral glows, a
+     three-material card system (dark glass, silver metal, plum gradient),
+     large radii, coral accent, chevron rows. Dark-first. */
+  :root {
+    --backdrop: #070608;
+    --canvas: #0B0A0C;
+    --sidebar: #0D0C0F;
+    --glass: rgba(255, 255, 255, .035);
+    --line: rgba(226, 205, 220, .10);
+    --line-strong: rgba(226, 205, 220, .16);
+    --text: #F5F2F4;
+    --text-2: #A79BA3;
+    --text-3: #6E646C;
+    --coral: #F27E93;
+    --coral-deep: #D95C77;
+    --plum-1: #4A1730;
+    --plum-2: #7A2E4F;
+    --plum-3: #A8456B;
+    --silver-1: #F6F4EF;
+    --silver-2: #DFDCD2;
+    --silver-ink: #17151A;
+    --mauve: #9A8F9E;
+    --champagne: #E8E4DA;
+    --red: #E06C5B;
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 16px 40px rgba(0, 0, 0, .5);
+    --shadow-window: 0 60px 140px rgba(0, 0, 0, .82), 0 0 130px rgba(122, 46, 79, .16);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(950px 540px at 88% -12%, rgba(122, 46, 79, .38), transparent 66%),
+      radial-gradient(900px 520px at 6% 112%, rgba(242, 126, 147, .10), transparent 65%),
+      var(--backdrop);
+    display: flex; align-items: center; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .window {
+    width: 1236px; height: 768px;
+    background: linear-gradient(180deg, #100D11 0%, var(--canvas) 34%);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 234px; flex: none;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: 14px 12px 12px;
+    display: flex; flex-direction: column;
+  }
+  .traffic { display: flex; gap: 7px; padding: 2px 6px 16px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+
+  .brand { padding: 0 8px 16px; display: flex; align-items: center; gap: 10px; }
+  .brand .mark {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    background: linear-gradient(150deg, var(--coral) 0%, var(--plum-2) 45%, var(--plum-1) 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(122, 46, 79, .45), 0 1px 0 rgba(255,255,255,.25) inset;
+  }
+  .brand h1 { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+  .brand .ver {
+    font: 700 9.5px ui-monospace, "SF Mono", monospace; color: var(--text-2);
+    background: rgba(255, 255, 255, .045); border: 1px solid var(--line);
+    padding: 2px 7px; border-radius: 999px;
+  }
+  .brand small {
+    display: block; font-size: 8px; font-weight: 700; letter-spacing: .14em;
+    color: var(--text-3); text-transform: uppercase; margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .nav-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-3); padding: 10px 12px 7px;
+  }
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+  .nav a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 13px; border-radius: 999px;
+    color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  .nav a svg { color: var(--text-3); }
+  .nav a .count {
+    margin-left: auto; font: 700 10px ui-monospace, "SF Mono", monospace;
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    color: var(--text-2); padding: 1.5px 7px; border-radius: 999px;
+  }
+  .nav a.active {
+    background: linear-gradient(135deg, var(--plum-3), var(--plum-2) 55%, var(--plum-1));
+    color: #FFF4F8;
+    box-shadow: 0 8px 26px rgba(122, 46, 79, .5), 0 1px 0 rgba(255,255,255,.18) inset;
+  }
+  .nav a.active svg { color: #FFE3EC; }
+  .nav a.active .count {
+    background: rgba(255, 255, 255, .18); border-color: transparent; color: #FFF4F8;
+  }
+  .spacer { flex: 1; }
+  .side-divider { height: 1px; background: var(--line); margin: 10px 8px 8px; }
+
+  /* ---------- Content ---------- */
+  .content { flex: 1; padding: 20px 26px; overflow: hidden; }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .search {
+    flex: 1; max-width: 400px; height: 36px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
+    display: flex; align-items: center; gap: 9px; padding: 0 15px;
+    color: var(--text-3); font-size: 12px;
+  }
+  .search svg { color: var(--text-3); }
+  .search .kbd {
+    margin-left: auto; font: 700 10px ui-monospace, "SF Mono", monospace; color: var(--text-3);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .iconbtn {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .primary {
+    height: 36px; padding: 0 17px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--plum-3), var(--plum-2) 60%, var(--plum-1));
+    color: #FFF4F8;
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: 12.5px; letter-spacing: -.005em;
+    box-shadow: 0 10px 28px rgba(122, 46, 79, .5), 0 1px 0 rgba(255,255,255,.2) inset;
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: linear-gradient(150deg, rgba(242,126,147,.25), rgba(122,46,79,.35));
+    border: 1px solid rgba(242, 126, 147, .35);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 12.5px ui-monospace, "SF Mono", monospace; color: #FFD9E3;
+  }
+
+  .pagehead { display: flex; align-items: baseline; gap: 13px; margin-bottom: 12px; }
+  .pagehead h2 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  .pagehead .sub { color: var(--text-2); font-size: 12px; }
+
+  /* ---------- Stats: silver · glass · plum ---------- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .stat {
+    position: relative; border-radius: 22px; padding: 13px 16px 12px;
+    border: 1px solid var(--line); box-shadow: var(--shadow-card);
+  }
+  .stat .label {
+    font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .stat .value { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+  .stat .value .unit { font-size: 12px; font-weight: 700; opacity: .6; margin-left: 3px; }
+  .stat .delta { font-size: 11px; font-weight: 700; margin-left: 7px; }
+  .stat .arrow {
+    position: absolute; top: 13px; right: 14px;
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat.glass { background: var(--glass); }
+  .stat.glass .label { color: var(--text-3); }
+  .stat.glass .delta { color: var(--coral); }
+  .stat.glass .arrow { border: 1px solid var(--line-strong); color: var(--text-2); }
+  .stat.silver {
+    background: linear-gradient(180deg, var(--silver-1), var(--silver-2));
+    color: var(--silver-ink); border-color: rgba(255, 255, 255, .5);
+    box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 16px 40px rgba(0, 0, 0, .45);
+  }
+  .stat.silver .label { color: rgba(23, 21, 26, .55); }
+  .stat.silver .delta { color: var(--coral-deep); }
+  .stat.silver .arrow { border: 1px solid rgba(23, 21, 26, .25); color: rgba(23, 21, 26, .7); }
+  .stat.plum {
+    background:
+      radial-gradient(300px 140px at 90% -30%, rgba(242, 126, 147, .5), transparent 70%),
+      linear-gradient(135deg, var(--plum-3), var(--plum-2) 55%, var(--plum-1));
+    border-color: rgba(242, 126, 147, .35);
+    box-shadow: 0 18px 44px rgba(122, 46, 79, .45), 0 1px 0 rgba(255,255,255,.22) inset;
+  }
+  .stat.plum .label { color: #F3C6D4; }
+  .stat.plum .delta { color: #FFD9E3; }
+  .stat.plum .arrow { border: 1px solid rgba(255, 244, 248, .4); color: #FFF4F8; }
+
+  /* ---------- Queue tabs ---------- */
+  .tabsrow { display: flex; align-items: center; margin: 2px 2px 10px; }
+  .tabsrow .title { font-size: 14px; font-weight: 800; margin-right: 12px; letter-spacing: -.01em; }
+  .tabs { display: inline-flex; gap: 4px; }
+  .tabs .tab {
+    padding: 6px 14px; border-radius: 999px;
+    font-weight: 600; font-size: 11.5px; color: var(--text-2);
+  }
+  .tabs .tab.active {
+    background: linear-gradient(135deg, var(--plum-3), var(--plum-2) 60%, var(--plum-1));
+    color: #FFF4F8;
+    box-shadow: 0 6px 18px rgba(122, 46, 79, .45);
+  }
+  .tabs .tab .n { opacity: .6; margin-left: 5px; font-weight: 700; }
+  .tabs .tab.active .n { opacity: .8; }
+
+  /* ---------- Task rows (chevron list style) ---------- */
+  .task {
+    background: var(--glass); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow-card); padding: 13px 16px; margin-bottom: 10px;
+  }
+  .task .row1 { display: flex; align-items: center; gap: 12px; }
+  .fileicon {
+    width: 38px; height: 38px; border-radius: 12px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fileicon.coral { background: rgba(242, 126, 147, .16); color: var(--coral); border: 1px solid rgba(242, 126, 147, .3); }
+  .fileicon.mauve { background: rgba(154, 143, 158, .14); color: var(--mauve); border: 1px solid rgba(154, 143, 158, .3); }
+  .fileicon.silverchip { background: linear-gradient(180deg, var(--silver-1), var(--silver-2)); color: var(--silver-ink); }
+  .task .file { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
+  .task .host { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .task .chev { margin-left: auto; color: var(--text-3); }
+  .task .status {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
+    padding: 3.5px 11px; border-radius: 999px; margin-left: auto;
+  }
+  .status.coral { color: #FFD9E3; background: rgba(242, 126, 147, .18); border: 1px solid rgba(242, 126, 147, .4); }
+  .status.mauve { color: #CFC5D2; background: rgba(154, 143, 158, .12); border: 1px solid rgba(154, 143, 158, .35); }
+  .status.silver { color: rgba(23,21,26,.8); background: linear-gradient(180deg, var(--silver-1), var(--silver-2)); border: 1px solid rgba(255,255,255,.5); }
+  .status.red { color: #FFD2CC; background: rgba(224, 108, 91, .14); border: 1px solid rgba(224, 108, 91, .4); }
+
+  .task .row2 { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; }
+  .bar.coral i { background: linear-gradient(90deg, #E98A8A, var(--coral)); box-shadow: 0 0 14px rgba(242, 126, 147, .35); }
+  .bar.mauve i { background: var(--mauve); }
+  .bar.silver i { background: linear-gradient(90deg, #FFFFFF, var(--champagne)); }
+  .task .pct { font: 700 11.5px ui-monospace, "SF Mono", monospace; min-width: 40px; text-align: right; color: var(--coral); }
+  .task .pct.mauve { color: var(--mauve); }
+  .task .pct.silver { color: var(--champagne); }
+  .task .meta { display: flex; gap: 16px; margin-top: 9px; font-size: 11px; color: var(--text-3); }
+  .task .meta b { color: var(--text-2); font-weight: 700; margin-left: 5px; }
+  .task .meta b.coral { color: var(--coral); }
+  .actions { display: flex; gap: 6px; margin-left: auto; }
+  .mini {
+    width: 29px; height: 29px; border-radius: 10px;
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .mini.danger { color: var(--red); border-color: rgba(224, 108, 91, .3); }
+</style>
+</head>
+<body>
+  <div class="window">
+    <aside class="sidebar">
+      <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+
+      <div class="brand">
+        <div class="mark">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#FFF4F8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v7m0 0L5.2 7.2M8 10l2.8-2.8M4 13.2h8"/></svg>
+        </div>
+        <div>
+          <h1>Grabbit</h1>
+          <small>Private Download Vault</small>
+        </div>
+        <span class="ver">v1.6</span>
+      </div>
+
+      <div class="nav-label">Main</div>
+      <nav class="nav">
+        <a class="active">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13.5h10"/></svg>
+          Downloads <span class="count">3</span>
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.8v3h-3"/></svg>
+          Torrents
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg>
+          Media
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="4" cy="12" r="1.6"/><path d="M3.5 8.5a4 4 0 0 1 4 4M3.5 4.5a8 8 0 0 1 8 8"/></svg>
+          RSS
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><ellipse cx="8" cy="8" rx="2.6" ry="6"/><path d="M2.4 6h11.2M2.4 10h11.2"/></svg>
+          Grabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+          LinkGrabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></svg>
+          Scheduler
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 8a5.5 5.5 0 1 0 1.6-3.9M2.5 1.8v3h3"/><path d="M8 5.5V8l1.8 1.2"/></svg>
+          History
+        </a>
+      </nav>
+
+      <div class="spacer"></div>
+      <div class="side-divider"></div>
+      <nav class="nav">
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4"/></svg>
+          Settings
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11"/><circle cx="8" cy="4.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          About
+        </a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M13.5 13.5L10.3 10.3"/></svg>
+          Search downloads…
+          <span class="kbd">⌘K</span>
+        </div>
+        <div class="right">
+          <div class="iconbtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v10M5 13l-2.4-2.4M5 13l2.4-2.4M11 13V3M11 3L8.6 5.4M11 3l2.4 2.4"/></svg>
+          </div>
+          <div class="primary">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>
+            New Download
+          </div>
+          <div class="avatar">G</div>
+        </div>
+      </div>
+
+      <div class="pagehead">
+        <h2>Downloads</h2>
+        <div class="sub">3 active tasks · 4.2 MB/s total</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat silver">
+          <div class="label">Active transfers</div>
+          <div class="value">3<span class="delta">+1 today</span></div>
+          <div class="arrow">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg>
+          </div>
+        </div>
+        <div class="stat glass">
+          <div class="label">Completed today</div>
+          <div class="value">12</div>
+          <div class="arrow">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg>
+          </div>
+        </div>
+        <div class="stat plum">
+          <div class="label">Total speed</div>
+          <div class="value">4.2<span class="unit">MB/s</span></div>
+          <div class="delta">+0.8 over average</div>
+          <div class="arrow">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabsrow">
+        <div class="title">Queue</div>
+        <div class="tabs">
+          <span class="tab active">All <span class="n">3</span></span>
+          <span class="tab">Downloading <span class="n">1</span></span>
+          <span class="tab">Paused <span class="n">1</span></span>
+          <span class="tab">Failed <span class="n">0</span></span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div class="fileicon coral">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v7m0 0L5.2 6.7M8 9.5l2.8-2.8M4 13.2h8"/></svg>
+          </div>
+          <div>
+            <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
+            <div class="host">media.example.com · 1.24 GB</div>
+          </div>
+          <span class="status coral">Downloading</span>
+        </div>
+        <div class="row2">
+          <div class="bar coral"><i style="width:64%"></i></div>
+          <div class="pct">64%</div>
+        </div>
+        <div class="meta">
+          <span>Speed <b class="coral">3.1 MB/s</b></span>
+          <span>ETA <b>2m 40s</b></span>
+          <span>Connections <b>16</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 3.5V13M10 3.5V13"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div class="fileicon mauve">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5V13M10 3.5V13"/></svg>
+          </div>
+          <div>
+            <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
+            <div class="host">cdn.example.com · 84.5 MB</div>
+          </div>
+          <span class="status mauve">Paused</span>
+        </div>
+        <div class="row2">
+          <div class="bar mauve"><i style="width:41%"></i></div>
+          <div class="pct mauve">41%</div>
+        </div>
+        <div class="meta">
+          <span>Speed <b>—</b></span>
+          <span>ETA <b>—</b></span>
+          <span>Connections <b>8</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div class="fileicon silverchip">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>
+          </div>
+          <div>
+            <div class="file">SM03_KaWai Font.zip</div>
+            <div class="host">netpanchi.com · 28.0 KB · saved to Downloads/Grabbit/Other</div>
+          </div>
+          <span class="status silver">Completed</span>
+          <span class="chev">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5L10.5 8 6 12.5"/></svg>
+          </span>
+        </div>
+        <div class="row2">
+          <div class="bar silver"><i style="width:100%"></i></div>
+          <div class="pct silver">100%</div>
+        </div>
+        <div class="meta">
+          <span>Saved to <b>Downloads/Grabbit/Other</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5a1 1 0 0 1 1-1h3l1.2 1.5h4.8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

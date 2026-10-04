@@ -146,3 +146,52 @@ Re-render:
   --screenshot="$PWD/docs/theme-previews/grove-dark.png" \
   "file://$PWD/docs/theme-previews/grove.html"
 ```
+
+## Velvet
+
+A luxe plum-on-black skin inspired by
+[Vaulta — AI-Powered Trading App](https://www.behance.net/gallery/256357433/Vaulta-AI-Powered-Trading-App-UIUX-Case-Study)
+on Behance. Name: **Velvet** — short, soft, premium. Dark-first.
+
+Style language: deep black canvas with plum and coral ambient glows, a
+three-material card system (dark glass · silver metal · plum gradient
+hero), coral accent for active states, very large radii, chevron list
+rows, and a plum-gradient app mark.
+
+### Tokens (as rendered)
+
+| Token | Value |
+| --- | --- |
+| Backdrop | `#070608` + plum glow `rgba(122,46,79,.38)` + coral hint |
+| Canvas | `#0B0A0C` (window gradient from `#100D11`) |
+| Sidebar | `#0D0C0F` |
+| Glass card | `rgba(255,255,255,.035)` |
+| Silver card | `linear-gradient(180deg,#F6F4EF,#DFDCD2)` with ink `#17151A` |
+| Plum hero | `linear-gradient(135deg,#A8456B,#7A2E4F 55%,#4A1730)` + coral radial |
+| Border | `rgba(226,205,220,.10)` / strong `.16` |
+| Text / secondary / tertiary | `#F5F2F4` / `#A79BA3` / `#6E646C` |
+| Coral (active) | `#F27E93`, deep `#D95C77` |
+| Muted mauve (paused) | `#9A8F9E` |
+| Champagne (completed) | `#E8E4DA` |
+| Danger | `#E06C5B` |
+| Card shadow | `inset 0 1px 0 rgba(255,255,255,.04), 0 16px 40px rgba(0,0,0,.5)` |
+| Window shadow | `0 60px 140px rgba(0,0,0,.82), 0 0 130px rgba(122,46,79,.16)` |
+
+Radii: window 26 · cards 20–22 · icon tiles 12 · pills 999. Signature
+elements: plum-gradient active pill and brand mark, coral file-icon
+tiles and progress fill, silver completed row with a chevron.
+
+### Files
+
+- `velvet.html` — the mockup (dark only)
+- `velvet-dark.png` — 2560×1600 render
+
+Re-render:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/velvet-dark.png" \
+  "file://$PWD/docs/theme-previews/velvet.html"
+```
