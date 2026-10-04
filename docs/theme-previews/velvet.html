@@ -33,6 +33,52 @@
     --shadow-window: 0 60px 140px rgba(0, 0, 0, .82), 0 0 130px rgba(122, 46, 79, .16);
   }
 
+
+  /* ---------- Light variant (add #light to the URL) ---------- */
+  body.light {
+    --backdrop: #EAE6E1;
+    --canvas: #F4F1ED;
+    --sidebar: #EFEBE6;
+    --glass: #FFFFFF;
+    --line: rgba(90, 60, 80, .12);
+    --line-strong: rgba(90, 60, 80, .18);
+    --text: #1A151A;
+    --text-2: #6E646C;
+    --text-3: #9A8F96;
+    --coral: #E0637F;
+    --coral-deep: #C74D6A;
+    --mauve: #A99DAE;
+    --champagne: #B5AD9C;
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, .9) inset, 0 14px 34px rgba(70, 40, 60, .10);
+    --shadow-window: 0 40px 100px rgba(70, 40, 60, .22), 0 0 90px rgba(122, 46, 79, .08);
+    background:
+      radial-gradient(950px 540px at 88% -12%, rgba(122, 46, 79, .12), transparent 66%),
+      radial-gradient(900px 520px at 6% 112%, rgba(242, 126, 147, .07), transparent 65%),
+      var(--backdrop);
+  }
+  body.light .window { background: linear-gradient(180deg, #F9F6F2 0%, var(--canvas) 34%); }
+  body.light .sidebar {
+    background:
+      radial-gradient(260px 170px at 30% -6%, rgba(122, 46, 79, .10), transparent 72%),
+      var(--sidebar);
+  }
+  body.light .stat.silver { background: linear-gradient(180deg, #FFFFFF, #F1EEE8); }
+  body.light .segs i { background: rgba(90, 60, 80, .10); }
+  body.light .segs.silver i.on { background: linear-gradient(180deg, #DCD6C8, #B5AD9C); box-shadow: none; }
+  body.light .segs.mauve i.on { background: linear-gradient(180deg, #C6BBC9, #A99DAE); }
+  body.light .pct.silver { color: #8A8272; }
+  body.light .pct.mauve { color: #8F8493; }
+  body.light .status.mauve {
+    color: #5F5563; background: rgba(154, 143, 158, .16); border-color: rgba(120, 105, 125, .4);
+  }
+  body.light .fileicon.mauve { color: #7E7283; }
+  body.light .avatar { color: #A8456B; }
+  body.light .iconbtn, body.light .search { background: #FFFFFF; }
+  body.light .mini { background: #F4F1ED; }
+  body.light .nav a .count, body.light .brand .ver, body.light .search .kbd {
+    background: rgba(90, 60, 80, .06);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1280px; height: 800px; overflow: hidden; }
   body {
@@ -482,6 +528,7 @@
     </main>
   </div>
   <script>
+    if (location.hash === '#light') document.body.classList.add('light');
     // Segmented meters: 38 segments, lit up to data-fill percent.
     document.querySelectorAll('.segs').forEach((meter) => {
       const fill = Math.max(0, Math.min(100, parseInt(meter.dataset.fill || '0', 10)));

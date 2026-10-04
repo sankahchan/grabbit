@@ -151,7 +151,8 @@ Re-render:
 
 A luxe plum-on-black skin inspired by
 [Vaulta — AI-Powered Trading App](https://www.behance.net/gallery/256357433/Vaulta-AI-Powered-Trading-App-UIUX-Case-Study)
-on Behance. Name: **Velvet** — short, soft, premium. Dark-first.
+on Behance. Name: **Velvet** — short, soft, premium. Ships in both
+**dark (default)** and **light** variants (`#light` on the URL).
 
 Style language: deep black canvas with plum and coral ambient glows, a
 three-material card system (dark glass · silver metal · plum gradient
@@ -183,10 +184,15 @@ meters** (Vaulta portfolio-bar style: 38 segments, lit ones in a coral
 gradient with a soft glow; mauve for paused, champagne for completed),
 gradient coral status pills, and a silver completed row with a chevron.
 
+Light variant tokens: backdrop `#EAE6E1`, canvas `#F4F1ED`, white cards
+with soft plum shadows, ink `#1A151A`; plum and coral stay identical, and
+completed segments turn antique silver (`#DCD6C8 → #B5AD9C`) so they read
+on white.
+
 ### Files
 
-- `velvet.html` — the mockup (dark only)
-- `velvet-dark.png` — 2560×1600 render
+- `velvet.html` — the mockup (`#light` on the URL switches variant)
+- `velvet-dark.png`, `velvet-light.png` — 2560×1600 renders
 
 Re-render:
 
@@ -196,4 +202,10 @@ Re-render:
   --force-device-scale-factor=2 --window-size=1280,800 \
   --screenshot="$PWD/docs/theme-previews/velvet-dark.png" \
   "file://$PWD/docs/theme-previews/velvet.html"
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/velvet-light.png" \
+  "file://$PWD/docs/theme-previews/velvet.html#light"
 ```
