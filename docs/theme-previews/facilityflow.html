@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Grabbit — FacilityFlow theme preview</title>
+<style>
+  /* FacilityFlow-inspired theme tokens. `#dark` switches to the dark variant. */
+  :root {
+    --bg: #F4F4F2;
+    --sidebar: #FAFAF8;
+    --card: #FFFFFF;
+    --border: #E8E8E4;
+    --border-soft: #F0F0EC;
+    --text: #17181A;
+    --text-2: #6E747D;
+    --text-3: #9AA0A6;
+    --pill: #17181A;
+    --pill-text: #FFFFFF;
+    --accent: #3AAE7F;
+    --accent-soft: #E3F5EC;
+    --accent-mid: #7ED0AC;
+    --track: #EEF0EE;
+    --amber: #E8A23D;
+    --amber-soft: #FBF0DE;
+    --red: #E0604F;
+    --red-soft: #FBECEA;
+    --shadow: 0 1px 2px rgba(20,20,15,.04), 0 10px 30px rgba(20,20,15,.05);
+    --radius: 16px;
+  }
+  body.dark {
+    --bg: #0E1012;
+    --sidebar: #121417;
+    --card: #17191C;
+    --border: #262A2F;
+    --border-soft: #1F2226;
+    --text: #F2F3F4;
+    --text-2: #A2A8B0;
+    --text-3: #767C84;
+    --pill: #F2F3F4;
+    --pill-text: #14161A;
+    --accent: #6FCFA5;
+    --accent-soft: #1B2B24;
+    --accent-mid: #4E9F7C;
+    --track: #23272B;
+    --amber: #E2A94E;
+    --amber-soft: #2B2418;
+    --red: #E2756A;
+    --red-soft: #2B1D1B;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .window {
+    width: 1240px; height: 780px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.18);
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 236px; flex: none;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    padding: 14px 12px;
+    display: flex; flex-direction: column;
+  }
+  .traffic { display: flex; gap: 7px; padding: 2px 4px 14px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+
+  .brand { padding: 2px 8px 14px; }
+  .brand h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+  .brand span {
+    display: block; font-size: 9px; font-weight: 700; letter-spacing: .12em;
+    color: var(--text-3); text-transform: uppercase; margin-top: 1px;
+  }
+
+  .nav-label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-3); padding: 12px 10px 6px;
+  }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 999px;
+    color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  .nav a .ic { width: 16px; text-align: center; font-size: 13px; opacity: .85; }
+  .nav a .count {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: var(--track); color: var(--text-2);
+    padding: 2px 7px; border-radius: 999px;
+  }
+  .nav a.active { background: var(--pill); color: var(--pill-text); }
+  .nav a.active .count { background: rgba(255,255,255,.18); color: var(--pill-text); }
+  .spacer { flex: 1; }
+
+  /* ---------- Content ---------- */
+  .content { flex: 1; padding: 20px 24px; overflow: hidden; }
+
+  .topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .search {
+    flex: 1; max-width: 380px; height: 36px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+    display: flex; align-items: center; gap: 8px; padding: 0 14px;
+    color: var(--text-3); font-size: 12px;
+  }
+  .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .iconbtn {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 14px;
+  }
+  .primary {
+    height: 36px; padding: 0 16px; border-radius: 999px;
+    background: var(--pill); color: var(--pill-text);
+    display: flex; align-items: center; gap: 7px;
+    font-weight: 700; font-size: 12.5px;
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px;
+  }
+
+  .pagehead { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 16px; }
+  .pagehead h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .pagehead .sub { color: var(--text-2); font-size: 12px; padding-bottom: 4px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 13px 16px;
+  }
+  .stat .label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 6px;
+  }
+  .stat .value { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+  .stat .delta { font-size: 11px; color: var(--accent); font-weight: 600; margin-left: 6px; }
+  .stat .delta.amber { color: var(--amber); }
+
+  .listhead {
+    display: flex; align-items: center; gap: 8px; margin: 4px 2px 10px;
+  }
+  .listhead .title { font-size: 14px; font-weight: 800; }
+  .chip {
+    font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--track); color: var(--text-2);
+  }
+  .chip.mint { background: var(--accent-soft); color: var(--accent); }
+  .chip.amber { background: var(--amber-soft); color: var(--amber); }
+  .chip.red { background: var(--red-soft); color: var(--red); }
+
+  .task {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 13px 16px; margin-bottom: 10px;
+  }
+  .task .row1 { display: flex; align-items: center; gap: 10px; }
+  .task .file { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .task .host { font-size: 11px; color: var(--text-3); }
+  .task .status { margin-left: auto; }
+  .task .row2 { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .bar { flex: 1; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent-mid); }
+  .bar.amber i { background: var(--amber); }
+  .bar.red i { background: var(--red); }
+  .task .pct { font-size: 11px; font-weight: 800; min-width: 36px; text-align: right; }
+  .task .meta { display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--text-2); }
+  .task .meta b { color: var(--text); font-weight: 700; }
+  .actions { display: flex; gap: 6px; margin-left: auto; }
+  .mini {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 12px;
+  }
+
+  .empty-note {
+    margin-top: 4px; font-size: 11px; color: var(--text-3); text-align: center;
+    padding: 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--sidebar);
+  }
+</style>
+</head>
+<body>
+  <div class="window">
+    <aside class="sidebar">
+      <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <div class="brand">
+        <h1>Grabbit</h1>
+        <span>Download Manager</span>
+      </div>
+
+      <div class="nav-label">Main</div>
+      <nav class="nav">
+        <a class="active"><span class="ic">⭣</span> Downloads <span class="count">3</span></a>
+        <a><span class="ic">⟳</span> Torrents</a>
+        <a><span class="ic">▷</span> Media</a>
+        <a><span class="ic">◉</span> RSS</a>
+        <a><span class="ic">◎</span> Grabber</a>
+        <a><span class="ic">🔗</span> LinkGrabber</a>
+        <a><span class="ic">🕐</span> Scheduler</a>
+        <a><span class="ic">↺</span> History</a>
+      </nav>
+
+      <div class="spacer"></div>
+      <nav class="nav">
+        <a><span class="ic">⚙</span> Settings</a>
+        <a><span class="ic">ⓘ</span> About</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="search">⌕ &nbsp;Search downloads…</div>
+        <div class="right">
+          <div class="iconbtn">⇅</div>
+          <div class="primary">＋ &nbsp;Add Download</div>
+          <div class="avatar">G</div>
+        </div>
+      </div>
+
+      <div class="pagehead">
+        <h2>Downloads</h2>
+        <div class="sub">3 active tasks · 4.2 MB/s total</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="label">Active</div><div class="value">3<span class="delta">+1 today</span></div></div>
+        <div class="stat"><div class="label">Completed today</div><div class="value">12</div></div>
+        <div class="stat"><div class="label">Total speed</div><div class="value">4.2 <span style="font-size:13px;color:var(--text-2)">MB/s</span></div></div>
+      </div>
+
+      <div class="listhead">
+        <div class="title">Queue</div>
+        <span class="chip">All</span>
+        <span class="chip mint">Downloading</span>
+        <span class="chip">Paused</span>
+        <span class="chip red">Failed</span>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
+            <div class="host">media.example.com · 1.24 GB</div>
+          </div>
+          <span class="chip mint status">Downloading</span>
+        </div>
+        <div class="row2">
+          <div class="bar"><i style="width:64%"></i></div>
+          <div class="pct">64%</div>
+        </div>
+        <div class="meta">
+          <span>Speed <b>3.1 MB/s</b></span>
+          <span>ETA <b>2m 40s</b></span>
+          <span>Connections <b>16</b></span>
+          <span class="actions">
+            <div class="mini">⏸</div><div class="mini">🔗</div><div class="mini">🗑</div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
+            <div class="host">cdn.example.com · 84.5 MB</div>
+          </div>
+          <span class="chip amber status">Paused</span>
+        </div>
+        <div class="row2">
+          <div class="bar amber"><i style="width:41%"></i></div>
+          <div class="pct">41%</div>
+        </div>
+        <div class="meta">
+          <span>Speed <b>—</b></span>
+          <span>ETA <b>—</b></span>
+          <span>Connections <b>8</b></span>
+          <span class="actions">
+            <div class="mini">▶</div><div class="mini">🔗</div><div class="mini">🗑</div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">SM03_KaWai Font.zip</div>
+            <div class="host">netpanchi.com · 28.0 KB</div>
+          </div>
+          <span class="chip mint status">Completed</span>
+        </div>
+        <div class="row2">
+          <div class="bar"><i style="width:100%"></i></div>
+          <div class="pct">100%</div>
+        </div>
+        <div class="meta">
+          <span>Saved to <b>Downloads/Grabbit/Other</b></span>
+          <span class="actions">
+            <div class="mini">📂</div><div class="mini">🔗</div><div class="mini">🗑</div>
+          </span>
+        </div>
+      </div>
+
+      <div class="empty-note">Completed tasks move to History automatically · drag a card to reorder the queue</div>
+    </main>
+  </div>
+
+  <script>
+    if (location.hash === '#dark') document.body.classList.add('dark');
+  </script>
+</body>
+</html>
