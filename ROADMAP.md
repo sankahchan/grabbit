@@ -6,10 +6,11 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
 
 - 🔨 **New app icon(s)** — a fresh icon for Grabbit (AppIcon set, and the
   extension icons where relevant). Design TBD.
-- 🔨 **New themes** — two designs reviewed and approved (saved in
+- 🔨 **New themes** — three designs reviewed and approved (saved in
   `docs/theme-previews/`):
   - **Aura** — clean airy SaaS, light + dark (FacilityFlow-inspired)
   - **Pulse** — dark neon download console, lime accent (Volta-inspired)
+  - **Grove** — dark olive command console, warm gold accent (TERA-inspired)
 
   Implementation is deferred: it needs a selectable theme-style system
   (palette + shape/shadow tokens) wired through Settings → Appearance.
