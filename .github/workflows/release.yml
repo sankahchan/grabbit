@@ -156,7 +156,11 @@ jobs:
           VERSION=$(python3 -c "import json; print(json.load(open('GrabbitExtension/manifest.json'))['version'])")
           ZIP="dist/grabbit-extension-v${VERSION}-full.zip"
           gh release upload "$TAG" "$ZIP" --clobber
-          echo "attached $ZIP"
+          # Version-less alias for a stable download URL:
+          # releases/latest/download/grabbit-extension-latest.zip
+          cp "$ZIP" dist/grabbit-extension-latest.zip
+          gh release upload "$TAG" dist/grabbit-extension-latest.zip --clobber
+          echo "attached $ZIP + grabbit-extension-latest.zip"
 
       - name: Sign DMG with Sparkle EdDSA key
         env:

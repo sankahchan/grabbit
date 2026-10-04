@@ -6920,6 +6920,23 @@
           }
         }
       }
+    },
+    "grabber.getExtension": {
+      "comment": "Grabber status card button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get the extension"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension ရယူရန်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -52,9 +52,9 @@ The Grabbit Web Grabber extension captures media from web pages. It is not
 on the Chrome Web Store (video-downloader policy), so it ships with every
 GitHub release:
 
-1. Download `grabbit-extension-vX.Y.Z-full.zip` from the
-   [latest release](https://github.com/sankahchan/grabbit/releases/latest)
-   and unzip it.
+1. Download
+   [grabbit-extension-latest.zip](https://github.com/sankahchan/grabbit/releases/latest/download/grabbit-extension-latest.zip)
+   (stable link, always the newest build) and unzip it.
 2. Open `chrome://extensions` → enable **Developer mode** → **Load unpacked**
    → pick the unzipped folder. (Works in Edge/Brave the same way.)
 3. Install the Grabbit app — v1.3.0+ connects the extension automatically on

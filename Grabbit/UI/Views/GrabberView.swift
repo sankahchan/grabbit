@@ -161,10 +161,22 @@ struct GrabberView: View {
     // MARK: - Hint
 
     private var hintCard: some View {
-        Text(NSLocalizedString("grabber.hint", comment: ""))
-            .font(.subheadline)
-            .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .neoCard(bg: Neo.yellow)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(NSLocalizedString("grabber.hint", comment: ""))
+                .font(.subheadline)
+            if !extensionConnected {
+                Button(NSLocalizedString("grabber.getExtension", comment: "")) {
+                    NSWorkspace.shared.open(Self.latestReleaseURL)
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
+            }
+        }
+        .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(bg: Neo.yellow)
     }
+
+    /// The extension ships with every GitHub release (no Web Store listing).
+    private static let latestReleaseURL =
+        URL(string: "https://github.com/sankahchan/grabbit/releases/latest")!
 }

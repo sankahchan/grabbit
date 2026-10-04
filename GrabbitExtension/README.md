@@ -4,37 +4,38 @@ Captures videos and download links from web pages and sends them to the Grabbit 
 
 ## Install (Chrome / Edge / Brave)
 
-### 1. Load the extension
+The extension ships with every GitHub release (it is not on the Chrome Web
+Store — video-downloader policy). The Grabbit app connects it automatically:
 
-1. Open `chrome://extensions` in your browser.
-2. Turn on **Developer mode** (top-right toggle).
-3. Click **Load unpacked**.
-4. Select the `GrabbitExtension` folder (from the repo, or from the DMG).
-5. Note the **extension ID** shown under the Grabbit card (32 characters).
+1. Download
+   [grabbit-extension-latest.zip](https://github.com/sankahchan/grabbit/releases/latest/download/grabbit-extension-latest.zip)
+   and unzip it.
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load
+   unpacked**, and select the unzipped folder.
+3. Open the Grabbit app (v1.3.0+). On launch it installs the native helper
+   and writes the browser host manifests for the extension automatically —
+   no manual step.
 
-### 2. Install the native host
+**Updating:** download the new ZIP, replace the folder's contents, and press
+the reload icon on the extension card.
 
-The extension talks to the Grabbit app via a lightweight helper. Install it:
+### Development checkouts
+
+If you run the extension straight from this repo instead, the app still
+installs the helper automatically; `install-host.sh` remains for pinning a
+custom extension ID (e.g. a store build):
 
 ```bash
 ./GrabbitExtension/native-messaging/install-host.sh <extension-id>
 ```
 
-Replace `<extension-id>` with the ID from step 1. **Re-run this after every
-pull** — the helper script is copied into `~/Library/Application Support/Grabbit/`.
-
-This installs:
-- The native messaging manifest for Chrome, Edge, Brave, and Chromium.
-- The Python helper (`grabbit-native-helper.py`) to `~/Library/Application Support/Grabbit/`.
-
-### 3. Test
+## Test
 
 1. Go to a page with a video (e.g. https://www.w3schools.com/html/mov_bbb.mp4).
 2. Click the Grabbit extension icon.
 3. Click **Download with Grabbit**.
-4. The download appears in the Grabbit app. (With the native host installed
-   there is no "Open Grabbit?" prompt — the helper hands the payload over
-   directly.)
+4. The download appears in the Grabbit app (with the host connected there is
+   no "Open Grabbit?" prompt — the helper hands the payload over directly).
 
 ## How it works
 
