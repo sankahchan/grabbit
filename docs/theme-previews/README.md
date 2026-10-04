@@ -52,41 +52,42 @@ Re-render:
 
 ## Pulse
 
-A dark, neon "download console" skin inspired by
-[Volta — Home Energy OS](https://www.behance.net/gallery/254877083/Volta-Home-Energy-OS-UI-UX-Design-Mobile-App-Design)
-on Behance. Name: **Pulse** — short, energy-console feel. Dark-first; no
-light variant is planned for this one.
+A dark, neon "download console" skin rebuilt from the energy-dashboard
+reference (edge-lit icon tiles, dot-matrix numerals, histogram meters,
+Tariff-style progress strips). Name: **Pulse**. Ships in **dark
+(default)** and **light** (`#light` on the URL).
 
-Style language: deep blue-black canvas with cyan/lime ambient glows,
-glassy cards with luminous hairline borders and soft outer shadows, one
-neon lime accent used like a power meter, cyan for completed data, gold
-for paused, monospace numerals with small colored dot markers, micro
-monospace labels (`/ ACTIVE ///`).
+Style language: every card is lit from its own edge — the glow is the
+charge, never a shadow behind the object. Per-item neon icon tiles in
+the sidebar, dot-matrix numeral readouts, waveform and histogram
+meters, and segmented progress strips with a "now" marker. Deep
+blue-black canvas in dark; crisp white cards with deeper accents in
+light.
 
 ### Tokens (as rendered)
 
 | Token | Value |
 | --- | --- |
-| Backdrop | `#07090C` + cyan glow top-left, lime glow bottom-right |
-| Canvas | `#0B0F14` (window gradient from `#0D1218`) |
-| Sidebar | `#0C1116` with a faint white top wash |
-| Card | `rgba(255,255,255,.028)` glass + backdrop blur |
-| Border | `rgba(140,220,255,.14)` / soft `.08` |
-| Text / secondary / tertiary | `#EDF2F5` / `#93A3AD` / `#5E6C76` |
-| Accent (lime) | `#A8FF3B`, glow `rgba(168,255,59,.45)`, ink `#0A1006` |
-| Cyan (completed) | `#4FC3E8` |
-| Gold (paused) | `#F5B54A` |
-| Danger | `#FF6B6B` |
-| Numerals | `SF Mono` / `ui-monospace`, tabular, glow on active values |
-| Card shadow | `inset 0 1px 0 rgba(255,255,255,.03), 0 14px 40px rgba(0,0,0,.45)` |
-| Window shadow | `0 50px 130px rgba(0,0,0,.75), 0 0 90px rgba(79,195,232,.07)` |
+| Backdrop | dark `#050607` / light `#EEF1F5`, both with cyan + amber radial hints |
+| Canvas | dark `#0A0C10` (window from `#0C0F13`) / light `#F5F7FA` (window from `#FDFEFF`) |
+| Sidebar | dark `#0B0E12` + cyan wash top / amber wash bottom · light `#FBFDFF → #F1F4F8` |
+| Card | edge-lit: `--edge-bg` wash + `--edge-line` border; shadow = soft depth `0 14px 34px rgba(0,0,0,.38)` + edge glow · light white with `0 12px 28px rgba(30,45,70,.08)` |
+| Accents (dark) | cyan `#25E3FF` · lime `#A8FF35` · amber `#FFB020` · red `#FF3355` · slate `#DDE8F2` |
+| Accents (light) | cyan `#00A9CC` · lime `#7BC300` · amber `#E08900` · red `#E0294A` · slate `#64748B` |
+| Text | dark `#EDF2F5` / `#8FA0AC` / `#5A6873` · light `#101418` / `#5A6873` / `#8A97A0` |
+| Numerals | 5×7 dot-matrix SVG (`data-v`, `data-cell`) with colored glow |
+| Progress | 40 segmented blocks + "now" marker (white in dark, ink in light) |
+| Window | radius 26, spectrum hairline cyan→lime→amber, ambient colored shadow |
 
-Radii: window 22 · cards 20 · inputs 12 · icon buttons 10 · pills 999.
+Radii: window 26 · cards 20 · controls 13 · tiles 9 · mini 11 · pills
+999. Signature: per-item sidebar nav tiles with their own edge glow, a
+charge bar on the active nav row, LIVE pill, waveform (active) /
+histogram (completed, speed) meters, dot-matrix percentages.
 
 ### Files
 
-- `pulse.html` — the mockup (dark only)
-- `pulse-dark.png` — 2560×1600 render
+- `pulse.html` — the mockup (`#light` on the URL switches appearance)
+- `pulse-dark.png`, `pulse-light.png` — 2560×1600 renders
 
 Re-render:
 
@@ -96,6 +97,12 @@ Re-render:
   --force-device-scale-factor=2 --window-size=1280,800 \
   --screenshot="$PWD/docs/theme-previews/pulse-dark.png" \
   "file://$PWD/docs/theme-previews/pulse.html"
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/pulse-light.png" \
+  "file://$PWD/docs/theme-previews/pulse.html#light"
 ```
 
 ## Grove

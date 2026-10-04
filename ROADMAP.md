@@ -9,7 +9,9 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
 - 🔨 **New themes** — five designs reviewed and approved (saved in
   `docs/theme-previews/`):
   - **Aura** — clean airy SaaS, light + dark (FacilityFlow-inspired)
-  - **Pulse** — dark neon download console, lime accent (Volta-inspired)
+  - **Pulse** — neon energy console: edge-lit cards, dot-matrix
+    numerals, segmented progress strips, dark + light (energy-dashboard
+    reference)
   - **Grove** — dark olive command console, warm gold accent (TERA-inspired)
   - **Velvet** — luxe plum-on-black with silver/coral materials, dark +
     light, segmented progress meters (Vaulta-inspired)
