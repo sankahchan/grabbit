@@ -68,6 +68,7 @@ struct SettingsView: View {
         func body(content: Content) -> some View {
             content
                 .onChange(of: store.settings.theme) { _, _ in store.save() }
+                .onChange(of: store.settings.themeStyle) { _, _ in store.save() }
                 .onChange(of: store.settings.language, onLanguageChange)
                 .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
@@ -200,6 +201,17 @@ struct SettingsView: View {
                 ])
                 .frame(maxWidth: 420)
                 Spacer()
+            }
+            subHeader(NSLocalizedString("settings.section.themeStyle", comment: ""))
+            HStack {
+                // Brand names stay Latin; only "Classic" is localized.
+                Text(NSLocalizedString("settings.themeStyle", comment: ""))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                NeoMenuPicker(
+                    selection: settings.themeStyle,
+                    options: ThemeStyle.allCases.map { (value: $0, title: $0.displayName) },
+                    maxWidth: 240)
             }
             subHeader(NSLocalizedString("settings.section.language", comment: ""))
             HStack {

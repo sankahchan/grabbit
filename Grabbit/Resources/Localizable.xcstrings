@@ -7073,6 +7073,57 @@
           }
         }
       }
+    },
+    "settings.section.themeStyle": {
+      "comment": "Section header",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme style"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပြင်အဆင် စတိုင်"
+          }
+        }
+      }
+    },
+    "settings.themeStyle": {
+      "comment": "Setting label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စတိုင်"
+          }
+        }
+      }
+    },
+    "theme.classic": {
+      "comment": "Theme style option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မူရင်း"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

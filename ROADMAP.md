@@ -20,9 +20,10 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
   - **Liquid** — Apple Liquid Glass skin: wallpaper-through glass chrome
     floating over clean content, dark + light (Apple HIG-inspired)
 
-  Implementation is deferred: it needs a selectable theme-style system
-  (palette + shape/shadow tokens) wired through Settings → Appearance.
-  Mockups, tokens and re-render commands live in the theme-previews README.
+  Implemented: a selectable theme-style system (palette + shape tokens)
+  wired through Settings → Appearance → Skin, with the classic
+  neo-brutalist look kept as the default. Mockups, tokens and re-render
+  commands live in the theme-previews README.
 - 💭 **Microsoft Edge Add-ons listing** — the Chrome Web Store item was
   permanently removed (downloader policy); Edge Add-ons accepts Chrome MV3
   packages and would give store presence + auto-updates. Reuse the store

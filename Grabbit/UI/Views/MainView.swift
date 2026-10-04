@@ -73,6 +73,10 @@ struct MainView: View {
     @State private var whatsNewVersion = ""
 
     var body: some View {
+        // Keep the global theme runtime in sync before descendants render;
+        // the .id() below rebuilds the tree when the style changes.
+        let themeStyle = store.settings.themeStyle
+        let _ = ThemeRuntime.current = themeStyle
         NavigationSplitView {
             Sidebar(selection: Binding(
                 get: { navigation.selection },
@@ -119,10 +123,10 @@ struct MainView: View {
         // Persists the window's size/position across launches when enabled
         // in Settings > Basic > Startup.
         .background(WindowFrameSaver(enabled: store.settings.keepWindowFrame))
-        // Re-key on language: rebuilding the hierarchy makes every
-        // NSLocalizedString re-evaluate (instant language switch). Theme
-        // needs no rebuild — NSApp.appearance applies immediately.
-        .id(store.settings.language.rawValue)
+        // Re-key on language + theme style: rebuilding the hierarchy makes
+        // every NSLocalizedString re-evaluate (instant language switch) and
+        // every Neo.* token read resolve against the new theme.
+        .id("\(store.settings.language.rawValue)-\(store.settings.themeStyle.rawValue)")
     }
 
     /// Shows the bundled release notes once per update. The version is

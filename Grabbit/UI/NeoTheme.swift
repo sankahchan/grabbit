@@ -15,8 +15,11 @@ extension Color {
 
 // MARK: - Neo-brutalist palette
 
-/// Neo-brutalist palette for Grabbit: thick ink borders, hard offset shadows,
-/// flat bright accents.
+/// Grabbit's design system. Tokens resolve from the active `ThemeStyle`
+/// (`ThemeRuntime`): the classic theme keeps the neo-brutalist look —
+/// thick ink borders, hard offset shadows, flat bright accents — while
+/// modern themes (Aura/Pulse/Grove/Velvet/Liquid) swap in soft shadows,
+/// hairline borders and their own palettes.
 ///
 /// The bright accents are fixed; `ink` / `paper` adapt to the color scheme —
 /// pass the view's scheme explicitly:
@@ -28,15 +31,24 @@ extension Color {
 /// .neoCard() // background defaults to theme-aware paper
 /// ```
 enum NeoPalette {
-    // MARK: Bright accents (identical in light & dark)
+    // MARK: Theme resolution
 
-    static let yellow = Color(hex: 0xFFD02F)
-    static let pink   = Color(hex: 0xFF90E8)
-    static let blue   = Color(hex: 0x7DD3FC)
-    static let green  = Color(hex: 0x86EFAC)
-    static let orange = Color(hex: 0xFB923C)
-    static let purple = Color(hex: 0xC4B5FD)
-    static let red    = Color(hex: 0xFF6B6B)
+    /// Tokens for the active theme. Resolved on every read so a theme
+    /// change repaints all call sites (MainView re-keys on change).
+    private static var tokens: ThemeTokens { ThemeRuntime.tokens }
+
+    /// Shape tokens for the active theme.
+    static var shape: ThemeShape { tokens.shape }
+
+    // MARK: Bright accents — resolved from the active theme
+
+    static var yellow: Color { tokens.yellow }
+    static var pink: Color   { tokens.pink }
+    static var blue: Color   { tokens.blue }
+    static var green: Color  { tokens.green }
+    static var orange: Color { tokens.orange }
+    static var purple: Color { tokens.purple }
+    static var red: Color    { tokens.red }
 
     // MARK: Scheme-adaptive neutrals
 
@@ -47,15 +59,20 @@ enum NeoPalette {
 
     /// Near-black in light mode, near-white in dark mode.
     /// Use for borders, text, and hard shadows.
-    static func ink(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? inkDark : inkLight
-    }
+    static func ink(_ scheme: ColorScheme) -> Color { tokens.ink(scheme) }
 
-    /// Warm paper in light mode, deep charcoal in dark mode.
-    /// Default card background.
-    static func paper(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? paperDark : paperLight
-    }
+    /// Canvas / window paper.
+    static func paper(_ scheme: ColorScheme) -> Color { tokens.paper(scheme) }
+
+    /// Card background (differs from paper in modern themes).
+    static func card(_ scheme: ColorScheme) -> Color { tokens.card(scheme) }
+
+    /// Sidebar background.
+    static func sidebar(_ scheme: ColorScheme) -> Color { tokens.sidebar(scheme) }
+
+    /// Secondary / tertiary text.
+    static func ink2(_ scheme: ColorScheme) -> Color { tokens.ink2(scheme) }
+    static func ink3(_ scheme: ColorScheme) -> Color { tokens.ink3(scheme) }
 
     /// Foreground for a filled background: dark ink on bright fills
     /// (yellow/green/blue/…), scheme-adaptive ink on dark fills.
@@ -93,28 +110,48 @@ struct NeoCardModifier: ViewModifier {
     var accent: Color?
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        content
-            .padding(14)
-            .background(bg ?? Neo.paper(scheme))
-            .overlay(alignment: .top) {
-                if let accent {
-                    Rectangle()
-                        .fill(accent)
-                        .frame(height: 7)
+        let shape = Neo.shape
+        let rect = RoundedRectangle(cornerRadius: shape.cardRadius, style: .continuous)
+        if shape.brutalist {
+            content
+                .padding(14)
+                .background(bg ?? Neo.card(scheme))
+                .overlay(alignment: .top) {
+                    if let accent {
+                        Rectangle()
+                            .fill(accent)
+                            .frame(height: shape.cardTopStrip)
+                    }
                 }
-            }
-            .clipShape(shape)
-            .background(
-                shape
-                    .fill(Neo.ink(scheme))
-                    .offset(x: 6, y: 6)
-            )
-            .overlay(
-                shape
-                    .stroke(Neo.ink(scheme), lineWidth: 3)
-            )
+                .clipShape(rect)
+                .background(
+                    rect
+                        .fill(Neo.ink(scheme))
+                        .offset(x: shape.cardHardOffset, y: shape.cardHardOffset)
+                )
+                .overlay(
+                    rect.stroke(Neo.ink(scheme), lineWidth: shape.cardBorder)
+                )
+        } else {
+            // Modern themes: soft shadow, hairline (or accent-tinted)
+            // border, no hard offset.
+            let border = accent?.opacity(0.45) ?? Neo.ink(scheme).opacity(0.10)
+            content
+                .padding(14)
+                .background(bg ?? Neo.card(scheme))
+                .clipShape(rect)
+                .shadow(
+                    color: .black.opacity(
+                        scheme == .dark ? shape.cardShadowDark : shape.cardShadowLight),
+                    radius: shape.cardShadowRadius,
+                    y: shape.cardShadowY
+                )
+                .overlay(
+                    rect.stroke(border, lineWidth: shape.cardBorder)
+                )
+        }
     }
 }
 
@@ -123,16 +160,28 @@ struct NeoBadgeModifier: ViewModifier {
     var bg: Color
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content
-            .font(.caption2.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(bg)
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2))
+        if Neo.shape.brutalist {
+            content
+                .font(.caption2.weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(bg)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2))
+        } else {
+            content
+                .font(.caption2.weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(bg)
+                .clipShape(Capsule())
+        }
     }
 }
 
@@ -143,31 +192,49 @@ struct NeoButtonStyle: ButtonStyle {
     var compact: Bool = false
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        let radius: CGFloat = compact ? 8 : 10
-        let shift: CGFloat = configuration.isPressed ? 1 : 4
-        return configuration.label
-            .font(compact ? .subheadline.weight(.bold) : .headline.weight(.semibold))
-            .textCase(.uppercase)
-            .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-            .padding(.horizontal, compact ? 10 : 16)
-            .padding(.vertical, compact ? 6 : 10)
-            .background(bg)
-            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            // Hard offset block as a plain shape, not `.shadow()`: a
-            // zero-blur shadow duplicates the label text as a solid ghost
-            // copy (near-white in dark mode = "doubled text").
-            .background(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(Neo.ink(scheme))
-                    .offset(x: shift, y: shift)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: 3)
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        let shape = Neo.shape
+        if shape.brutalist {
+            let radius: CGFloat = compact ? 8 : 10
+            let shift: CGFloat = configuration.isPressed ? 1 : shape.buttonHardOffset
+            configuration.label
+                .font(compact ? .subheadline.weight(.bold) : .headline.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .padding(.horizontal, compact ? 10 : 16)
+                .padding(.vertical, compact ? 6 : 10)
+                .background(bg)
+                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                // Hard offset block as a plain shape, not `.shadow()`: a
+                // zero-blur shadow duplicates the label text as a solid ghost
+                // copy (near-white in dark mode = "doubled text").
+                .background(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(Neo.ink(scheme))
+                        .offset(x: shift, y: shift)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .stroke(Neo.ink(scheme), lineWidth: shape.buttonBorder)
+                )
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        } else {
+            configuration.label
+                .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.semibold))
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .padding(.horizontal, compact ? 12 : 18)
+                .padding(.vertical, compact ? 6 : 10)
+                .background(bg)
+                .clipShape(RoundedRectangle(cornerRadius: shape.buttonRadius, style: .continuous))
+                .shadow(
+                    color: .black.opacity(scheme == .dark ? 0.35 : 0.16),
+                    radius: 6, y: 3)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1)
+                .opacity(configuration.isPressed ? 0.9 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        }
     }
 }
 
@@ -202,25 +269,50 @@ struct SegmentedProgressBar: View {
     var segments: [Segment]
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     var body: some View {
-        HStack(spacing: 3) {
-            ForEach(segments) { segment in
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Neo.paper(scheme))
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(fillColor(for: segment))
-                            .frame(width: max(0, geo.size.width * fraction(of: segment)))
+        if Neo.shape.segmentedMeters {
+            HStack(spacing: 3) {
+                ForEach(segments) { segment in
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Neo.paper(scheme))
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(fillColor(for: segment))
+                                .frame(width: max(0, geo.size.width * fraction(of: segment)))
+                        }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .stroke(Neo.ink(scheme), lineWidth: 2)
+                        )
                     }
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(Neo.ink(scheme), lineWidth: 2)
-                    )
                 }
             }
+            .frame(height: 14)
+        } else {
+            // Modern: one smooth capsule, colored by overall progress.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Neo.ink(scheme).opacity(0.09))
+                    Capsule()
+                        .fill(overallComplete ? Neo.green : Neo.blue)
+                        .frame(width: max(0, geo.size.width * overallFraction))
+                }
+            }
+            .frame(height: 8)
         }
-        .frame(height: 14)
+    }
+
+    private var overallFraction: Double {
+        let received = segments.reduce(Int64(0)) { $0 + max(0, $1.receivedBytes) }
+        let total = segments.reduce(Int64(0)) { $0 + max($1.byteCount, 0) }
+        guard total > 0 else { return segments.allSatisfy(\.isComplete) ? 1 : 0 }
+        return min(1, max(0, Double(received) / Double(total)))
+    }
+
+    private var overallComplete: Bool {
+        !segments.isEmpty && segments.allSatisfy(\.isComplete)
     }
 
     private func fraction(of segment: Segment) -> Double {
@@ -242,20 +334,23 @@ struct NeoLinearBar: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        GeometryReader { geo in
+        let shape = Neo.shape
+        return GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Neo.paper(scheme))
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
+                    .fill(shape.brutalist ? Neo.paper(scheme) : Neo.ink(scheme).opacity(0.09))
+                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
                     .fill(fill)
                     .frame(width: geo.size.width * min(1, max(0, progress)))
             }
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Neo.ink(scheme), lineWidth: 2)
+                RoundedRectangle(cornerRadius: shape.brutalist ? 6 : 4)
+                    .stroke(
+                        Neo.ink(scheme),
+                        lineWidth: shape.brutalist ? 2 : 0)
             )
         }
-        .frame(height: 12)
+        .frame(height: shape.brutalist ? 12 : 8)
     }
 }
 
@@ -264,6 +359,7 @@ struct NeoLinearBar: View {
 /// Small colored badge identifying where a download came from.
 struct SourceBadge: View {
     var site: SourceSite
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Text(label)
@@ -290,7 +386,7 @@ struct SourceBadge: View {
         case .tiktok: Neo.pink
         case .instagram: Neo.purple
         case .telegram: Neo.blue
-        case .other: Neo.paperLight
+        case .other: Neo.card(scheme)
         }
     }
 }
@@ -309,11 +405,14 @@ struct NeoToggleStyle: ToggleStyle {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(configuration.isOn ? Neo.green : Neo.paper(scheme))
+                        .fill(configuration.isOn ? Neo.green : Neo.card(scheme))
                         .frame(width: 22, height: 22)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(Neo.ink(scheme), lineWidth: 2.5)
+                                .stroke(
+                                    Neo.shape.brutalist
+                                        ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.18),
+                                    lineWidth: Neo.shape.brutalist ? 2.5 : 1.5)
                         )
                     if configuration.isOn {
                         Image(systemName: "checkmark")
@@ -354,27 +453,42 @@ struct NeoSegmented<Value: Hashable>: View {
         options = titles.map { Option(value: $0.0, title: $0.1, icon: nil) }
     }
 
+    @ViewBuilder
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(options.indices, id: \.self) { index in
-                segmentButton(for: options[index])
-                if index < options.count - 1 {
-                    Rectangle()
-                        .fill(Neo.ink(scheme))
-                        .frame(width: 2)
+        let shape = Neo.shape
+        if shape.brutalist {
+            HStack(spacing: 0) {
+                ForEach(options.indices, id: \.self) { index in
+                    segmentButton(for: options[index], modern: false)
+                    if index < options.count - 1 {
+                        Rectangle()
+                            .fill(Neo.ink(scheme))
+                            .frame(width: shape.controlDivider)
+                    }
                 }
             }
+            .background(Neo.paper(scheme))
+            .clipShape(RoundedRectangle(cornerRadius: shape.controlRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: shape.controlRadius, style: .continuous)
+                    .stroke(Neo.ink(scheme), lineWidth: shape.controlBorder)
+            )
+        } else {
+            // Modern: soft track with an ink pill for the selected value.
+            HStack(spacing: 3) {
+                ForEach(options.indices, id: \.self) { index in
+                    segmentButton(for: options[index], modern: true)
+                }
+            }
+            .padding(3)
+            .background(Neo.ink(scheme).opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: shape.controlRadius, style: .continuous))
         }
-        .background(Neo.paper(scheme))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Neo.ink(scheme), lineWidth: 2.5)
-        )
     }
 
-    private func segmentButton(for option: Option) -> some View {
+    private func segmentButton(for option: Option, modern: Bool) -> some View {
         let selected = selection == option.value
+        let modernFill = Neo.ink(scheme)
         return Button {
             selection = option.value
         } label: {
@@ -384,16 +498,19 @@ struct NeoSegmented<Value: Hashable>: View {
                 }
                 Text(option.title)
             }
-            .font(.subheadline.weight(.bold))
+            .font(.subheadline.weight(modern ? .semibold : .bold))
             .lineLimit(1)
             // Longer localized labels (e.g. "မြန်မာ") must shrink, never
             // truncate with an ellipsis inside a segment.
             .minimumScaleFactor(0.8)
             .foregroundStyle(
-                selected ? Neo.onAccent(Neo.yellow, scheme: scheme) : Neo.ink(scheme))
-            .padding(.vertical, 7)
+                selected
+                    ? Neo.onAccent(modern ? modernFill : Neo.yellow, scheme: scheme)
+                    : Neo.ink(scheme))
+            .padding(.vertical, modern ? 6 : 7)
             .frame(maxWidth: .infinity)
-            .background(selected ? Neo.yellow : Color.clear)
+            .background(selected ? (modern ? modernFill : Neo.yellow) : Color.clear)
+            .clipShape(Capsule())
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -406,15 +523,18 @@ struct NeoTextFieldModifier: ViewModifier {
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        content
+        let shape = Neo.shape
+        return content
             .textFieldStyle(.plain)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(Neo.paper(scheme))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(shape.brutalist ? Neo.paper(scheme) : Neo.card(scheme))
+            .clipShape(RoundedRectangle(cornerRadius: shape.fieldRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: 2)
+                RoundedRectangle(cornerRadius: shape.fieldRadius, style: .continuous)
+                    .stroke(
+                        shape.brutalist ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
+                        lineWidth: shape.fieldBorder)
             )
     }
 }
@@ -465,11 +585,14 @@ struct NeoStepper<V: Strideable>: View {
                 .font(.system(size: 12, weight: .black))
                 .foregroundStyle(Neo.ink(scheme))
                 .frame(width: 26, height: 26)
-                .background(Neo.paper(scheme))
+                .background(Neo.shape.brutalist ? Neo.paper(scheme) : Neo.card(scheme))
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                        .stroke(
+                            Neo.shape.brutalist
+                                ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
+                            lineWidth: Neo.shape.hairline)
                 )
                 .opacity(disabled ? 0.35 : 1)
         }
@@ -493,12 +616,21 @@ struct NeoDotBackground: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        let shape = Neo.shape
         ZStack {
             Neo.paper(scheme)
+            if shape.dotGridLight > 0 || shape.dotGridDark > 0 {
             Canvas { context, size in
-                let color = scheme == .dark
-                    ? Color.white.opacity(0.09)
-                    : Color.black.opacity(0.14)
+                let opacity: Double
+                let color: Color
+                if scheme == .dark {
+                    opacity = shape.dotGridDark
+                    color = .white
+                } else {
+                    opacity = shape.dotGridLight
+                    color = .black
+                }
+                let grid = color.opacity(opacity)
                 let cols = Int(size.width / spacing) + 2
                 let rows = Int(size.height / spacing) + 2
                 for row in 0..<rows {
@@ -511,9 +643,10 @@ struct NeoDotBackground: View {
                             x: origin.x, y: origin.y,
                             width: dotSize, height: dotSize
                         )
-                        context.fill(Path(ellipseIn: rect), with: .color(color))
+                        context.fill(Path(ellipseIn: rect), with: .color(grid))
                     }
                 }
+            }
             }
         }
         .ignoresSafeArea()
@@ -548,8 +681,8 @@ struct NeoDivider: View {
 
     var body: some View {
         Rectangle()
-            .fill(Neo.ink(scheme))
-            .frame(height: 2)
+            .fill(Neo.shape.brutalist ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12))
+            .frame(height: Neo.shape.hairline)
     }
 }
 
@@ -572,7 +705,10 @@ struct NeoSpinner: View {
         .clipShape(RoundedRectangle(cornerRadius: max(2, size / 8), style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: max(2, size / 8), style: .continuous)
-                .stroke(Neo.ink(scheme), lineWidth: 2)
+                .stroke(
+                    Neo.shape.brutalist
+                        ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.18),
+                    lineWidth: Neo.shape.hairline)
         )
         .rotationEffect(.degrees(angle))
         .onAppear {
@@ -632,11 +768,13 @@ struct NeoMenuPicker<Value: Hashable>: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .frame(maxWidth: maxWidth, alignment: .leading)
-            .background(bg ?? Neo.paper(scheme))
+            .background(bg ?? (Neo.shape.brutalist ? Neo.paper(scheme) : Neo.card(scheme)))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: 2)
+                    .stroke(
+                        Neo.shape.brutalist ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
+                        lineWidth: Neo.shape.brutalist ? 2 : 1)
             )
         }
         .menuStyle(.borderlessButton)

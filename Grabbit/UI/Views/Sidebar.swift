@@ -78,7 +78,7 @@ struct Sidebar: View {
         // Explicit column background: the default sidebar material would not
         // follow our theme override, which left the sidebar light while the
         // content went dark.
-        .background(Neo.paper(scheme))
+        .background(Neo.sidebar(scheme))
     }
 
     // MARK: - Rows
@@ -112,26 +112,54 @@ struct Sidebar: View {
                 if let count = count(for: item) {
                     Text("\(count)")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Neo.onAccent(Neo.paper(scheme), scheme: scheme))
+                        .foregroundStyle(
+                            Neo.shape.brutalist
+                                ? Neo.onAccent(Neo.paper(scheme), scheme: scheme)
+                                : Neo.ink2(scheme))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Neo.paper(scheme))
+                        .background(
+                            Neo.shape.brutalist ? Neo.paper(scheme) : Neo.card(scheme))
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2))
+                        .overlay(
+                            Capsule().stroke(
+                                Neo.ink(scheme),
+                                lineWidth: Neo.shape.brutalist ? 2 : 0))
                 }
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Selected row sits on bright yellow — dark text in both modes.
-            .foregroundStyle(Neo.onAccent(isSelected ? Neo.yellow : Neo.paper(scheme), scheme: scheme))
-            .background(isSelected ? Neo.yellow : Neo.paper(scheme))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .foregroundStyle(selectionForeground(isSelected))
+            .background(rowBackground(isSelected))
+            .clipShape(RoundedRectangle(
+                cornerRadius: Neo.shape.brutalist ? 10 : 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: isSelected ? 3 : 2)
+                RoundedRectangle(
+                    cornerRadius: Neo.shape.brutalist ? 10 : 12, style: .continuous)
+                    .stroke(
+                        Neo.ink(scheme),
+                        lineWidth: Neo.shape.brutalist
+                            ? (isSelected ? 3 : 2)
+                            : (isSelected ? 1 : 0))
+                    .opacity(Neo.shape.brutalist ? 1 : 0.10)
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func selectionForeground(_ isSelected: Bool) -> Color {
+        if Neo.shape.brutalist {
+            // Selected row sits on bright yellow — dark text in both modes.
+            return Neo.onAccent(isSelected ? Neo.yellow : Neo.paper(scheme), scheme: scheme)
+        }
+        return isSelected ? Neo.ink(scheme) : Neo.ink2(scheme)
+    }
+
+    private func rowBackground(_ isSelected: Bool) -> Color {
+        if Neo.shape.brutalist {
+            return isSelected ? Neo.yellow : Neo.paper(scheme)
+        }
+        return isSelected ? Neo.card(scheme) : Color.clear
     }
 
     /// Badge counts: only actively-downloading tasks, and hidden entirely

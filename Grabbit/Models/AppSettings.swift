@@ -33,6 +33,8 @@ public enum ProxyMode: String, Codable, CaseIterable, Sendable {
 public struct AppSettings: Codable {
     public var language: AppLanguage = .system
     public var theme: ThemeMode = .system
+    /// Visual skin (classic neo-brutalist or one of the modern themes).
+    public var themeStyle: ThemeStyle = .classic
     public var speedLimitBytesPerSec: Int64 = 0 // 0 = unlimited
     public var clipboardMonitorEnabled = true
     public var autoResumeOnLaunch = false
@@ -121,7 +123,7 @@ public struct AppSettings: Codable {
 // extension so the memberwise initializer is preserved.
 extension AppSettings {
     private enum CodingKeys: String, CodingKey {
-        case language, theme, speedLimitBytesPerSec, clipboardMonitorEnabled
+        case language, theme, themeStyle, speedLimitBytesPerSec, clipboardMonitorEnabled
         case autoResumeOnLaunch, autoClearFinished, autoClearFailed, autoUpdateEnabled, notificationsEnabled
         case showCompletionToast, showFailureToast, completionSoundEnabled
         case autoExtractArchives, deleteArchiveAfterExtract
@@ -141,6 +143,7 @@ extension AppSettings {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         language = try c.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .system
         theme = try c.decodeIfPresent(ThemeMode.self, forKey: .theme) ?? .system
+        themeStyle = try c.decodeIfPresent(ThemeStyle.self, forKey: .themeStyle) ?? .classic
         speedLimitBytesPerSec = try c.decodeIfPresent(Int64.self, forKey: .speedLimitBytesPerSec) ?? 0
         clipboardMonitorEnabled = try c.decodeIfPresent(Bool.self, forKey: .clipboardMonitorEnabled) ?? true
         autoResumeOnLaunch = try c.decodeIfPresent(Bool.self, forKey: .autoResumeOnLaunch) ?? false

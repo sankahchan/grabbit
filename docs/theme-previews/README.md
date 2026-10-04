@@ -1,7 +1,8 @@
 # Theme previews
 
-Trial skins for Grabbit, rendered from HTML mockups. These are design
-explorations only — nothing here is wired into the app yet.
+Skins for Grabbit, first rendered as HTML mockups here and now
+implemented in the app — Settings → Appearance → Skin. The classic
+neo-brutalist look remains the default.
 
 ## Aura
 
