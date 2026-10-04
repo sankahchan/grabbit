@@ -19,17 +19,16 @@
     --text: #F2F2E8;
     --text-2: #A9AF9A;
     --text-3: #6F7663;
-    --lime: #D6F24E;
-    --lime-soft: #E6F8A6;
-    --lime-ink: #14170F;
-    --lime-dim: rgba(214, 242, 78, .16);
-    --amber: #D9A94A;
-    --amber-dim: rgba(217, 169, 74, .14);
-    --blue: #5B8CFF;
+    --lime: #E0A94E;
+    --lime-soft: #F1E3BD;
+    --lime-ink: #1A1508;
+    --lime-dim: rgba(224, 169, 78, .15);
+    --amber: #9BA189;
+    --amber-dim: rgba(155, 161, 137, .14);
     --red: #E06C5B;
     --mono: "SF Mono", ui-monospace, Menlo, monospace;
     --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 14px 36px rgba(0, 0, 0, .45);
-    --shadow-window: 0 56px 130px rgba(0, 0, 0, .78), 0 0 110px rgba(214, 242, 78, .05);
+    --shadow-window: 0 56px 130px rgba(0, 0, 0, .78), 0 0 110px rgba(224, 169, 78, .06);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,8 +37,8 @@
     font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
     color: var(--text);
     background:
-      radial-gradient(900px 520px at 10% -10%, rgba(214, 242, 78, .10), transparent 65%),
-      radial-gradient(1100px 560px at 95% 110%, rgba(91, 140, 255, .07), transparent 65%),
+      radial-gradient(900px 520px at 10% -10%, rgba(224, 169, 78, .10), transparent 65%),
+      radial-gradient(1100px 560px at 95% 110%, rgba(150, 110, 50, .10), transparent 65%),
       var(--backdrop);
     display: flex; align-items: center; justify-content: center;
     -webkit-font-smoothing: antialiased;
@@ -99,7 +98,7 @@
   }
   .nav a.active {
     background: var(--lime-soft); color: var(--lime-ink);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset, 0 6px 18px rgba(214, 242, 78, .12);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .45) inset, 0 6px 18px rgba(224, 169, 78, .12);
   }
   .nav a.active svg { color: var(--lime-ink); }
   .nav a.active .count {
@@ -140,7 +139,7 @@
     background: var(--lime); color: var(--lime-ink);
     display: flex; align-items: center; gap: 8px;
     font-weight: 800; font-size: 12.5px; letter-spacing: -.005em;
-    box-shadow: 0 8px 24px rgba(214, 242, 78, .18), 0 1px 0 rgba(255,255,255,.5) inset;
+    box-shadow: 0 8px 24px rgba(224, 169, 78, .22), 0 1px 0 rgba(255,255,255,.45) inset;
   }
   .avatar {
     width: 36px; height: 36px; border-radius: 999px;
@@ -175,18 +174,18 @@
     background: var(--lime); color: var(--lime-ink);
     display: flex; align-items: center; justify-content: center;
     font: 800 10.5px var(--mono);
-    box-shadow: 0 0 20px rgba(214, 242, 78, .25);
+    box-shadow: 0 0 20px rgba(224, 169, 78, .28);
   }
   /* The water-style accent card (blue gradient) */
   .stat.water {
     background:
-      radial-gradient(340px 150px at 88% -30%, rgba(91, 140, 255, .35), transparent 70%),
-      linear-gradient(120deg, #16233F 0%, #1B2A4A 55%, #101A2E 100%);
-    border-color: rgba(91, 140, 255, .28);
+      radial-gradient(340px 150px at 88% -30%, rgba(224, 169, 78, .30), transparent 70%),
+      linear-gradient(120deg, #2A2413 0%, #3A3016 55%, #1E1B10 100%);
+    border-color: rgba(224, 169, 78, .30);
   }
-  .stat.water .value { color: #EAF1FF; }
-  .stat.water .delta { color: #9FB6FF; }
-  .stat.water .arrow { border-color: rgba(91, 140, 255, .4); color: #C9D8FF; }
+  .stat.water .value { color: #FBEFD3; }
+  .stat.water .delta { color: #E8CF9A; }
+  .stat.water .arrow { border-color: rgba(224, 169, 78, .4); color: #F3E3BD; }
 
   /* ---------- Queue pill tabs ---------- */
   .tabs {
@@ -220,7 +219,7 @@
     padding: 3.5px 11px; border-radius: 999px;
     border: 1px solid var(--line-strong); color: var(--text-2);
   }
-  .chip.lime { border-color: rgba(214, 242, 78, .5); color: var(--lime); background: var(--lime-dim); }
+  .chip.lime { border-color: rgba(224, 169, 78, .5); color: var(--lime); background: var(--lime-dim); }
   .chip.amber { border-color: rgba(217, 169, 74, .5); color: var(--amber); background: var(--amber-dim); }
   .chip.plain { border-color: var(--line-strong); color: var(--text-2); }
   .chip.red { border-color: rgba(224, 108, 91, .5); color: var(--red); background: rgba(224, 108, 91, .12); }
@@ -236,7 +235,7 @@
     display: flex; align-items: center; justify-content: center;
     font: 800 11px var(--mono);
   }
-  .gauge.lime { background: var(--lime); color: var(--lime-ink); box-shadow: 0 0 24px rgba(214, 242, 78, .22); }
+  .gauge.lime { background: var(--lime); color: var(--lime-ink); box-shadow: 0 0 24px rgba(224, 169, 78, .22); }
   .gauge.amber { border: 2px solid var(--amber); color: var(--amber); }
   .gauge.done { border: 1.5px solid rgba(242, 242, 232, .35); color: var(--text-2); }
 
@@ -365,7 +364,7 @@
           </div>
         </div>
         <div class="stat water">
-          <div class="label micro" style="color:#8FA8E8">Total speed</div>
+          <div class="label micro" style="color:#D9BE86">Total speed</div>
           <div class="value">4.2<span class="unit">MB/s</span></div>
           <div class="delta">+0.8 over average</div>
           <div class="arrow">
