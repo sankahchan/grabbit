@@ -133,6 +133,7 @@ struct NeoCardModifier: ViewModifier {
                 )
                 .overlay(
                     rect.stroke(Neo.ink(scheme), lineWidth: shape.cardBorder)
+                        .allowsHitTesting(false)
                 )
         } else if shape.cardEdgeGlow {
             // Pulse: the card is lit from its own accent edge — a colored
@@ -151,6 +152,7 @@ struct NeoCardModifier: ViewModifier {
                 )
                 .overlay(
                     rect.stroke(charge.opacity(0.45), lineWidth: shape.cardBorder)
+                        .allowsHitTesting(false)
                 )
         } else {
             // Modern themes: soft shadow, hairline (or accent-tinted)
@@ -168,6 +170,7 @@ struct NeoCardModifier: ViewModifier {
                 )
                 .overlay(
                     rect.stroke(border, lineWidth: shape.cardBorder)
+                        .allowsHitTesting(false)
                 )
         }
     }
@@ -189,7 +192,8 @@ struct NeoBadgeModifier: ViewModifier {
                 .padding(.vertical, 4)
                 .background(bg)
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2))
+                .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2)
+                    .allowsHitTesting(false))
         } else {
             content
                 .font(.caption2.weight(.bold))
@@ -224,6 +228,7 @@ struct NeoButtonStyle: ButtonStyle {
                 .padding(.vertical, compact ? 6 : 10)
                 .background(bg)
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                 // Hard offset block as a plain shape, not `.shadow()`: a
                 // zero-blur shadow duplicates the label text as a solid ghost
                 // copy (near-white in dark mode = "doubled text").
@@ -235,6 +240,7 @@ struct NeoButtonStyle: ButtonStyle {
                 .overlay(
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
                         .stroke(Neo.ink(scheme), lineWidth: shape.buttonBorder)
+                        .allowsHitTesting(false)
                 )
                 .scaleEffect(configuration.isPressed ? 0.97 : 1)
                 .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
@@ -246,6 +252,7 @@ struct NeoButtonStyle: ButtonStyle {
                 .padding(.vertical, compact ? 6 : 10)
                 .background(bg)
                 .clipShape(RoundedRectangle(cornerRadius: shape.buttonRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: shape.buttonRadius, style: .continuous))
                 .shadow(
                     color: .black.opacity(scheme == .dark ? 0.35 : 0.16),
                     radius: 6, y: 3)
@@ -303,6 +310,7 @@ struct SegmentedProgressBar: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 3)
                                 .stroke(Neo.ink(scheme), lineWidth: 2)
+                                .allowsHitTesting(false)
                         )
                     }
                 }
@@ -485,6 +493,7 @@ struct NeoSegmented<Value: Hashable>: View {
             .overlay(
                 RoundedRectangle(cornerRadius: shape.controlRadius, style: .continuous)
                     .stroke(Neo.ink(scheme), lineWidth: shape.controlBorder)
+                    .allowsHitTesting(false)
             )
         } else {
             // Modern: soft track with an ink pill for the selected value.
@@ -548,6 +557,7 @@ struct NeoTextFieldModifier: ViewModifier {
                     .stroke(
                         shape.brutalist ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
                         lineWidth: shape.fieldBorder)
+                    .allowsHitTesting(false)
             )
     }
 }
@@ -606,6 +616,7 @@ struct NeoStepper<V: Strideable>: View {
                             Neo.shape.brutalist
                                 ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
                             lineWidth: Neo.shape.hairline)
+                        .allowsHitTesting(false)
                 )
                 .opacity(disabled ? 0.35 : 1)
         }
@@ -684,6 +695,7 @@ struct NeoDotBackground: View {
                 }
             }
         }
+        .allowsHitTesting(false)
         .ignoresSafeArea()
     }
 }
@@ -699,6 +711,12 @@ struct NeoProgressTrack: View {
     var body: some View {
         let shape = Neo.shape
         let trackColor = Neo.ink(scheme).opacity(0.10)
+        return track(shape: shape, trackColor: trackColor)
+            .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func track(shape: ThemeShape, trackColor: Color) -> some View {
         switch shape.progress {
         case .blocks:
             EmptyView()
@@ -887,6 +905,7 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     .stroke(
                         Neo.shape.brutalist ? Neo.ink(scheme) : Neo.ink(scheme).opacity(0.12),
                         lineWidth: Neo.shape.brutalist ? 2 : 1)
+                    .allowsHitTesting(false)
             )
         }
         .menuStyle(.borderlessButton)

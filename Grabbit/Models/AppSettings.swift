@@ -211,6 +211,7 @@ public final class SettingsStore {
         } else {
             settings = .default
         }
+        ThemeRuntime.current = settings.themeStyle
         migrateProxyPasswordToKeychain()
     }
 
@@ -270,6 +271,7 @@ public final class SettingsStore {
             // never delete a credential we never saw.
             KeychainStore.delete(account: keychainAccount)
         }
+        ThemeRuntime.current = settings.themeStyle
         if let data = try? JSONEncoder().encode(toPersist) {
             UserDefaults.standard.set(data, forKey: Self.userDefaultsKey)
         }

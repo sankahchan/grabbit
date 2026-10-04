@@ -340,8 +340,11 @@ enum ThemeCatalog {
 
     private static let liquid = ThemeTokens(
         paperLight: Color(hex: 0xF5F6F8), paperDark: Color(hex: 0x1B1C20),
-        cardLight: Color(hex: 0xFFFFFF), cardDark: Color(hex: 0x202127),
-        sidebarLight: Color(hex: 0xEFF2F6), sidebarDark: Color(hex: 0x1E1F25),
+        // Translucent "glass" cards and sidebar: the wallpaper gradient
+        // shows through, like the preview's Liquid Glass sheets.
+        cardLight: Color.white.opacity(0.82), cardDark: Color(hex: 0x202127).opacity(0.84),
+        sidebarLight: Color(hex: 0xEFF2F6).opacity(0.74),
+        sidebarDark: Color(hex: 0x1E1F25).opacity(0.72),
         inkLight: Color(hex: 0x1C1C1E), inkDark: Color(hex: 0xFFFFFF),
         ink2Light: Color(hex: 0x5F6470), ink2Dark: Color(hex: 0xB8C0CC),
         ink3Light: Color(hex: 0x8E939E), ink3Dark: Color(hex: 0x8A93A0),

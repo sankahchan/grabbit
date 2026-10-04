@@ -156,6 +156,10 @@ struct Sidebar: View {
             .background(rowBackground(isSelected))
             .clipShape(RoundedRectangle(
                 cornerRadius: Neo.shape.brutalist ? 10 : 12, style: .continuous))
+            // Full-row hit area: rows must respond to a click anywhere,
+            // including the transparent padding of modern themes.
+            .contentShape(RoundedRectangle(
+                cornerRadius: Neo.shape.brutalist ? 10 : 12, style: .continuous))
             .overlay(
                 RoundedRectangle(
                     cornerRadius: Neo.shape.brutalist ? 10 : 12, style: .continuous)
@@ -165,6 +169,7 @@ struct Sidebar: View {
                             ? (isSelected ? 3 : 2)
                             : (isSelected ? 1 : 0))
                     .opacity(Neo.shape.brutalist ? 1 : 0.10)
+                    .allowsHitTesting(false)
             )
         }
         .buttonStyle(.plain)

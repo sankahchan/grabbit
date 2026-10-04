@@ -8,8 +8,19 @@ import Observation
 // signing and run Sparkle's `generate_keys` tool, then paste the public key
 // into project.yml's SUPublicEDKey.
 
+/// Keeps the app alive when the main window closes: tray/hidden run modes
+/// deliberately hide the window and live in the menu bar, so the default
+/// "quit after the last window closes" behavior would terminate them.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+}
+
 @main
 struct GrabbitApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     @State private var downloadEngine: DownloadEngine
     @State private var torrentEngine: TorrentEngine
     @State private var mediaEngine: MediaEngine
