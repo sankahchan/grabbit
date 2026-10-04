@@ -141,5 +141,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.5.2/Grabbit-v1.5.2.dmg" sparkle:version="1.5.2" sparkle:shortVersionString="1.5.2" sparkle:edSignature="aXpNk+E5g3TyMn6T190ICAmXciALsXDEektPEl6NPbHK1eWWI8WVTs7TAB+rDCaLit7rKrJd4QoE9CPwoa8PAA==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.6.0</title>
+      <pubDate>Sun, 04 Oct 2026 11:13:51 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">Release v1.6.0: one-click extension updates from the Grabber tab<br/><br/>- The Grabber tab gains an Update extension button (Get the extension<br/>  when nothing is connected). It downloads the latest package straight<br/>  from the GitHub release — no browser detour — detects the unpacked<br/>  folder Chrome/Edge/Brave loads from the browser preferences, mirrors<br/>  the new files over it (stale files removed), then points the user at<br/>  chrome://extensions for the final Reload. Fresh installs are saved to<br/>  ~/Downloads/Grabbit/GrabbitExtension with the ZIP beside them.<br/>- The full (GitHub) extension package now ships INSTALL.txt: install<br/>  steps, the update flow, troubleshooting and the privacy note.<br/>- ExtensionUpdater covers preference parsing (location == 4), recursive<br/>  two-way mirroring and ZIP installation with a manifest sanity check.<br/><br/>415 tests / 0 failures.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.6.0/Grabbit-v1.6.0.dmg" sparkle:version="1.6.0" sparkle:shortVersionString="1.6.0" sparkle:edSignature="+eoaO9Bj54XBeEAGnJrLHq1J4w2ch3qkIq03US/r00HYTQ75j5ASFV148gZx5rmGFpenwmAE9yiSr+zUwOV1CQ==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
