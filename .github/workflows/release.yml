@@ -144,6 +144,20 @@ jobs:
             --title "$TAG" \
             --notes-file /tmp/release-notes.md
 
+      # The extension is not on the Chrome Web Store (downloader policy), so
+      # every release carries the current full build — the "latest release"
+      # page is the documented install source.
+      - name: Package + attach the browser extension
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/package-extension.sh --full
+          TAG="${GITHUB_REF_NAME}"
+          VERSION=$(python3 -c "import json; print(json.load(open('GrabbitExtension/manifest.json'))['version'])")
+          ZIP="dist/grabbit-extension-v${VERSION}-full.zip"
+          gh release upload "$TAG" "$ZIP" --clobber
+          echo "attached $ZIP"
+
       - name: Sign DMG with Sparkle EdDSA key
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}

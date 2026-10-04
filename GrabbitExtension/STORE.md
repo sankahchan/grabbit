@@ -144,6 +144,19 @@ updated so the item fully complies. Please lift the block so v1.0.8 can be
 submitted for review.
 ```
 
+## Outcome (Oct 2026)
+
+The appeal was denied: violation "Facilitating download of content from
+YouTube", **corrective action: none — the extension will not be allowed back
+in the store**. The Chrome Web Store listing for item ID
+`ccimhjbjoidahibcijllkgoljnonhg` is permanently closed.
+
+Distribution moved to GitHub releases (see the README): the release
+workflow packages `scripts/package-extension.sh --full` and attaches
+`grabbit-extension-v<version>-full.zip` to every release, so the "latest
+release" page is always the canonical install source. Edge Add-ons /
+Firefox (AMO) submissions are the alternative-store path if desired.
+
 ## Assets needed (dashboard)
 
 - **Store icon:** 128×128 PNG (reuse `icons/icon128.png`).
