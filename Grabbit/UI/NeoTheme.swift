@@ -79,7 +79,10 @@ enum NeoPalette {
     /// Without this, dark mode renders white text on bright accents
     /// (white-on-yellow, white-on-green) which is unreadable.
     static func onAccent(_ bg: Color, scheme: ColorScheme) -> Color {
-        isBright(bg) ? inkLight : ink(scheme)
+        // Dark fills always take light text; bright fills take dark ink.
+        // (`ink(scheme)` was wrong for dark fills in light mode — black
+        // text on the black pill controls was invisible.)
+        isBright(bg) ? inkLight : (scheme == .dark ? inkDark : .white)
     }
 
     private static func isBright(_ color: Color) -> Bool {
