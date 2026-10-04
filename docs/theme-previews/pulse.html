@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Grabbit — Pulse theme preview</title>
+<style>
+  /* ===== Pulse — a dark, neon "download console" Grabbit theme =====
+     Volta-inspired: glassy cards with luminous hairline borders, neon
+     lime accent (#A8FF3B), cyan data, glow on every active element.
+     Dark-first; no light variant. */
+  :root {
+    --backdrop: #07090C;
+    --canvas: #0B0F14;
+    --sidebar: #0C1116;
+    --card: rgba(255, 255, 255, .028);
+    --card-solid: #10161C;
+    --line: rgba(140, 220, 255, .14);
+    --line-soft: rgba(140, 220, 255, .08);
+    --text: #EDF2F5;
+    --text-2: #93A3AD;
+    --text-3: #5E6C76;
+    --lime: #A8FF3B;
+    --lime-ink: #0A1006;
+    --lime-glow: rgba(168, 255, 59, .45);
+    --cyan: #4FC3E8;
+    --gold: #F5B54A;
+    --red: #FF6B6B;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+    --shadow-card: 0 1px 0 rgba(255,255,255,.03) inset, 0 14px 40px rgba(0,0,0,.45);
+    --shadow-window: 0 50px 130px rgba(0,0,0,.75), 0 0 90px rgba(79,195,232,.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(79, 195, 232, .14), transparent 65%),
+      radial-gradient(1000px 560px at 92% 108%, rgba(168, 255, 59, .08), transparent 65%),
+      var(--backdrop);
+    display: flex; align-items: center; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .window {
+    width: 1236px; height: 768px;
+    background: linear-gradient(180deg, #0D1218 0%, var(--canvas) 30%);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: var(--shadow-window);
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 232px; flex: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .022), rgba(255, 255, 255, 0) 40%), var(--sidebar);
+    border-right: 1px solid var(--line-soft);
+    padding: 14px 12px 12px;
+    display: flex; flex-direction: column;
+  }
+  .traffic { display: flex; gap: 7px; padding: 2px 6px 16px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+
+  .brand { padding: 0 8px 16px; display: flex; align-items: center; gap: 8px; }
+  .brand h1 { font-size: 16px; font-weight: 800; letter-spacing: .04em; }
+  .brand h1 i { font-style: normal; color: var(--lime); }
+  .brand .ver {
+    font: 700 9.5px var(--mono); color: var(--text-2);
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    padding: 2px 7px; border-radius: 999px;
+  }
+  .brand small {
+    display: block; font-size: 8.5px; font-weight: 700; letter-spacing: .16em;
+    color: var(--text-3); text-transform: uppercase; margin-top: 2px;
+  }
+
+  .nav-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-3); padding: 10px 12px 7px;
+  }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 13px; border-radius: 12px;
+    color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  .nav a svg { color: var(--text-3); }
+  .nav a .count {
+    margin-left: auto; font: 700 10px var(--mono);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    color: var(--text-2); padding: 1.5px 7px; border-radius: 999px;
+  }
+  .nav a.active {
+    background: var(--lime); color: var(--lime-ink);
+    box-shadow: 0 0 26px var(--lime-glow), 0 1px 0 rgba(255,255,255,.35) inset;
+  }
+  .nav a.active svg { color: var(--lime-ink); }
+  .nav a.active .count {
+    background: rgba(10, 16, 6, .18); border-color: transparent; color: var(--lime-ink);
+  }
+  .spacer { flex: 1; }
+  .side-divider { height: 1px; background: var(--line-soft); margin: 10px 8px 8px; }
+
+  /* ---------- Content ---------- */
+  .content { flex: 1; padding: 20px 26px; overflow: hidden; }
+  .micro {
+    font: 700 9px var(--mono); letter-spacing: .22em; text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .search {
+    flex: 1; max-width: 400px; height: 38px;
+    background: var(--card); backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 12px;
+    display: flex; align-items: center; gap: 9px; padding: 0 13px;
+    color: var(--text-3); font-size: 12px;
+  }
+  .search svg { color: var(--text-3); }
+  .search .kbd {
+    margin-left: auto; font: 700 10px var(--mono); color: var(--text-3);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .iconbtn {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .primary {
+    height: 38px; padding: 0 17px; border-radius: 999px;
+    background: var(--lime); color: var(--lime-ink);
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 800; font-size: 12.5px; letter-spacing: -.005em;
+    box-shadow: 0 0 30px var(--lime-glow), 0 1px 0 rgba(255,255,255,.35) inset;
+  }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 999px;
+    background: rgba(79, 195, 232, .12); color: var(--cyan);
+    border: 1px solid rgba(79, 195, 232, .3);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 12.5px var(--mono);
+  }
+
+  .pagehead { display: flex; align-items: baseline; gap: 13px; margin-bottom: 17px; }
+  .pagehead h2 { font-size: 27px; font-weight: 300; letter-spacing: -.01em; }
+  .pagehead h2 b { font-weight: 800; }
+  .pagehead .sub { color: var(--text-2); font-size: 12px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .stat {
+    background: var(--card); backdrop-filter: blur(12px);
+    border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow-card); padding: 14px 17px 13px;
+  }
+  .stat .label { margin-bottom: 8px; }
+  .stat .value {
+    font: 500 24px var(--mono); letter-spacing: .04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .value .unit { font-size: 12px; letter-spacing: .1em; color: var(--text-2); margin-left: 3px; }
+  .stat .value.lime { color: var(--lime); text-shadow: 0 0 18px rgba(168, 255, 59, .45); }
+  .stat .value.cyan { color: var(--cyan); text-shadow: 0 0 18px rgba(79, 195, 232, .4); }
+  .stat .dots { display: flex; gap: 5px; margin-top: 8px; }
+  .stat .dots i { width: 6px; height: 6px; border-radius: 50%; }
+  .stat .delta { font-size: 11px; color: var(--lime); font-weight: 700; margin-left: 7px; }
+
+  .listhead { display: flex; align-items: center; gap: 8px; margin: 4px 2px 12px; }
+  .listhead .title { font-size: 14px; font-weight: 800; letter-spacing: -.01em; margin-right: 4px; }
+  .chip {
+    font: 700 10.5px var(--mono); letter-spacing: .04em;
+    padding: 3.5px 10px; border-radius: 999px;
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line); color: var(--text-2);
+  }
+  .chip.lime { background: rgba(168, 255, 59, .12); border-color: rgba(168, 255, 59, .35); color: var(--lime); }
+  .chip.gold { background: rgba(245, 181, 74, .12); border-color: rgba(245, 181, 74, .35); color: var(--gold); }
+  .chip.cyan { background: rgba(79, 195, 232, .12); border-color: rgba(79, 195, 232, .35); color: var(--cyan); }
+  .chip.red { background: rgba(255, 107, 107, .12); border-color: rgba(255, 107, 107, .35); color: var(--red); }
+
+  .task {
+    background: var(--card); backdrop-filter: blur(12px);
+    border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow-card); padding: 14px 17px; margin-bottom: 11px;
+  }
+  .task .row1 { display: flex; align-items: center; gap: 10px; }
+  .task .file { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; }
+  .task .host { font: 500 11px var(--mono); color: var(--text-3); margin-top: 2px; }
+  .task .status { margin-left: auto; }
+  .task .row2 { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .bar { flex: 1; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .06); overflow: hidden; }
+  .bar i {
+    display: block; height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #C4FF70, var(--lime));
+    box-shadow: 0 0 16px var(--lime-glow);
+  }
+  .bar.gold i { background: linear-gradient(90deg, #FFD37A, var(--gold)); box-shadow: 0 0 14px rgba(245, 181, 74, .4); }
+  .bar.cyan i { background: linear-gradient(90deg, #7BD8F5, var(--cyan)); box-shadow: 0 0 14px rgba(79, 195, 232, .35); }
+  .task .pct { font: 700 11.5px var(--mono); min-width: 40px; text-align: right; color: var(--lime); }
+  .task .pct.gold { color: var(--gold); }
+  .task .pct.cyan { color: var(--cyan); }
+  .task .meta { display: flex; gap: 18px; margin-top: 10px; font-size: 11px; color: var(--text-3); }
+  .task .meta b { font: 700 11px var(--mono); color: var(--text); margin-left: 5px; }
+  .task .meta b.lime { color: var(--lime); }
+  .actions { display: flex; gap: 6px; margin-left: auto; }
+  .mini {
+    width: 29px; height: 29px; border-radius: 10px;
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+  }
+  .mini.danger { color: var(--red); border-color: rgba(255, 107, 107, .28); }
+
+  .footnote { margin-top: 2px; font: 600 10.5px var(--mono); letter-spacing: .06em; color: var(--text-3); text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+  <div class="window">
+    <aside class="sidebar">
+      <div class="traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+
+      <div class="brand">
+        <div>
+          <h1>Gr<i>a</i>bbit</h1>
+          <small>Download Console</small>
+        </div>
+        <span class="ver">v1.6</span>
+      </div>
+
+      <div class="nav-label">Main</div>
+      <nav class="nav">
+        <a class="active">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13.5h10"/></svg>
+          Downloads <span class="count">3</span>
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.8v3h-3"/></svg>
+          Torrents
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg>
+          Media
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="4" cy="12" r="1.6"/><path d="M3.5 8.5a4 4 0 0 1 4 4M3.5 4.5a8 8 0 0 1 8 8"/></svg>
+          RSS
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><ellipse cx="8" cy="8" rx="2.6" ry="6"/><path d="M2.4 6h11.2M2.4 10h11.2"/></svg>
+          Grabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg>
+          LinkGrabber
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.6V8l2.4 1.6"/></svg>
+          Scheduler
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 8a5.5 5.5 0 1 0 1.6-3.9M2.5 1.8v3h3"/><path d="M8 5.5V8l1.8 1.2"/></svg>
+          History
+        </a>
+      </nav>
+
+      <div class="spacer"></div>
+      <div class="side-divider"></div>
+      <nav class="nav">
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4"/></svg>
+          Settings
+        </a>
+        <a>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11"/><circle cx="8" cy="4.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          About
+        </a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M13.5 13.5L10.3 10.3"/></svg>
+          Search downloads…
+          <span class="kbd">⌘K</span>
+        </div>
+        <div class="right">
+          <div class="iconbtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v10M5 13l-2.4-2.4M5 13l2.4-2.4M11 13V3M11 3L8.6 5.4M11 3l2.4 2.4"/></svg>
+          </div>
+          <div class="primary">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>
+            Add Download
+          </div>
+          <div class="avatar">G</div>
+        </div>
+      </div>
+
+      <div class="pagehead">
+        <h2><b>Downloads</b></h2>
+        <div class="sub">3 active tasks · 4.2 MB/s total</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label micro">/ Active ///</div>
+          <div class="value lime">3<span class="delta" style="font-family:-apple-system">+1 today</span></div>
+          <div class="dots"><i style="background:var(--lime);box-shadow:0 0 8px var(--lime-glow)"></i><i style="background:var(--cyan)"></i><i style="background:var(--gold)"></i></div>
+        </div>
+        <div class="stat">
+          <div class="label micro">/ Completed today ///</div>
+          <div class="value cyan">12</div>
+          <div class="dots"><i style="background:var(--cyan);box-shadow:0 0 8px rgba(79,195,232,.5)"></i><i style="background:var(--lime)"></i><i style="background:var(--gold)"></i></div>
+        </div>
+        <div class="stat">
+          <div class="label micro">/ Total speed ///</div>
+          <div class="value lime">4.2<span class="unit">MB/S</span></div>
+          <div class="dots"><i style="background:var(--gold)"></i><i style="background:var(--text)"></i><i style="background:var(--lime);box-shadow:0 0 8px var(--lime-glow)"></i><i style="background:var(--cyan)"></i></div>
+        </div>
+      </div>
+
+      <div class="listhead">
+        <div class="title">Queue</div>
+        <span class="chip">ALL</span>
+        <span class="chip lime">DOWNLOADING</span>
+        <span class="chip">PAUSED</span>
+        <span class="chip red">FAILED</span>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Waterfront Concert 2026 — Full Set.mp4</div>
+            <div class="host">media.example.com · 1.24 GB</div>
+          </div>
+          <span class="chip lime status">DOWNLOADING</span>
+        </div>
+        <div class="row2">
+          <div class="bar"><i style="width:64%"></i></div>
+          <div class="pct">64%</div>
+        </div>
+        <div class="meta">
+          <span>SPEED<b class="lime">3.1 MB/s</b></span>
+          <span>ETA<b>2m 40s</b></span>
+          <span>PEERS<b>16</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 3.5V13M10 3.5V13"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">Podcast Episode 12 — Waterfront Sessions.m4a</div>
+            <div class="host">cdn.example.com · 84.5 MB</div>
+          </div>
+          <span class="chip gold status">PAUSED</span>
+        </div>
+        <div class="row2">
+          <div class="bar gold"><i style="width:41%"></i></div>
+          <div class="pct gold">41%</div>
+        </div>
+        <div class="meta">
+          <span>SPEED<b>—</b></span>
+          <span>ETA<b>—</b></span>
+          <span>PEERS<b>8</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="row1">
+          <div>
+            <div class="file">SM03_KaWai Font.zip</div>
+            <div class="host">netpanchi.com · 28.0 KB</div>
+          </div>
+          <span class="chip cyan status">COMPLETED</span>
+        </div>
+        <div class="row2">
+          <div class="bar cyan"><i style="width:100%"></i></div>
+          <div class="pct cyan">100%</div>
+        </div>
+        <div class="meta">
+          <span>SAVED TO<b>Downloads/Grabbit/Other</b></span>
+          <span class="actions">
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5a1 1 0 0 1 1-1h3l1.2 1.5h4.8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></div>
+            <div class="mini"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6.6 9.4a3 3 0 0 0 4.2 0l1.8-1.8a3 3 0 1 0-4.2-4.2l-.8.8M9.4 6.6a3 3 0 0 0-4.2 0L3.4 8.4a3 3 0 1 0 4.2 4.2l.8-.8"/></svg></div>
+            <div class="mini danger"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></div>
+          </span>
+        </div>
+      </div>
+
+      <div class="footnote">COMPLETED TASKS MOVE TO HISTORY · DRAG A CARD TO REORDER THE QUEUE</div>
+    </main>
+  </div>
+</body>
+</html>

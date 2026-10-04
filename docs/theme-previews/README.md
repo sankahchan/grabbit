@@ -49,3 +49,51 @@ Re-render:
   --screenshot="$PWD/docs/theme-previews/aura-light.png" \
   "file://$PWD/docs/theme-previews/aura.html"
 ```
+
+## Pulse
+
+A dark, neon "download console" skin inspired by
+[Volta — Home Energy OS](https://www.behance.net/gallery/254877083/Volta-Home-Energy-OS-UI-UX-Design-Mobile-App-Design)
+on Behance. Name: **Pulse** — short, energy-console feel. Dark-first; no
+light variant is planned for this one.
+
+Style language: deep blue-black canvas with cyan/lime ambient glows,
+glassy cards with luminous hairline borders and soft outer shadows, one
+neon lime accent used like a power meter, cyan for completed data, gold
+for paused, monospace numerals with small colored dot markers, micro
+monospace labels (`/ ACTIVE ///`).
+
+### Tokens (as rendered)
+
+| Token | Value |
+| --- | --- |
+| Backdrop | `#07090C` + cyan glow top-left, lime glow bottom-right |
+| Canvas | `#0B0F14` (window gradient from `#0D1218`) |
+| Sidebar | `#0C1116` with a faint white top wash |
+| Card | `rgba(255,255,255,.028)` glass + backdrop blur |
+| Border | `rgba(140,220,255,.14)` / soft `.08` |
+| Text / secondary / tertiary | `#EDF2F5` / `#93A3AD` / `#5E6C76` |
+| Accent (lime) | `#A8FF3B`, glow `rgba(168,255,59,.45)`, ink `#0A1006` |
+| Cyan (completed) | `#4FC3E8` |
+| Gold (paused) | `#F5B54A` |
+| Danger | `#FF6B6B` |
+| Numerals | `SF Mono` / `ui-monospace`, tabular, glow on active values |
+| Card shadow | `inset 0 1px 0 rgba(255,255,255,.03), 0 14px 40px rgba(0,0,0,.45)` |
+| Window shadow | `0 50px 130px rgba(0,0,0,.75), 0 0 90px rgba(79,195,232,.07)` |
+
+Radii: window 22 · cards 20 · inputs 12 · icon buttons 10 · pills 999.
+
+### Files
+
+- `pulse.html` — the mockup (dark only)
+- `pulse-dark.png` — 2560×1600 render
+
+Re-render:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --screenshot="$PWD/docs/theme-previews/pulse-dark.png" \
+  "file://$PWD/docs/theme-previews/pulse.html"
+```

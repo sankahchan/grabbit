@@ -8,8 +8,9 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
   extension icons where relevant). Design TBD.
 - 🔨 **New themes** — additional themes beyond the built-in neobrutalist
   light/dark. Design reference images will be shared before implementation
-  to pin down the exact look. First exploration: **Aura**, a clean airy SaaS
-  skin (light + dark mockups in `docs/theme-previews/`).
+  to pin down the exact look. Explorations in `docs/theme-previews/`:
+  **Aura** (clean airy SaaS, light + dark) and **Pulse** (dark neon
+  console, Volta-inspired).
 - 💭 **Microsoft Edge Add-ons listing** — the Chrome Web Store item was
   permanently removed (downloader policy); Edge Add-ons accepts Chrome MV3
   packages and would give store presence + auto-updates. Reuse the store
