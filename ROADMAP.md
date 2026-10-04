@@ -6,11 +6,14 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
 
 - 🔨 **New app icon(s)** — a fresh icon for Grabbit (AppIcon set, and the
   extension icons where relevant). Design TBD.
-- 🔨 **New themes** — additional themes beyond the built-in neobrutalist
-  light/dark. Design reference images will be shared before implementation
-  to pin down the exact look. Explorations in `docs/theme-previews/`:
-  **Aura** (clean airy SaaS, light + dark) and **Pulse** (dark neon
-  console, Volta-inspired).
+- 🔨 **New themes** — two designs reviewed and approved (saved in
+  `docs/theme-previews/`):
+  - **Aura** — clean airy SaaS, light + dark (FacilityFlow-inspired)
+  - **Pulse** — dark neon download console, lime accent (Volta-inspired)
+
+  Implementation is deferred: it needs a selectable theme-style system
+  (palette + shape/shadow tokens) wired through Settings → Appearance.
+  Mockups, tokens and re-render commands live in the theme-previews README.
 - 💭 **Microsoft Edge Add-ons listing** — the Chrome Web Store item was
   permanently removed (downloader policy); Edge Add-ons accepts Chrome MV3
   packages and would give store presence + auto-updates. Reuse the store
