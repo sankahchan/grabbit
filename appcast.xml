@@ -148,5 +148,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.6.0/Grabbit-v1.6.0.dmg" sparkle:version="1.6.0" sparkle:shortVersionString="1.6.0" sparkle:edSignature="+eoaO9Bj54XBeEAGnJrLHq1J4w2ch3qkIq03US/r00HYTQ75j5ASFV148gZx5rmGFpenwmAE9yiSr+zUwOV1CQ==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.7.0</title>
+      <pubDate>Mon, 05 Oct 2026 22:17:31 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">Release v1.7.0: torrent search with Torznab, Pulse dot-matrix UI<br/><br/>- The Torrents tab can search the built-in Pirate Bay and Nyaa indexes<br/>  plus any custom Torznab indexer — Jackett, Prowlarr, or a single<br/>  indexer endpoint. Add them by hand or let Auto-detect read the local<br/>  Jackett/Prowlarr configuration (API keys go to the macOS Keychain),<br/>  and configured servers start automatically with Grabbit.<br/>- Indexer download links that redirect to a magnet are now resolved by<br/>  Grabbit itself, so ADD works with link-serving indexers (Jackett /dl)<br/>  instead of failing in aria2.<br/>- Pulse renders the entire UI in the bundled Doto dot-matrix font with<br/>  edge-lit glass tiles, segmented progress strips with a glowing<br/>  now-marker, and a light/dark readability pass.<br/>- Downloads gains a dashboard header: active/completed/speed stat<br/>  cards (flip-dot numerals on Pulse, plain numerals elsewhere), a LIVE<br/>  status pill, queue filter pills and tidied Batch/Add actions.<br/>  Torrents and Media got matching stat strips and compact status rows.<br/>- App-wide Tabler line icons, cleaner empty states, and a zero-warning<br/>  build.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.7.0/Grabbit-v1.7.0.dmg" sparkle:version="1.7.0" sparkle:shortVersionString="1.7.0" sparkle:edSignature="+g0ewtUIBVTxTPI4svfAe8ARhcyyxEoXh92Hk4ituW3DjaYqS3V3+F5xt0H+qAtIEEKKzQNyvwxTY3wrFFu4DQ==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
