@@ -25,7 +25,7 @@ struct MediaView: View {
                     title: NSLocalizedString("media.title", comment: ""),
                     accent: Neo.blue)
                 statsStrip
-                runtimeCard
+                runtimeStrip
                 urlCard
                 switch media.state {
                 case .ready:
@@ -119,45 +119,49 @@ struct MediaView: View {
 
     // MARK: - Runtime status
 
-    private var runtimeCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(NSLocalizedString("media.runtime.title", comment: ""))
-                .font(NeoFont.f(.headline, .heavy))
-                .textCase(.uppercase)
-            ForEach(runtime, id: \.0) { component, found in
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(found ? Neo.green : Neo.red)
-                        .frame(width: 12, height: 12)
-                        .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
-                    Text(component.rawValue)
-                        .font(NeoFont.f(.subheadline, .bold))
-                    Spacer()
-                    if !found {
-                        Text(component.installHint)
-                            .font(NeoFont.f(.caption))
-                            .foregroundStyle(.secondary)
+    private var runtimeStrip: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 12) {
+                Text(NSLocalizedString("media.runtime.title", comment: ""))
+                    .font(NeoFont.f(.caption2, .bold))
+                    .tracking(1.2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Neo.ink2(scheme))
+                ForEach(runtime, id: \.0) { component, found in
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(found ? Neo.green : Neo.red)
+                            .frame(width: 7, height: 7)
+                        Text(component.rawValue)
+                            .font(NeoFont.f(.caption, .semibold))
+                            .foregroundStyle(found ? Neo.ink(scheme) : Neo.red)
                     }
+                    .help(found ? "" : component.installHint)
                 }
-            }
-            HStack {
+                Spacer()
+                if let note = updateNote {
+                    Text(note)
+                        .font(NeoFont.f(.caption2))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
                 Button {
                     Task { await checkForUpdate() }
                 } label: {
-                    Label {
-                        Text(NSLocalizedString("media.runtime.checkUpdate", comment: ""))
-                    } icon: {
-                        AppIcon("arrow.triangle.2.circlepath", size: 13)
-                    }
+                    AppIcon("arrow.triangle.2.circlepath", size: 13)
                 }
-                .neoButton(bg: Neo.paper(scheme))
+                .buttonStyle(NeoIconButtonStyle(bg: Neo.blue))
                 .disabled(checkingUpdate)
-                if let note = updateNote {
-                    Text(note).font(NeoFont.f(.caption)).foregroundStyle(.secondary)
-                }
+                .help(NSLocalizedString("media.runtime.checkUpdate", comment: ""))
+            }
+            // Only a missing component grows the strip — with hints inline.
+            ForEach(runtime.filter { !$0.1 }, id: \.0) { component, _ in
+                Text("\(component.rawValue): \(component.installHint)")
+                    .font(NeoFont.f(.caption2))
+                    .foregroundStyle(Neo.red)
             }
         }
-        .neoCard(accent: Neo.blue)
+        .neoCard(accent: Neo.blue, inset: 10)
     }
 
     private func refreshRuntime() {
