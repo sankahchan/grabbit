@@ -12,25 +12,21 @@ struct TorrentSearchSheet: View {
 
     @State private var service = TorrentSearchService()
     @State private var query = ""
-    @State private var mode = 0
     @State private var addingID: String?
     @State private var addedIDs: Set<String> = []
     @State private var addError: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        @Bindable var service = service
+        return VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("torrents.search.title", comment: ""))
                 .font(NeoFont.f(.title2, .heavy))
 
-            NeoSegmented(selection: $mode, titles: [
-                (0, TorrentSearchProvider.apibay.displayName),
-                (1, TorrentSearchProvider.nyaa.displayName),
-            ])
-            .onChange(of: mode) { _, newValue in
-                service.provider = newValue == 0 ? .apibay : .nyaa
-            }
-
             HStack(spacing: 8) {
+                NeoMenuPicker(
+                    selection: $service.source,
+                    options: sources.map { ($0, $0.name) },
+                    maxWidth: 200)
                 TextField(
                     NSLocalizedString("torrents.search", comment: ""),
                     text: $query,
@@ -73,6 +69,13 @@ struct TorrentSearchSheet: View {
     }
 
     // MARK: - Results
+
+    /// Built-ins plus the user's Torznab indexers, listed in settings
+    /// order.
+    private var sources: [TorrentSearchSource] {
+        TorrentSearchProvider.builtIns.map { .builtin($0) }
+            + settings.settings.torznabIndexers.map { .torznab($0) }
+    }
 
     @ViewBuilder private var resultsArea: some View {
         if service.isSearching {
@@ -127,7 +130,7 @@ struct TorrentSearchSheet: View {
                         Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(result.seeders ?? 0)")
                     }
                     Text("\(NSLocalizedString("torrents.peers", comment: "")): \(result.leechers ?? 0)")
-                    Text(result.provider.displayName)
+                    Text(result.providerName)
                         .neoBadge(bg: Neo.purple)
                 }
                 .font(NeoFont.f(.caption))

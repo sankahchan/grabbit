@@ -11,6 +11,9 @@ public struct TorrentSearchResult: Identifiable, Hashable, Sendable {
     public let seeders: Int?
     public let leechers: Int?
     public let provider: TorrentSearchProvider
+    /// Badge label: the built-in provider's name, or the custom indexer's
+    /// own name for Torznab hits.
+    public let providerName: String
     public let source: String
 
     public init(
@@ -20,6 +23,7 @@ public struct TorrentSearchResult: Identifiable, Hashable, Sendable {
         seeders: Int?,
         leechers: Int?,
         provider: TorrentSearchProvider,
+        providerName: String? = nil,
         source: String
     ) {
         self.id = id
@@ -28,6 +32,7 @@ public struct TorrentSearchResult: Identifiable, Hashable, Sendable {
         self.seeders = seeders
         self.leechers = leechers
         self.provider = provider
+        self.providerName = providerName ?? provider.displayName
         self.source = source
     }
 }
@@ -38,8 +43,14 @@ public struct TorrentSearchResult: Identifiable, Hashable, Sendable {
 public enum TorrentSearchProvider: String, CaseIterable, Identifiable, Sendable {
     case apibay
     case nyaa
+    /// Custom Torznab indexers wear this kind; the badge shows the
+    /// indexer's own name (see `TorrentSearchResult.providerName`).
+    case torznab
 
     public var id: String { rawValue }
+
+    /// The user-selectable built-ins (Torznab comes from settings).
+    public static let builtIns: [TorrentSearchProvider] = [.apibay, .nyaa]
 
     public var displayName: String {
         switch self {
@@ -47,6 +58,29 @@ public enum TorrentSearchProvider: String, CaseIterable, Identifiable, Sendable 
             NSLocalizedString("torrents.search.provider.apibay", comment: "")
         case .nyaa:
             NSLocalizedString("torrents.search.provider.nyaa", comment: "")
+        case .torznab:
+            NSLocalizedString("torrents.search.provider.torznab", comment: "")
+        }
+    }
+}
+
+/// What the search sheet is querying: a built-in provider or one of the
+/// user's Torznab indexers.
+public enum TorrentSearchSource: Identifiable, Hashable, Sendable {
+    case builtin(TorrentSearchProvider)
+    case torznab(TorznabIndexer)
+
+    public var id: String {
+        switch self {
+        case .builtin(let provider): "builtin.\(provider.rawValue)"
+        case .torznab(let indexer): "torznab.\(indexer.id.uuidString)"
+        }
+    }
+
+    public var name: String {
+        switch self {
+        case .builtin(let provider): provider.displayName
+        case .torznab(let indexer): indexer.name
         }
     }
 }
@@ -55,6 +89,7 @@ public enum TorrentSearchError: LocalizedError {
     case badURL
     case badResponse(Int)
     case emptyResponse
+    case missingAPIKey
 
     public var errorDescription: String? {
         switch self {
@@ -67,6 +102,8 @@ public enum TorrentSearchError: LocalizedError {
                 code)
         case .emptyResponse:
             NSLocalizedString("torrents.search.error.empty", comment: "")
+        case .missingAPIKey:
+            NSLocalizedString("torrents.search.error.apiKey", comment: "")
         }
     }
 }
@@ -221,6 +258,10 @@ enum TorrentSearch {
                 throw TorrentSearchError.badURL
             }
             url = built
+        case .torznab:
+            // Custom indexers go through searchTorznab with their own
+            // URL/key; reaching here means a routing bug, not user input.
+            throw TorrentSearchError.badURL
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
@@ -235,7 +276,69 @@ enum TorrentSearch {
         switch provider {
         case .apibay: return parseApibay(data: data)
         case .nyaa: return parseNyaa(data: data)
+        case .torznab: return []
         }
+    }
+
+    // MARK: - Torznab
+
+    /// The indexer URL is used as pasted (Jackett/Prowlarr torznab
+    /// endpoints), with `t=search`, `q` and `apikey` appended. An apikey
+    /// already embedded in the pasted URL wins.
+    static func torznabURL(
+        indexer: TorznabIndexer, apiKey: String, query: String
+    ) -> URL? {
+        guard var components = URLComponents(
+            string: indexer.urlString
+                .trimmingCharacters(in: .whitespacesAndNewlines))
+        else { return nil }
+        var items = components.queryItems ?? []
+        let hasKey = items.contains {
+            $0.name.lowercased() == "apikey" && !($0.value ?? "").isEmpty
+        }
+        if !hasKey, !apiKey.isEmpty {
+            items.append(URLQueryItem(name: "apikey", value: apiKey))
+        }
+        items.append(URLQueryItem(name: "t", value: "search"))
+        items.append(URLQueryItem(name: "q", value: query))
+        components.queryItems = items
+        return components.url
+    }
+
+    static func searchTorznab(
+        indexer: TorznabIndexer,
+        apiKey: String,
+        query: String,
+        session: URLSession = .shared
+    ) async throws -> [TorrentSearchResult] {
+        guard !apiKey.isEmpty
+            || indexer.urlString.lowercased().contains("apikey")
+        else { throw TorrentSearchError.missingAPIKey }
+        guard let url = torznabURL(
+            indexer: indexer, apiKey: apiKey, query: query)
+        else { throw TorrentSearchError.badURL }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 25
+        request.setValue(
+            "Grabbit/1.6 (macOS)", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse,
+           !(200..<300).contains(http.statusCode)
+        {
+            throw TorrentSearchError.badResponse(http.statusCode)
+        }
+        guard !data.isEmpty else { throw TorrentSearchError.emptyResponse }
+        return parseTorznab(data: data, indexerName: indexer.name)
+    }
+
+    static func parseTorznab(
+        data: Data, indexerName: String
+    ) -> [TorrentSearchResult] {
+        let delegate = TorznabParser(indexerName: indexerName)
+        let parser = XMLParser(data: data)
+        parser.delegate = delegate
+        parser.parse()
+        return delegate.results
     }
 
     // MARK: - apibay (JSON)
@@ -372,7 +475,124 @@ private final class NyaaRSSParser: NSObject, XMLParserDelegate {
     }
 }
 
-/// Drives the search sheet: provider, query, results, one in-flight search.
+/// Torznab results are a Newznab-style RSS feed: `<item>` with title,
+/// link/enclosure, size, and `<torznab:attr>` pairs carrying the info
+/// hash, seeders and peers. Items without a hash or a fetchable .torrent
+/// link are dropped.
+private final class TorznabParser: NSObject, XMLParserDelegate {
+    private let indexerName: String
+    private(set) var results: [TorrentSearchResult] = []
+
+    private var inItem = false
+    private var buffer = ""
+    private var title = ""
+    private var link = ""
+    private var enclosure = ""
+    private var size = ""
+    private var infoHash = ""
+    private var seeders = ""
+    private var peers = ""
+
+    init(indexerName: String) {
+        self.indexerName = indexerName
+    }
+
+    private func localName(_ element: String) -> String {
+        element.split(separator: ":").last.map(String.init) ?? element
+    }
+
+    func parser(
+        _ parser: XMLParser, didStartElement elementName: String,
+        namespaceURI: String?, qualifiedName qName: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
+        buffer = ""
+        let name = localName(elementName)
+        if name == "item" {
+            inItem = true
+            title = ""
+            link = ""
+            enclosure = ""
+            size = ""
+            infoHash = ""
+            seeders = ""
+            peers = ""
+            return
+        }
+        guard inItem else { return }
+        if name == "enclosure", let url = attributeDict["url"] {
+            enclosure = url
+            return
+        }
+        if name == "attr", let attr = attributeDict["name"]?.lowercased(),
+           let value = attributeDict["value"]
+        {
+            switch attr {
+            case "infohash":
+                if infoHash.isEmpty { infoHash = value }
+            case "seeders":
+                if seeders.isEmpty { seeders = value }
+            case "peers", "leechers":
+                if peers.isEmpty { peers = value }
+            default:
+                break
+            }
+        }
+    }
+
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        buffer += string
+    }
+
+    func parser(
+        _ parser: XMLParser, didEndElement elementName: String,
+        namespaceURI: String?, qualifiedName qName: String?
+    ) {
+        let text = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+        buffer = ""
+        guard inItem else { return }
+        switch localName(elementName) {
+        case "item":
+            inItem = false
+            appendResult()
+        case "title":
+            if title.isEmpty { title = text }
+        case "link":
+            if link.isEmpty { link = text }
+        case "size":
+            if size.isEmpty { size = text }
+        default:
+            break
+        }
+    }
+
+    private func appendResult() {
+        let name = HTMLEntities.decode(title)
+        let hash = infoHash.lowercased()
+        let source: String?
+        if MagnetLink.isInfoHash(hash) {
+            source = MagnetLink.build(infoHash: hash, name: name)
+        } else if !enclosure.isEmpty {
+            source = enclosure
+        } else if link.lowercased().hasPrefix("http") {
+            source = link
+        } else {
+            source = nil
+        }
+        guard let source, !name.isEmpty else { return }
+        results.append(TorrentSearchResult(
+            id: hash.isEmpty ? source : hash,
+            name: name,
+            sizeBytes: Int64(size),
+            seeders: Int(seeders),
+            leechers: Int(peers),
+            provider: .torznab,
+            providerName: indexerName,
+            source: source))
+    }
+}
+
+/// Drives the search sheet: source, query, results, one in-flight search.
 /// Owned by the sheet (`@State`) — nothing else in the app needs it.
 @Observable
 @MainActor
@@ -381,7 +601,7 @@ public final class TorrentSearchService {
     public private(set) var isSearching = false
     public private(set) var hasSearched = false
     public private(set) var errorMessage: String?
-    public var provider: TorrentSearchProvider = .apibay
+    public var source: TorrentSearchSource = .builtin(.apibay)
 
     private var searchTask: Task<Void, Never>?
 
@@ -394,11 +614,19 @@ public final class TorrentSearchService {
         isSearching = true
         hasSearched = true
         errorMessage = nil
-        let provider = provider
+        let source = source
         searchTask = Task { [weak self] in
             do {
-                let found = try await TorrentSearch.search(
-                    provider: provider, query: trimmed)
+                let found: [TorrentSearchResult]
+                switch source {
+                case .builtin(let provider):
+                    found = try await TorrentSearch.search(
+                        provider: provider, query: trimmed)
+                case .torznab(let indexer):
+                    let key = TorznabVault.loadKey(for: indexer.id) ?? ""
+                    found = try await TorrentSearch.searchTorznab(
+                        indexer: indexer, apiKey: key, query: trimmed)
+                }
                 guard !Task.isCancelled else { return }
                 self?.results = found
                 self?.isSearching = false

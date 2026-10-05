@@ -16,6 +16,9 @@ struct SettingsView: View {
     @State private var magnetAppName = ""
     /// Phase 5 named queues: name for the queue being added.
     @State private var newQueueName = ""
+    /// Torznab indexer add/remove flow.
+    @State private var showingIndexerSheet = false
+    @State private var indexerToRemove: TorznabIndexer?
 
     var body: some View {
         @Bindable var store = store
@@ -689,9 +692,85 @@ struct SettingsView: View {
                 .disabled(!settings.wrappedValue.autoUpdateTrackers)
             }
             NeoDivider()
+            indexersSection(settings: settings)
+            NeoDivider()
             magnetHandlerRow()
         }
         .neoCard()
+    }
+
+    // MARK: - Torznab indexers
+
+    private func indexersSection(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                subHeader(NSLocalizedString("settings.indexers.title", comment: ""))
+                Spacer()
+                Button(NSLocalizedString("settings.indexers.add", comment: "")) {
+                    showingIndexerSheet = true
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+            }
+            Text(NSLocalizedString("settings.indexers.note", comment: ""))
+                .font(NeoFont.f(.caption))
+                .foregroundStyle(.secondary)
+            let indexers = settings.wrappedValue.torznabIndexers
+            if indexers.isEmpty {
+                Text(NSLocalizedString("settings.indexers.empty", comment: ""))
+                    .font(NeoFont.f(.caption))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(indexers) { indexer in
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(indexer.name)
+                                .font(NeoFont.f(.subheadline, .semibold))
+                            Text(indexer.urlString)
+                                .font(NeoFont.f(.caption2))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        Spacer()
+                        Button {
+                            indexerToRemove = indexer
+                        } label: {
+                            AppIcon("trash", size: 13)
+                        }
+                        .buttonStyle(NeoIconButtonStyle(bg: Neo.red))
+                        .help(NSLocalizedString("common.delete", comment: ""))
+                    }
+                    .padding(8)
+                    .background(
+                        Neo.paper(scheme),
+                        in: RoundedRectangle(
+                            cornerRadius: 8, style: .continuous))
+                }
+            }
+        }
+        .sheet(isPresented: $showingIndexerSheet) {
+            TorznabIndexerSheet()
+        }
+        .alert(
+            NSLocalizedString("settings.indexers.remove.title", comment: ""),
+            isPresented: Binding(
+                get: { indexerToRemove != nil },
+                set: { if !$0 { indexerToRemove = nil } })
+        ) {
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                if let indexer = indexerToRemove {
+                    store.settings.torznabIndexers.removeAll {
+                        $0.id == indexer.id
+                    }
+                    TorznabVault.deleteKey(for: indexer.id)
+                    store.save()
+                }
+                indexerToRemove = nil
+            }
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {
+                indexerToRemove = nil
+            }
+        }
     }
 
     // MARK: - Run As (tray mode)

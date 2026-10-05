@@ -7872,6 +7872,176 @@
           }
         }
       }
+    },
+    "torrents.search.provider.torznab": {
+      "comment": "Provider",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab"
+          }
+        }
+      }
+    },
+    "torrents.search.error.apiKey": {
+      "comment": "Error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This indexer needs an API key."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒီ indexer အတွက် API key လိုအပ်ပါသည်။"
+          }
+        }
+      }
+    },
+    "settings.indexers.title": {
+      "comment": "Section",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab indexers"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab indexer များ"
+          }
+        }
+      }
+    },
+    "settings.indexers.note": {
+      "comment": "Note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Works with Jackett, Prowlarr or any Torznab endpoint. Paste the indexer URL (…/results/torznab) and its API key."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jackett, Prowlarr သို့မဟုတ် Torznab endpoint မည်သည့်ဟာနှင့်မဆို အလုပ်လုပ်သည်။ indexer URL (…/results/torznab) နှင့် API key ကို ထည့်ပါ။"
+          }
+        }
+      }
+    },
+    "settings.indexers.empty": {
+      "comment": "Empty",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No custom indexers yet."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "custom indexer မရှိသေးပါ။"
+          }
+        }
+      }
+    },
+    "settings.indexers.add": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add indexer"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indexer ထည့်"
+          }
+        }
+      }
+    },
+    "settings.indexers.name": {
+      "comment": "Field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမည်"
+          }
+        }
+      }
+    },
+    "settings.indexers.url": {
+      "comment": "Field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab URL"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torznab URL"
+          }
+        }
+      }
+    },
+    "settings.indexers.apiKey": {
+      "comment": "Field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key"
+          }
+        }
+      }
+    },
+    "settings.indexers.remove.title": {
+      "comment": "Alert",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this indexer?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒီ indexer ကို ဖျက်မလား?"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

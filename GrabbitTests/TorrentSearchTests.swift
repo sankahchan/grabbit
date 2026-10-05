@@ -124,6 +124,68 @@ final class TorrentSearchTests: XCTestCase {
             results[1].source, "https://nyaa.si/download/124.torrent")
     }
 
+    // MARK: - Torznab
+
+    func testTorznabURLAppendsSearchParamsAndKey() throws {
+        let indexer = TorznabIndexer(
+            name: "Prowlarr",
+            urlString: "http://localhost:9117/api/v2.0/indexers/all/results/torznab")
+        let url = try XCTUnwrap(TorrentSearch.torznabURL(
+            indexer: indexer, apiKey: "secret", query: "big bunny"))
+        let query = try XCTUnwrap(url.query)
+        XCTAssertTrue(query.contains("apikey=secret"))
+        XCTAssertTrue(query.contains("t=search"))
+        XCTAssertTrue(query.contains("q=big%20bunny")
+            || query.contains("q=big+bunny"))
+    }
+
+    func testTorznabURLKeepsEmbeddedKey() throws {
+        let indexer = TorznabIndexer(
+            name: "X", urlString: "http://host/api?apikey=embedded")
+        let url = try XCTUnwrap(TorrentSearch.torznabURL(
+            indexer: indexer, apiKey: "other", query: "x"))
+        let query = try XCTUnwrap(url.query)
+        XCTAssertTrue(query.contains("apikey=embedded"))
+        XCTAssertFalse(query.contains("apikey=other"))
+    }
+
+    func testParseTorznabBuildsMagnetAndFallsBackToEnclosure() throws {
+        let hash = String(repeating: "c", count: 40)
+        let xml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed">
+        <channel><title>Indexer</title>
+        <item>
+          <title>Movie 2026 1080p</title>
+          <link>http://host/download/1</link>
+          <enclosure url="http://host/download/1.torrent" length="1000" type="application/x-bittorrent"/>
+          <size>1073741824</size>
+          <torznab:attr name="infohash" value="\(hash)"/>
+          <torznab:attr name="seeders" value="42"/>
+          <torznab:attr name="peers" value="7"/>
+        </item>
+        <item>
+          <title>No hash release</title>
+          <enclosure url="http://host/download/2.torrent" length="10" type="application/x-bittorrent"/>
+          <size>1024</size>
+        </item>
+        </channel></rss>
+        """
+        let results = TorrentSearch.parseTorznab(
+            data: Data(xml.utf8), indexerName: "Prowlarr")
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results[0].provider, .torznab)
+        XCTAssertEqual(results[0].providerName, "Prowlarr")
+        XCTAssertEqual(results[0].seeders, 42)
+        XCTAssertEqual(results[0].leechers, 7)
+        XCTAssertEqual(results[0].sizeBytes, 1_073_741_824)
+        XCTAssertTrue(results[0].source.hasPrefix("magnet:?"))
+        XCTAssertTrue(results[0].source.contains(hash))
+        // No usable hash: the enclosure .torrent URL is handed over.
+        XCTAssertEqual(
+            results[1].source, "http://host/download/2.torrent")
+    }
+
     // MARK: - URL builders
 
     func testURLBuilders() throws {
