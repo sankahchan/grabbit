@@ -791,39 +791,39 @@ struct NeoProgressTrack: View {
             }
             .frame(height: 16)
         case .segments:
-            // Reference language: chunky rounded blocks with a thin "now"
+            // Reference language: slim rounded blocks with a thin "now"
             // line whose glowing dot rides above the blocks.
             Canvas { context, size in
-                let count = 26
-                let gap: CGFloat = 4
-                let blockHeight: CGFloat = 16
+                let count = 36
+                let gap: CGFloat = 3
+                let blockHeight: CGFloat = 10
                 let top = size.height - blockHeight
                 let block = max(
-                    3, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
+                    2, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
                 let lit = Int((clamped * Double(count)).rounded())
                 for index in 0..<count {
                     let rect = CGRect(
                         x: CGFloat(index) * (block + gap), y: top,
                         width: block, height: blockHeight)
                     context.fill(
-                        Path(roundedRect: rect, cornerRadius: 4),
+                        Path(roundedRect: rect, cornerRadius: 3),
                         with: .color(index < lit ? color : trackColor))
                 }
                 if shape.progressMarker, clamped > 0, clamped < 1 {
                     let markerColor: Color = scheme == .dark ? .white : .black
                     let x = CGFloat(lit) * (block + gap) - gap / 2
-                    let line = CGRect(x: x - 1.25, y: 0, width: 2.5, height: size.height)
+                    let line = CGRect(x: x - 1, y: 0, width: 2, height: size.height)
                     context.fill(
-                        Path(roundedRect: line, cornerRadius: 1.25),
+                        Path(roundedRect: line, cornerRadius: 1),
                         with: .color(markerColor))
                     var dot = context
-                    dot.addFilter(.shadow(color: markerColor.opacity(0.9), radius: 4))
+                    dot.addFilter(.shadow(color: markerColor.opacity(0.9), radius: 3))
                     dot.fill(
-                        Path(ellipseIn: CGRect(x: x - 3.5, y: 1.5, width: 7, height: 7)),
+                        Path(ellipseIn: CGRect(x: x - 2.5, y: 1, width: 5, height: 5)),
                         with: .color(markerColor))
                 }
             }
-            .frame(height: 22)
+            .frame(height: 16)
         }
     }
 
