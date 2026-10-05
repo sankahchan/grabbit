@@ -132,9 +132,17 @@ struct NeoStatCard: View {
                     .shadow(color: accent.opacity(0.8), radius: 3)
             }
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                DotMatrixDigits(
-                    text: value,
-                    color: Neo.readable(accent, scheme: scheme))
+                // The flip-dot numeral is Pulse's signature; every other
+                // theme keeps a plain heavy numeral.
+                if Neo.shape.dotFont {
+                    DotMatrixDigits(
+                        text: value,
+                        color: Neo.readable(accent, scheme: scheme))
+                } else {
+                    Text(value)
+                        .font(NeoFont.f(24, .heavy))
+                        .foregroundStyle(Neo.readable(accent, scheme: scheme))
+                }
                 if let unit {
                     Text(unit)
                         .font(NeoFont.f(.caption2, .semibold))
