@@ -23,7 +23,7 @@ public enum DownloadState: String, Codable, CaseIterable {
     }
 }
 
-public enum DownloadCategory: String, Codable, CaseIterable {
+public enum DownloadCategory: String, Codable, CaseIterable, Sendable {
     case video
     case audio
     case document

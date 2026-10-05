@@ -12,6 +12,9 @@ struct AboutView: View {
     @State private var updaterNote: String?
 
     private static let licensesURL = URL(string: "https://github.com/sankahchan/grabbit/blob/main/THIRD-PARTY-LICENSES.md")!
+    private static let githubURL = URL(string: "https://github.com/sankahchan/grabbit")!
+    private static let issuesURL = URL(string: "https://github.com/sankahchan/grabbit/issues")!
+    private static let releasesURL = URL(string: "https://github.com/sankahchan/grabbit/releases")!
 
     var body: some View {
         @Bindable var store = store
@@ -25,6 +28,7 @@ struct AboutView: View {
                     accent: Neo.yellow)
                 identityCard
                 updatesCard(settings: settings)
+                linksCard
                 creditsCard
             }
             .frame(maxWidth: 900)
@@ -39,8 +43,8 @@ struct AboutView: View {
     private var versionText: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-        let version = (short?.isEmpty == false) ? short! : "—"
-        let buildNumber = (build?.isEmpty == false) ? build! : "—"
+        let version = short.flatMap { $0.isEmpty ? nil : $0 } ?? "—"
+        let buildNumber = build.flatMap { $0.isEmpty ? nil : $0 } ?? "—"
         return String(
             format: NSLocalizedString("about.versionFormat", comment: ""),
             version, buildNumber)
@@ -108,6 +112,31 @@ struct AboutView: View {
         }
         updaterNote = nil
         UpdaterBridge.checkForUpdates()
+    }
+
+    // MARK: - Project links
+
+    private var linksCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(NSLocalizedString("about.section.links", comment: ""))
+            HStack(spacing: 10) {
+                Button(NSLocalizedString("about.link.github", comment: "")) {
+                    NSWorkspace.shared.open(Self.githubURL)
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+                Button(NSLocalizedString("about.link.issues", comment: "")) {
+                    NSWorkspace.shared.open(Self.issuesURL)
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.orange, compact: true))
+                Button(NSLocalizedString("about.link.releases", comment: "")) {
+                    NSWorkspace.shared.open(Self.releasesURL)
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
+                Spacer()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(accent: Neo.blue)
     }
 
     // MARK: - Credits

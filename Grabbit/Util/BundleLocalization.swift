@@ -43,7 +43,7 @@ public enum BundleLocalization {
 /// The language code lives in an associated object instead.
 private var localizedBundleLanguageKey: UInt8 = 0
 
-private final class LocalizedBundle: Bundle {
+private final class LocalizedBundle: Bundle, @unchecked Sendable {
     var languageCode: String? {
         get { objc_getAssociatedObject(self, &localizedBundleLanguageKey) as? String }
         set {

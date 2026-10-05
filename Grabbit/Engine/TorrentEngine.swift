@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import Observation
 
+@MainActor
 public protocol TorrentEngineProtocol: AnyObject {
     var torrents: [TorrentItem] { get }
     func add(magnetOrURL: String, savePath: URL, displayName: String?, proxy: TaskProxy?) async throws

@@ -16,6 +16,8 @@ enum IconMap {
         case "link": return "IconCopyLink"
         case "doc.on.doc": return "IconCopy"
         case "arrow.clockwise", "arrow.triangle.2.circlepath": return "IconRefresh"
+        case "arrow.up.arrow.down": return "IconSort"
+        case "magnifyingglass": return "IconSearch"
         case "tray.and.arrow.down": return "IconDownloads"
         case "sparkles": return "IconSparkles"
         case "plus": return "IconAdd"

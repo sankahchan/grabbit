@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 struct DownloadsView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(HistoryStore.self) private var historyStore: HistoryStore
+    @Environment(AppNavigation.self) private var navigation: AppNavigation
     @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
@@ -281,16 +282,22 @@ struct DownloadsView: View {
     }
 
     private var avatarChip: some View {
-        Text("G")
-            .font(NeoFont.f(15, .black))
-            .foregroundStyle(Neo.green)
-            .frame(width: 34, height: 34)
-            .background(Neo.card(scheme), in: Circle())
-            .overlay(
-                Circle()
-                    .stroke(Neo.green.opacity(0.7), lineWidth: 1.5)
-                    .allowsHitTesting(false))
-            .help("Grabbit")
+        Button {
+            navigation.selection = .about
+        } label: {
+            Text("G")
+                .font(NeoFont.f(15, .black))
+                .foregroundStyle(Neo.green)
+                .frame(width: 34, height: 34)
+                .background(Neo.card(scheme), in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Neo.green.opacity(0.7), lineWidth: 1.5)
+                        .allowsHitTesting(false))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(NSLocalizedString("nav.about", comment: ""))
     }
 
     private var livePill: some View {
