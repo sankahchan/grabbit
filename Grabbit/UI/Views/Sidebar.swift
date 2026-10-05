@@ -17,7 +17,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         switch self {
         case .downloads: "IconDownloads"
         case .linkgrabber: "IconLinkGrabber"
-        case .torrents: "IconTorrents"
+        case .torrents: "IconMagnet"
         case .media: "IconMedia"
         case .rss: "IconRSS"
         case .grabber: "IconGrabber"
