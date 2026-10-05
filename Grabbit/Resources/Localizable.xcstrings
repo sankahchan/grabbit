@@ -7124,6 +7124,244 @@
           }
         }
       }
+    },
+    "common.done": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးပါပြီ"
+          }
+        }
+      }
+    },
+    "torrents.search": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှာရန်"
+          }
+        }
+      }
+    },
+    "torrents.search.title": {
+      "comment": "Sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrent ရှာရန်"
+          }
+        }
+      }
+    },
+    "torrents.search.placeholder": {
+      "comment": "Field placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search torrents…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "torrent ရှာပါ…"
+          }
+        }
+      }
+    },
+    "torrents.search.empty": {
+      "comment": "Empty results",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No results. Try another keyword."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရလဒ် မတွေ့ပါ။ နောက်တစ်လုံး စမ်းကြည့်ပါ။"
+          }
+        }
+      }
+    },
+    "torrents.search.prompt": {
+      "comment": "Idle prompt",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search across public indexes, then add a hit as a regular torrent."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အများသုံး index များတွင် ရှာပြီး ရလဒ်ကို ပုံမှန် torrent အဖြစ် ထည့်နိုင်ပါသည်။"
+          }
+        }
+      }
+    },
+    "torrents.search.add": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်"
+          }
+        }
+      }
+    },
+    "torrents.search.added": {
+      "comment": "Toast title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrents ထဲ ထည့်ပြီးပါပြီ"
+          }
+        }
+      }
+    },
+    "torrents.search.disclaimer": {
+      "comment": "Footer",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results come from third-party indexes. Grabbit does not host, verify or endorse them."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရလဒ်များသည် ပြင်ပ index များမှ ဖြစ်ပါသည်။ Grabbit သည် ၎င်းတို့ကို သိမ်းဆည်းခြင်း၊ အတည်ပြုခြင်း သို့မဟုတ် ထောက်ခံခြင်း မပြုပါ။"
+          }
+        }
+      }
+    },
+    "torrents.search.provider.apibay": {
+      "comment": "Provider",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pirate Bay"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pirate Bay"
+          }
+        }
+      }
+    },
+    "torrents.search.provider.nyaa": {
+      "comment": "Provider",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyaa"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyaa"
+          }
+        }
+      }
+    },
+    "torrents.search.error.url": {
+      "comment": "Error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not build the search request."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှာဖွေမှု တောင်းဆိုချက် ဖန်တီး၍ မရပါ။"
+          }
+        }
+      }
+    },
+    "torrents.search.error.response": {
+      "comment": "Error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The index returned HTTP %@."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Index မှ HTTP %@ ပြန်လာပါသည်။"
+          }
+        }
+      }
+    },
+    "torrents.search.error.empty": {
+      "comment": "Error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The index returned an empty response."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Index မှ အလွတ် ပြန်လာပါသည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

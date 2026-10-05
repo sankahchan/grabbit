@@ -11,6 +11,7 @@ struct TorrentsView: View {
     @Environment(\.colorScheme) private var scheme
 
     @State private var showingAdd = false
+    @State private var showingSearch = false
     @State private var removingItem: TorrentItem?
     @State private var detailsSubject: TaskDetailsSheet.Subject?
 
@@ -43,6 +44,10 @@ struct TorrentsView: View {
             } else {
                 HStack {
                     Spacer()
+                    Button(NSLocalizedString("torrents.search", comment: "")) {
+                        showingSearch = true
+                    }
+                    .buttonStyle(NeoButtonStyle(bg: Neo.purple, compact: true))
                     Button(NSLocalizedString("torrents.add", comment: "")) {
                         showingAdd = true
                     }
@@ -68,6 +73,9 @@ struct TorrentsView: View {
         }
         .sheet(isPresented: $showingAdd) {
             TorrentAddSheet()
+        }
+        .sheet(isPresented: $showingSearch) {
+            TorrentSearchSheet()
         }
         .sheet(item: $removingItem) { item in
             TorrentRemoveSheet(item: item)
@@ -140,10 +148,16 @@ struct TorrentsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button(NSLocalizedString("torrents.add", comment: "")) {
-                showingAdd = true
+            HStack(spacing: 8) {
+                Button(NSLocalizedString("torrents.search", comment: "")) {
+                    showingSearch = true
+                }
+                .neoButton(bg: Neo.purple)
+                Button(NSLocalizedString("torrents.add", comment: "")) {
+                    showingAdd = true
+                }
+                .neoButton(bg: Neo.yellow)
             }
-            .neoButton(bg: Neo.yellow)
             .padding(.top, 4)
         }
         .padding()
