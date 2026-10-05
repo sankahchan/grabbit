@@ -42,9 +42,8 @@ struct GrabberView: View {
                     sticker: NSLocalizedString("page.grabber.sticker", comment: ""),
                     title: NSLocalizedString("grabber.title", comment: ""),
                     accent: Neo.pink)
-                statusCard
+                statusStrip
                 detectedCard
-                hintCard
             }
             .frame(maxWidth: 900)
             .frame(maxWidth: .infinity)
@@ -156,31 +155,37 @@ struct GrabberView: View {
         }
     }
 
-    private var statusCard: some View {
-        let bg = extensionConnected ? Neo.green : Neo.paper(scheme)
-        return VStack(alignment: .leading, spacing: 10) {
+    private var statusColor: Color {
+        extensionConnected ? Neo.green : Neo.red
+    }
+
+    /// Compact strip like the Torrents daemon / Media runtime rows: state
+    /// dot, state name, and the one action that fits the state.
+    private var statusStrip: some View {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 Circle()
-                    .fill(extensionConnected ? Neo.green : Neo.red)
-                    .frame(width: 14, height: 14)
-                    .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
+                    .fill(statusColor)
+                    .frame(width: 7, height: 7)
+                    .shadow(color: statusColor.opacity(0.8), radius: 3)
                 Text(extensionConnected
                      ? NSLocalizedString("grabber.status.connected", comment: "")
                      : NSLocalizedString("grabber.status.disconnected", comment: ""))
-                    .font(NeoFont.f(.headline, .bold))
+                    .font(NeoFont.f(.caption, .semibold))
+                    .foregroundStyle(Neo.ink(scheme))
                 Spacer()
-                if extensionConnected {
-                    Button(NSLocalizedString("grabber.updateExtension", comment: "")) {
-                        runExtensionUpdate()
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
-                    .disabled(updateState == .working)
+                Button(extensionConnected
+                       ? NSLocalizedString("grabber.updateExtension", comment: "")
+                       : NSLocalizedString("grabber.getExtension", comment: "")) {
+                    runExtensionUpdate()
                 }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+                .disabled(updateState == .working)
             }
             updateStatusView
         }
-        .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-        .neoCard(bg: bg, accent: extensionConnected ? Neo.green : Neo.red)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(accent: statusColor, inset: 10)
     }
 
     // MARK: - Detected media
@@ -194,15 +199,21 @@ struct GrabberView: View {
             if detected.isEmpty {
                 Text(NSLocalizedString("grabber.detected.empty", comment: ""))
                     .font(NeoFont.f(.subheadline))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Neo.ink2(scheme))
+                if !extensionConnected {
+                    // The only place the install hint belongs: no host yet.
+                    Text(NSLocalizedString("grabber.hint", comment: ""))
+                        .font(NeoFont.f(.caption))
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 ForEach(detected) { media in
                     detectedRow(for: media)
                 }
             }
         }
-        .neoCard(accent: Neo.purple)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(accent: Neo.purple)
     }
 
     private func detectedRow(for media: DetectedMedia) -> some View {
@@ -240,25 +251,5 @@ struct GrabberView: View {
                 destination: destination
             )
         }
-    }
-
-    // MARK: - Hint
-
-    private var hintCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(NSLocalizedString("grabber.hint", comment: ""))
-                .font(NeoFont.f(.subheadline))
-            if !extensionConnected {
-                Button(NSLocalizedString("grabber.getExtension", comment: "")) {
-                    runExtensionUpdate()
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-                .disabled(updateState == .working)
-            }
-            updateStatusView
-        }
-        .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard(bg: Neo.yellow)
     }
 }
