@@ -85,17 +85,12 @@ struct RSSFeedsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            AppIcon("dot.radiowaves.left.and.right", size: 44)
-                .font(NeoFont.f(52))
-                .foregroundStyle(Neo.ink(scheme))
-            Button(NSLocalizedString("rss.add", comment: "")) {
-                newURL = ""
-                showingAdd = true
-            }
-            .neoButton(bg: Neo.yellow)
-        }
-        .padding()
+        // The header already carries "Add feed"; the empty state is just
+        // the placeholder glyph.
+        AppIcon("dot.radiowaves.left.and.right", size: 44)
+            .font(NeoFont.f(52))
+            .foregroundStyle(Neo.ink(scheme))
+            .padding()
     }
 
     // MARK: - Feed card
