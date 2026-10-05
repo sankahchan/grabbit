@@ -30,12 +30,12 @@ targets:
     info:
       path: Grabbit/Info.plist
       properties:
-        CFBundleShortVersionString: 1.6.0
+        CFBundleShortVersionString: 1.7.0
         # Keep in lockstep with CFBundleShortVersionString: Sparkle compares
         # the appcast's sparkle:version against this build number, and a
         # stale "1" here makes every check report a new update forever.
         # release.yml also forces both keys from the tag.
-        CFBundleVersion: "1.6.0"
+        CFBundleVersion: "1.7.0"
         NSHumanReadableCopyright: Copyright © 2026 sankahchan
         LSMinimumSystemVersion: "14.0"
         SUFeedURL: https://github.com/sankahchan/grabbit/releases/latest/download/appcast.xml

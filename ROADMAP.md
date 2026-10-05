@@ -39,6 +39,11 @@ Statuses: ✅ shipped · 🔨 planned · 💭 idea / awaiting input
 
 ## Shipped (recent)
 
+- v1.7.0 — torrent search: built-in Pirate Bay/Nyaa plus custom Torznab
+  indexers (Jackett/Prowlarr) with auto-detect, Keychain keys and
+  auto-start; Pulse dot-matrix typography (Doto) and edge-lit tiles;
+  Downloads dashboard with stat cards, LIVE pill and queue filters;
+  Torrents/Media stat strips; Tabler icon set; zero build warnings.
 - v1.6.0 — one-click extension updates from the Grabber tab; the full
   extension package ships an en/my `INSTALL.txt` guide.
 - v1.5.x — "What's New" sheet after every update, release notes in the
