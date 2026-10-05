@@ -63,15 +63,18 @@ struct SettingsView: View {
         @Environment(\.colorScheme) private var scheme
 
         var body: some View {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(ThemeStyle.allCases, id: \.self) { style in
-                        tile(for: style)
-                    }
+            // A grid instead of a scroller: on a mouse there is no
+            // horizontal scroll gesture, so every skin must be visible.
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3),
+                spacing: 14
+            ) {
+                ForEach(ThemeStyle.allCases, id: \.self) { style in
+                    tile(for: style)
                 }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 2)
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
         }
 
         private func tile(for style: ThemeStyle) -> some View {
@@ -83,7 +86,8 @@ struct SettingsView: View {
                     Image(thumbnailAsset(for: style))
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 168, height: 105)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 112)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
