@@ -54,12 +54,12 @@ struct AboutView: View {
                     .frame(width: 96, height: 96)
             }
             Text("Grabbit")
-                .font(.largeTitle.weight(.heavy))
+                .font(NeoFont.f(.largeTitle, .heavy))
             Text(versionText)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
                 .foregroundStyle(.secondary)
             Text(NSLocalizedString("about.tagline", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
@@ -86,12 +86,12 @@ struct AboutView: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
                 if let updaterNote {
                     Text(updaterNote)
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
             Text(NSLocalizedString("about.updates.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -116,7 +116,7 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(NSLocalizedString("about.section.credits", comment: ""))
             Text(NSLocalizedString("about.credits.runtime", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
             Button(NSLocalizedString("about.link.licenses", comment: "")) {
                 NSWorkspace.shared.open(Self.licensesURL)
             }
@@ -130,7 +130,7 @@ struct AboutView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.headline.weight(.heavy))
+            .font(NeoFont.f(.headline, .heavy))
             .textCase(.uppercase)
     }
 }

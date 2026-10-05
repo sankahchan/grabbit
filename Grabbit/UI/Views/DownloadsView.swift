@@ -153,10 +153,10 @@ struct DownloadsView: View {
                         .neoBadge(bg: Neo.yellow)
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text(NSLocalizedString("downloads.title", comment: ""))
-                            .font(.system(size: 28, weight: .black))
+                            .font(NeoFont.f(28, .black))
                             .foregroundStyle(Neo.ink(scheme))
                         Text(summaryLine)
-                            .font(.caption)
+                            .font(NeoFont.f(.caption))
                             .foregroundStyle(Neo.ink2(scheme))
                     }
                 }
@@ -186,7 +186,7 @@ struct DownloadsView: View {
                     stateFilter = filter
                 } label: {
                     Text(filter.title.uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                        .font(NeoFont.f(9, .bold))
                         .tracking(0.6)
                         .foregroundStyle(selected ? Neo.blue : Neo.ink2(scheme))
                         .padding(.horizontal, 10)
@@ -282,7 +282,7 @@ struct DownloadsView: View {
 
     private var avatarChip: some View {
         Text("G")
-            .font(.system(size: 15, weight: .black))
+            .font(NeoFont.f(15, .black))
             .foregroundStyle(Neo.green)
             .frame(width: 34, height: 34)
             .background(Neo.card(scheme), in: Circle())
@@ -301,7 +301,7 @@ struct DownloadsView: View {
                 .frame(width: 6, height: 6)
                 .shadow(color: live.color.opacity(0.8), radius: 3)
             Text("LIVE")
-                .font(.system(size: 9, weight: .heavy))
+                .font(NeoFont.f(9, .heavy))
                 .tracking(1.1)
         }
         .foregroundStyle(live.color)
@@ -358,10 +358,10 @@ struct DownloadsView: View {
     private var searchEmptyState: some View {
         VStack(spacing: 10) {
             AppIcon("magnifyingglass", size: 26)
-                .font(.system(size: 30))
+                .font(NeoFont.f(30))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("downloads.search.empty", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
         }
         .padding()
@@ -501,7 +501,7 @@ struct DownloadsView: View {
     private var recoveryBanner: some View {
         HStack(spacing: 10) {
             Text("\(NSLocalizedString("downloads.recovered.title", comment: "")): \(engine.recoveredCount)")
-                .font(.headline.weight(.bold))
+                .font(NeoFont.f(.headline, .bold))
             Spacer()
             Button(NSLocalizedString("downloads.resumeAll", comment: "")) {
                 engine.resumeAllInterrupted()
@@ -521,12 +521,12 @@ struct DownloadsView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             AppIcon("tray.and.arrow.down", size: 44)
-                .font(.system(size: 52))
+                .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("downloads.empty.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             Text(NSLocalizedString("downloads.empty.hint", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 10) {
@@ -550,7 +550,7 @@ struct DownloadsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(item.filename)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                     .lineLimit(1)
                 stateBadge(for: item.state)
                 // Backlog #7: per-task priority marker.
@@ -576,13 +576,13 @@ struct DownloadsView: View {
             // support? connection dropped?).
             if item.state == .failed, let message = item.errorMessage, !message.isEmpty {
                 Text(message)
-                    .font(.caption.weight(.semibold))
+                    .font(NeoFont.f(.caption, .semibold))
                     .foregroundStyle(Neo.red)
                     .lineLimit(2)
             }
 
             Text(NSLocalizedString("downloads.segments", comment: ""))
-                .font(.caption2.weight(.bold))
+                .font(NeoFont.f(.caption2, .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(.secondary)
             SegmentedProgressBar(segments: item.segments)
@@ -599,7 +599,7 @@ struct DownloadsView: View {
                 Text("\(Int((item.progress * 100).rounded()))%")
                     .fontWeight(.bold)
             }
-            .font(.caption)
+            .font(NeoFont.f(.caption))
             .foregroundStyle(.secondary)
         }
         .neoCard(accent: badgeColor(for: item.state))

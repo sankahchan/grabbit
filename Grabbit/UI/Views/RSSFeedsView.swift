@@ -69,7 +69,7 @@ struct RSSFeedsView: View {
     private var header: some View {
         HStack {
             Text(NSLocalizedString("rss.subtitle", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
             Spacer()
             Button(NSLocalizedString("rss.checkAll", comment: "")) {
@@ -87,10 +87,10 @@ struct RSSFeedsView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             AppIcon("dot.radiowaves.left.and.right", size: 44)
-                .font(.system(size: 52))
+                .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("rss.empty", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button(NSLocalizedString("rss.add", comment: "")) {
@@ -110,10 +110,10 @@ struct RSSFeedsView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Text(live.wrappedValue.displayTitle)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                     .lineLimit(1)
                 Text(URL(string: live.wrappedValue.url)?.host ?? "")
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer()
@@ -158,7 +158,7 @@ struct RSSFeedsView: View {
     private func statusLine(for feed: RSSFeed, error: String?) -> some View {
         if let error, !error.isEmpty {
             Text(error)
-                .font(.caption.weight(.semibold))
+                .font(NeoFont.f(.caption, .semibold))
                 .foregroundStyle(Neo.red)
                 .lineLimit(2)
         } else {
@@ -171,7 +171,7 @@ struct RSSFeedsView: View {
                 }
                 Spacer()
             }
-            .font(.caption)
+            .font(NeoFont.f(.caption))
             .foregroundStyle(.secondary)
         }
     }
@@ -181,7 +181,7 @@ struct RSSFeedsView: View {
     private var addSheet: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("rss.add.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             TextField(
                 NSLocalizedString("rss.add.placeholder", comment: ""),
                 text: $newURL

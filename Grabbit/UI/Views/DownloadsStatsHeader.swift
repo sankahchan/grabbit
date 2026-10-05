@@ -7,8 +7,8 @@ import SwiftUI
 struct DotMatrixDigits: View {
     let text: String
     var color: Color
-    var dot: CGFloat = 2.9
-    var spacing: CGFloat = 1.7
+    var dot: CGFloat = 2.5
+    var spacing: CGFloat = 1.45
 
     private static let glyphs: [Character: [String]] = [
         "0": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
@@ -72,7 +72,7 @@ struct MiniBarChart: View {
     var values: [Double]
     var slots: Int
     var accent: Color
-    var height: CGFloat = 20
+    var height: CGFloat = 18
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -117,10 +117,10 @@ struct DownloadsStatCard: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 Text(label.uppercased())
-                    .font(.system(size: 9, weight: .bold))
+                    .font(NeoFont.f(9, .bold))
                     .tracking(1.2)
                     .foregroundStyle(Neo.ink2(scheme))
                 Spacer()
@@ -133,20 +133,20 @@ struct DownloadsStatCard: View {
                 DotMatrixDigits(text: value, color: accent)
                 if let unit {
                     Text(unit)
-                        .font(.caption2.weight(.semibold))
+                        .font(NeoFont.f(.caption2, .semibold))
                         .foregroundStyle(Neo.ink2(scheme))
                 }
             }
             Text(subtitle)
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(Neo.ink2(scheme))
                 .lineLimit(1)
-            Spacer(minLength: 0)
+            // No Spacer: a flexible card would stretch with the window
+            // (chart pinned to the bottom, empty middle). Content-sized.
             chart
         }
-        // neoCard supplies its own 14pt inset — no extra padding here.
-        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
-        .neoCard(accent: accent.opacity(0.75))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(accent: accent.opacity(0.75), inset: 10)
     }
 }
 

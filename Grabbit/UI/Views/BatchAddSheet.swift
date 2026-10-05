@@ -89,13 +89,13 @@ struct BatchAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("batch.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
 
             // MARK: Links
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(NSLocalizedString("batch.links", comment: ""))
-                        .font(.headline)
+                        .font(NeoFont.f(.headline))
                     Spacer()
                     Button(NSLocalizedString("batch.import", comment: "")) {
                         importTextFile()
@@ -111,25 +111,25 @@ struct BatchAddSheet: View {
                 TextEditor(text: $text)
                     .neoTextField()
                     .frame(minHeight: 120)
-                    .font(.body.monospaced())
+                    .font(NeoFont.mono(.body))
                 HStack {
                     Text(String(
                         format: NSLocalizedString("batch.found", comment: ""),
                         links.count))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     if parsed.duplicateCount > 0 {
                         Text(String(
                             format: NSLocalizedString("batch.duplicates", comment: ""),
                             parsed.duplicateCount))
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                     }
                     if parsed.invalidCount > 0 {
                         Text(String(
                             format: NSLocalizedString("batch.skipped", comment: ""),
                             parsed.invalidCount))
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                     }
                 }
@@ -139,7 +139,7 @@ struct BatchAddSheet: View {
             if !links.isEmpty && destination == .downloads {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(NSLocalizedString("batch.perItem", comment: ""))
-                        .font(.headline)
+                        .font(NeoFont.f(.headline))
                     ScrollView {
                         LazyVStack(spacing: 8) {
                             ForEach(links, id: \.self) { url in
@@ -162,7 +162,7 @@ struct BatchAddSheet: View {
             // MARK: Queue + connections
             HStack {
                 Text(NSLocalizedString("add.queue", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 NeoMenuPicker<UUID?>(
                     selection: $queueID,
@@ -181,7 +181,7 @@ struct BatchAddSheet: View {
             // MARK: Destination
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("batch.destination", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 NeoSegmented(selection: $destination, titles: [
                     (.downloads, NSLocalizedString("batch.destination.downloads", comment: "")),
                     (.linkGrabber, NSLocalizedString("batch.destination.linkgrabber", comment: "")),
@@ -308,7 +308,7 @@ private struct BatchItemRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(url.absoluteString)
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)

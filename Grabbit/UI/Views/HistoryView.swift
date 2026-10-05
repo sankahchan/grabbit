@@ -106,9 +106,9 @@ struct HistoryView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Text(label)
-                    .font(.subheadline.weight(.bold))
+                    .font(NeoFont.f(.subheadline, .bold))
                 Text("\(count)")
-                    .font(.caption.weight(.bold))
+                    .font(NeoFont.f(.caption, .bold))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
                     .background(
@@ -135,12 +135,12 @@ struct HistoryView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             AppIcon("clock.arrow.circlepath", size: 44)
-                .font(.system(size: 52))
+                .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("history.empty.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             Text(NSLocalizedString("history.empty.hint", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -153,10 +153,10 @@ struct HistoryView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 AppIcon(entry.kind.systemImage, size: 20)
-                    .font(.title3.weight(.bold))
+                    .font(NeoFont.f(.title3, .bold))
                     .frame(width: 28)
                 Text(entry.name)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                     .lineLimit(1)
                 Spacer()
                 Text(entry.status.localizedName)
@@ -175,13 +175,13 @@ struct HistoryView: View {
                     for: entry.finishedAt, relativeTo: Date()))
                 Spacer()
             }
-            .font(.caption)
+            .font(NeoFont.f(.caption))
             .foregroundStyle(.secondary)
 
             if entry.status == .failed,
                let message = entry.errorMessage, !message.isEmpty {
                 Text(message)
-                    .font(.caption.weight(.semibold))
+                    .font(NeoFont.f(.caption, .semibold))
                     .foregroundStyle(Neo.red)
                     .lineLimit(2)
             }

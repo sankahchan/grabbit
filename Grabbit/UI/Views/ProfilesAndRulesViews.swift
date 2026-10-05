@@ -13,7 +13,7 @@ struct HostProfilesSection: View {
         VStack(alignment: .leading, spacing: 10) {
             subHeader(NSLocalizedString("settings.hostProfiles.title", comment: ""))
             Text(NSLocalizedString("settings.hostProfiles.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             ForEach(store.profiles) { profile in
                 profileRow(profile)
@@ -49,9 +49,9 @@ struct HostProfilesSection: View {
                 Text(profile.host.isEmpty
                     ? NSLocalizedString("settings.hostProfiles.hostPlaceholder", comment: "")
                     : profile.host)
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Text(summary(for: profile))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -91,7 +91,7 @@ struct HostProfilesSection: View {
 
     private func subHeader(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.weight(.heavy))
+            .font(NeoFont.f(.subheadline, .heavy))
             .textCase(.uppercase)
             .foregroundStyle(.secondary)
             .padding(.top, 2)
@@ -125,7 +125,7 @@ private struct HostProfileEditSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("settings.hostProfiles.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             labeled(NSLocalizedString("settings.hostProfiles.host", comment: "")) {
                 TextField(
                     NSLocalizedString("settings.hostProfiles.hostPlaceholder", comment: ""),
@@ -180,7 +180,7 @@ private struct HostProfileEditSheet: View {
         _ title: String, @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.subheadline.weight(.semibold))
+            Text(title).font(NeoFont.f(.subheadline, .semibold))
             content()
         }
     }
@@ -199,7 +199,7 @@ struct PackagizerRulesSection: View {
         VStack(alignment: .leading, spacing: 10) {
             subHeader(NSLocalizedString("settings.packagizer.title", comment: ""))
             Text(NSLocalizedString("settings.packagizer.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             ForEach(store.rules) { rule in
                 ruleRow(rule)
@@ -235,9 +235,9 @@ struct PackagizerRulesSection: View {
                 Text(rule.name.isEmpty
                     ? NSLocalizedString("settings.packagizer.namePlaceholder", comment: "")
                     : rule.name)
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Text(summary(for: rule))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -272,7 +272,7 @@ struct PackagizerRulesSection: View {
 
     private func subHeader(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.weight(.heavy))
+            .font(NeoFont.f(.subheadline, .heavy))
             .textCase(.uppercase)
             .foregroundStyle(.secondary)
             .padding(.top, 2)
@@ -308,7 +308,7 @@ private struct PackagizerRuleEditSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("settings.packagizer.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             labeled(NSLocalizedString("settings.packagizer.name", comment: "")) {
                 TextField(
                     NSLocalizedString("settings.packagizer.namePlaceholder", comment: ""),
@@ -320,20 +320,20 @@ private struct PackagizerRuleEditSheet: View {
                     NSLocalizedString("settings.packagizer.patternPlaceholder", comment: ""),
                     text: $urlPattern)
                 .neoTextField()
-                .font(.system(.body, design: .monospaced))
+                .font(NeoFont.f(.body, design: .monospaced))
             }
             if !patternValid {
                 Text(NSLocalizedString("settings.packagizer.patternInvalid", comment: ""))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(Neo.red)
             }
             labeled(NSLocalizedString("settings.packagizer.template", comment: "")) {
                 TextField("{name}.{ext}", text: $filenameTemplate)
                     .neoTextField()
-                    .font(.system(.body, design: .monospaced))
+                    .font(NeoFont.f(.body, design: .monospaced))
             }
             Text(NSLocalizedString("settings.packagizer.templateHint", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             labeled(NSLocalizedString("settings.packagizer.category", comment: "")) {
                 NeoMenuPicker<DownloadCategory?>(
@@ -371,7 +371,7 @@ private struct PackagizerRuleEditSheet: View {
         _ title: String, @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.subheadline.weight(.semibold))
+            Text(title).font(NeoFont.f(.subheadline, .semibold))
             content()
         }
     }

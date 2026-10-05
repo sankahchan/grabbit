@@ -18,19 +18,19 @@ struct ToastCard: View {
             HStack(spacing: 8) {
                 statusIcon(for: toast.kind)
                 Text(toast.title)
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 Button {
                     toastCenter.dismiss(id: toast.id)
                 } label: {
                     AppIcon("xmark", size: 12)
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
             Text(toast.message)
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
                 .truncationMode(.middle)
@@ -68,7 +68,7 @@ struct ToastCard: View {
                     .foregroundStyle(Neo.blue)
             }
         }
-        .font(.title2)
+        .font(NeoFont.f(.title2))
     }
 
     private struct ToastAction {

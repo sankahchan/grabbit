@@ -139,10 +139,10 @@ struct SchedulerView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             AppIcon("clock", size: 44)
-                .font(.system(size: 52))
+                .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("scheduler.empty", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button(NSLocalizedString("scheduler.add", comment: "")) {
@@ -166,12 +166,12 @@ struct SchedulerView: View {
             .toggleStyle(NeoToggleStyle())
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.time.formatted(date: .omitted, time: .shortened))
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                 Text(actionSummary(for: entry))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                 Text(weekdaySummary(for: entry))
-                    .font(.caption2)
+                    .font(NeoFont.f(.caption2))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -226,7 +226,7 @@ private struct AddScheduleSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("scheduler.add", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
 
             DatePicker(
                 NSLocalizedString("scheduler.time", comment: ""),
@@ -242,7 +242,7 @@ private struct AddScheduleSheet: View {
             if action == .speedLimit {
                 HStack {
                     Text(NSLocalizedString("scheduler.speedLimit", comment: ""))
-                        .font(.headline)
+                        .font(NeoFont.f(.headline))
                     Spacer()
                     NeoStepper(value: $speedKBps, in: 0...100_000, step: 50) { v in
                         v == 0
@@ -255,7 +255,7 @@ private struct AddScheduleSheet: View {
             // Repeat on specific weekdays (system-localized short names).
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("scheduler.repeat", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 HStack(spacing: 6) {
                     ForEach(0..<7, id: \.self) { day in
                         let on = weekdays & (1 << day) != 0

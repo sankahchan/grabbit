@@ -101,6 +101,9 @@ struct ThemeShape: Sendable {
     /// Pulse (dark): buttons and icon buttons become edge-lit glass tiles
     /// in the reference's language (dark glass, saturated border, glow).
     var tileButtons = false
+    /// Pulse: the whole UI's text renders in the bundled dot-matrix font
+    /// (Doto) — the reference's flip-dot display.
+    var dotFont = false
 
     var dotGridLight: Double = 0.14
     var dotGridDark: Double = 0.09
@@ -260,7 +263,7 @@ enum ThemeCatalog {
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
             progress: .segments, progressMarker: true, cardEdgeGlow: true,
-            sidebarIconTiles: true, tileButtons: true,
+            sidebarIconTiles: true, tileButtons: true, dotFont: true,
             dotGridLight: 0, dotGridDark: 0),
         backgroundGlows: [
             AmbientGlow(color: Color(hex: 0x25E3FF), x: 0.08, y: 0.06, radius: 640,

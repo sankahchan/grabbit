@@ -50,6 +50,9 @@ struct GrabbitApp: App {
     // @MainActor: TorrentEngine is main-actor-isolated, so it must be built here.
     @MainActor
     init() {
+        // Pulse's dot-matrix UI font (Doto, OFL) — one process-lifetime
+        // registration; other themes never reference it.
+        NeoFont.registerBundledFonts()
         // One SettingsStore shared by the app and the torrent engine (the
         // engine reads the VPN kill-switch and seeding defaults live).
         let sharedSettings = SettingsStore()

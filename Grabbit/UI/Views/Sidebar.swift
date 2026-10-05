@@ -103,7 +103,7 @@ struct Sidebar: View {
     private var brandHeader: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text("Grabbit")
-                .font(.headline.weight(.black))
+                .font(NeoFont.f(.headline, .black))
             HStack(spacing: 5) {
                 if let dot = ThemeRuntime.tokens.brandDot {
                     Circle()
@@ -111,7 +111,7 @@ struct Sidebar: View {
                         .frame(width: 5, height: 5)
                 }
                 Text(NSLocalizedString("sidebar.subtitle", comment: ""))
-                    .font(.system(size: 9, weight: .bold))
+                    .font(NeoFont.f(9, .bold))
                     .textCase(.uppercase)
                     .tracking(0.6)
                     .foregroundStyle(.secondary)
@@ -161,11 +161,11 @@ struct Sidebar: View {
                         .frame(width: 22)
                 }
                 Text(item.localizedTitle)
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 if let count = count(for: item) {
                     Text("\(count)")
-                        .font(.caption.weight(.bold))
+                        .font(NeoFont.f(.caption, .bold))
                         .foregroundStyle(
                             Neo.shape.brutalist
                                 ? Neo.onAccent(Neo.paper(scheme), scheme: scheme)

@@ -53,7 +53,7 @@ struct MediaView: View {
     private var runtimeCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(NSLocalizedString("media.runtime.title", comment: ""))
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
                 .textCase(.uppercase)
             ForEach(runtime, id: \.0) { component, found in
                 HStack(spacing: 8) {
@@ -62,11 +62,11 @@ struct MediaView: View {
                         .frame(width: 12, height: 12)
                         .overlay(Circle().stroke(Neo.ink(scheme), lineWidth: 2))
                     Text(component.rawValue)
-                        .font(.subheadline.weight(.bold))
+                        .font(NeoFont.f(.subheadline, .bold))
                     Spacer()
                     if !found {
                         Text(component.installHint)
-                            .font(.caption)
+                            .font(NeoFont.f(.caption))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -84,7 +84,7 @@ struct MediaView: View {
                 .neoButton(bg: Neo.paper(scheme))
                 .disabled(checkingUpdate)
                 if let note = updateNote {
-                    Text(note).font(.caption).foregroundStyle(.secondary)
+                    Text(note).font(NeoFont.f(.caption)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -116,7 +116,7 @@ struct MediaView: View {
     private var urlCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(NSLocalizedString("media.url.title", comment: ""))
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
                 .textCase(.uppercase)
             HStack(spacing: 10) {
                 TextField(NSLocalizedString("media.url.placeholder", comment: ""), text: $urlText)
@@ -129,7 +129,7 @@ struct MediaView: View {
                     .disabled(!canProbe)
             }
             Text(NSLocalizedString("media.url.hint", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
         }
         .neoCard(accent: Neo.yellow)
@@ -157,7 +157,7 @@ struct MediaView: View {
         HStack(spacing: 10) {
             NeoSpinner()
             Text(NSLocalizedString("media.probing", comment: ""))
-                .font(.subheadline.weight(.bold))
+                .font(NeoFont.f(.subheadline, .bold))
         }
         .neoCard(accent: Neo.blue)
     }
@@ -188,14 +188,14 @@ struct MediaView: View {
                 )
             }
             Text(probed.title)
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
             if let duration = probed.duration {
                 Text(Self.formatDuration(duration))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
             }
             HStack(spacing: 10) {
                 Text(NSLocalizedString("media.quality", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 NeoMenuPicker(
                     selection: $selectedPresetID,
@@ -244,12 +244,12 @@ struct MediaView: View {
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(media.displayTitle ?? media.probed?.title ?? "")
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
                 .lineLimit(1)
             NeoLinearBar(progress: media.progress)
             HStack {
                 Text("\(Int(media.progress * 100))%")
-                    .font(.subheadline.weight(.bold))
+                    .font(NeoFont.f(.subheadline, .bold))
                 Spacer()
                 Button(NSLocalizedString("media.cancel", comment: "")) {
                     Task { await media.cancel() }
@@ -258,7 +258,7 @@ struct MediaView: View {
             }
             if !media.statusLine.isEmpty {
                 Text(media.statusLine)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -273,7 +273,7 @@ struct MediaView: View {
                 Text(NSLocalizedString("media.completed", comment: ""))
                     .lineLimit(1)
             }
-            .font(.headline.weight(.heavy))
+            .font(NeoFont.f(.headline, .heavy))
             Button(NSLocalizedString("media.new", comment: "")) {
                 urlText = ""
                 Task { await media.reset() }
@@ -293,9 +293,9 @@ struct MediaView: View {
             } icon: {
                 AppIcon("exclamationmark.triangle.fill", size: 15)
             }
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
             Text(message)
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
             Button(NSLocalizedString("media.retry", comment: "")) { probe() }
                 .neoButton(bg: Neo.yellow)
         }

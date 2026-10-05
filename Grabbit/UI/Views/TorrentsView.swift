@@ -93,10 +93,10 @@ struct TorrentsView: View {
                 .fill(statusColor)
                 .frame(width: 10, height: 10)
             Text(torrentEngine.daemonState.localizedName)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             if case .failed(let message) = torrentEngine.daemonState {
                 Text(message)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -128,7 +128,7 @@ struct TorrentsView: View {
         HStack(spacing: 10) {
             AppIcon("exclamationmark.shield.fill", size: 13)
             Text(NSLocalizedString("torrents.vpn.suspended", comment: ""))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
         }
         // Solid fill + onAccent: the old translucent fill composited to a
@@ -142,10 +142,10 @@ struct TorrentsView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             AppIcon("magnet", size: 44)
-                .font(.system(size: 52))
+                .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("torrents.empty", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 8) {
@@ -169,7 +169,7 @@ struct TorrentsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(item.name)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                     .lineLimit(1)
                 let display = TorrentDisplayStatus.of(item)
                 Text(display.localizedName)
@@ -200,7 +200,7 @@ struct TorrentsView: View {
                 Spacer()
                 Text("\(formatBytes(item.downloadedBytes)) / \(formatBytes(item.totalBytes))")
             }
-            .font(.caption)
+            .font(NeoFont.f(.caption))
             .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
@@ -213,7 +213,7 @@ struct TorrentsView: View {
                         .lineLimit(1)
                 }
             }
-            .font(.caption)
+            .font(NeoFont.f(.caption))
             .foregroundStyle(.secondary)
         }
         .neoCard(accent: Neo.purple)
@@ -290,7 +290,7 @@ struct TorrentAddSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("torrents.add", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
 
             NeoSegmented(selection: $mode, titles: [
                 (0, NSLocalizedString("torrents.add.linkTab", comment: "")),
@@ -315,7 +315,7 @@ struct TorrentAddSheet: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
                 if let torrentName {
                     Text(torrentName)
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -323,14 +323,14 @@ struct TorrentAddSheet: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(Neo.red)
             }
 
             // MARK: Rename (optional)
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("torrents.add.rename", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 TextField(
                     NSLocalizedString("torrents.add.rename", comment: ""),
                     text: $rename,
@@ -342,10 +342,10 @@ struct TorrentAddSheet: View {
             // MARK: Save folder (optional override)
             HStack {
                 Text(NSLocalizedString("add.destination", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 Text(destinationURL.path)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -459,15 +459,15 @@ struct TorrentFilesSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("torrents.files.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             Text(item.name)
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(Neo.red)
             }
 
@@ -483,7 +483,7 @@ struct TorrentFilesSheet: View {
                     .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
                     Spacer()
                     Text("\(selected.count) / \(files.count)")
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                 }
                 ScrollView {
@@ -560,25 +560,25 @@ struct TorrentFilesSheet: View {
                 } label: {
                     AppIcon(expanded.contains(node.id)
                         ? "chevron.down" : "chevron.right")
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .frame(width: 16)
                 }
                 .buttonStyle(.plain)
                 folderCheckbox(for: node)
                 Text(node.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                     .lineLimit(1)
                 Text(formatBytes(node.size))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
             } else if let index = node.fileIndex {
                 Toggle(isOn: binding(for: index)) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(node.name)
-                            .font(.subheadline)
+                            .font(NeoFont.f(.subheadline))
                             .lineLimit(1)
                         Text(formatBytes(node.size))
-                            .font(.caption)
+                            .font(NeoFont.f(.caption))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -608,7 +608,7 @@ struct TorrentFilesSheet: View {
         } label: {
             AppIcon(systemName, size: 20)
                 .foregroundStyle(state == .none ? .secondary : Neo.green)
-                .font(.title3)
+                .font(NeoFont.f(.title3))
         }
         .buttonStyle(.plain)
     }
@@ -658,9 +658,9 @@ struct TorrentSeedingSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("torrents.seeding.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             Text(item.name)
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
@@ -685,12 +685,12 @@ struct TorrentSeedingSheet: View {
                 increase: { timeMinutes = min(10080, timeMinutes + 30) })
 
             Text(NSLocalizedString("torrents.seeding.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(Neo.red)
             }
 
@@ -719,14 +719,14 @@ struct TorrentSeedingSheet: View {
     ) -> some View {
         HStack {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             Button { decrease() } label: {
                 AppIcon("minus", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
             Text(value)
-                .font(.subheadline.monospacedDigit())
+                .font(NeoFont.digits(.subheadline))
                 .frame(minWidth: 120)
             Button { increase() } label: {
                 AppIcon("plus", size: 14)
@@ -765,9 +765,9 @@ struct TorrentRemoveSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("torrents.remove.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             Text(item.name)
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 

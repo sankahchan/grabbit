@@ -20,7 +20,7 @@ struct TorrentSearchSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("torrents.search.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
 
             NeoSegmented(selection: $mode, titles: [
                 (0, TorrentSearchProvider.apibay.displayName),
@@ -50,14 +50,14 @@ struct TorrentSearchSheet: View {
 
             if let message = addError ?? service.errorMessage {
                 Text(message)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(Neo.red)
             }
 
             resultsArea
 
             Text(NSLocalizedString("torrents.search.disclaimer", comment: ""))
-                .font(.caption2)
+                .font(NeoFont.f(.caption2))
                 .foregroundStyle(.secondary)
 
             HStack {
@@ -86,13 +86,13 @@ struct TorrentSearchSheet: View {
         } else if service.results.isEmpty {
             VStack(spacing: 10) {
                 AppIcon("magnifyingglass", size: 26)
-                    .font(.system(size: 30))
+                    .font(NeoFont.f(30))
                     .foregroundStyle(Neo.ink(scheme))
                 Text(NSLocalizedString(
                     service.hasSearched
                         ? "torrents.search.empty"
                         : "torrents.search.prompt", comment: ""))
-                    .font(.subheadline)
+                    .font(NeoFont.f(.subheadline))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
@@ -114,7 +114,7 @@ struct TorrentSearchSheet: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                     .lineLimit(2)
                 HStack(spacing: 10) {
                     if let size = result.sizeBytes {
@@ -130,7 +130,7 @@ struct TorrentSearchSheet: View {
                     Text(result.provider.displayName)
                         .neoBadge(bg: Neo.purple)
                 }
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             }
             Spacer()

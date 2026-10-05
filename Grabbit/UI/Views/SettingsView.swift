@@ -167,13 +167,13 @@ struct SettingsView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.headline.weight(.heavy))
+            .font(NeoFont.f(.headline, .heavy))
             .textCase(.uppercase)
     }
 
     private func subHeader(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.weight(.heavy))
+            .font(NeoFont.f(.subheadline, .heavy))
             .textCase(.uppercase)
             .foregroundStyle(.secondary)
             .padding(.top, 2)
@@ -206,7 +206,7 @@ struct SettingsView: View {
             HStack {
                 // Brand names stay Latin; only "Classic" is localized.
                 Text(NSLocalizedString("settings.themeStyle", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Spacer()
                 // Live accent swatch: the skin reads at a glance without
                 // opening the menu.
@@ -244,7 +244,7 @@ struct SettingsView: View {
                 Spacer()
             }
             Text(NSLocalizedString("settings.language.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             Toggle(NSLocalizedString("settings.notifications", comment: ""), isOn: settings.notificationsEnabled)
             .toggleStyle(NeoToggleStyle())
@@ -286,7 +286,7 @@ struct SettingsView: View {
         )
         return HStack {
             Text(NSLocalizedString("settings.maxActiveTasks", comment: ""))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             NeoStepper(value: count, in: 1...20, step: 1) { "\($0)" }
         }
@@ -307,7 +307,7 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.autoClearFailed", comment: ""), isOn: settings.autoClearFailed)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.autoClear.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             NeoDivider()
             subHeader(NSLocalizedString("settings.section.archives", comment: ""))
@@ -316,7 +316,7 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.archives.deleteAfterExtract", comment: ""), isOn: settings.deleteArchiveAfterExtract)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.archives.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             NeoDivider()
             proxySection(settings: settings)
@@ -345,12 +345,12 @@ struct SettingsView: View {
                       text: settings.mediaSubtitleLanguages)
                 .neoTextField()
             Text(NSLocalizedString("settings.media.subtitleLangs.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             NeoDivider()
             cookiesFileRow(settings: settings)
             Text(NSLocalizedString("settings.media.cookies.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
         }
         .neoCard()
@@ -361,12 +361,12 @@ struct SettingsView: View {
     private func cookiesFileRow(settings: Binding<AppSettings>) -> some View {
         HStack(spacing: 10) {
             Text(NSLocalizedString("settings.media.cookies", comment: ""))
-                .font(.headline)
+                .font(NeoFont.f(.headline))
             Spacer()
             Text(settings.wrappedValue.cookiesFilePath.isEmpty
                  ? NSLocalizedString("settings.media.cookies.none", comment: "")
                  : (settings.wrappedValue.cookiesFilePath as NSString).lastPathComponent)
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -438,7 +438,7 @@ struct SettingsView: View {
             subHeader(NSLocalizedString("settings.completion.title", comment: ""))
             HStack {
                 Text(NSLocalizedString("settings.completion.action", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 NeoMenuPicker(
                     selection: settings.completionAction,
@@ -457,7 +457,7 @@ struct SettingsView: View {
                 .neoTextField()
             }
             Text(NSLocalizedString("settings.completion.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
         }
     }
@@ -473,7 +473,7 @@ struct SettingsView: View {
                 queueRow(queue: queue)
             }
             Text(NSLocalizedString("queue.deleteNote", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
                 TextField(
@@ -497,7 +497,7 @@ struct SettingsView: View {
         HStack(spacing: 8) {
             if queue.isDefault {
                 Text(queue.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
             } else {
                 TextField(
                     NSLocalizedString("queue.name", comment: ""),
@@ -510,7 +510,7 @@ struct SettingsView: View {
             }
             Spacer()
             Text(NSLocalizedString("queue.maxConcurrent", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             NeoStepper(value: Binding(
                 get: { queue.maxConcurrent },
@@ -544,7 +544,7 @@ struct SettingsView: View {
             subHeader(NSLocalizedString("watch.title", comment: ""))
             if watchFolderStore.folders.isEmpty {
                 Text(NSLocalizedString("watch.empty", comment: ""))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
             }
             ForEach(watchFolderStore.folders) { folder in
@@ -556,7 +556,7 @@ struct SettingsView: View {
                     .toggleStyle(NeoToggleStyle())
                     .labelsHidden()
                     Text(folder.path)
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()
@@ -570,7 +570,7 @@ struct SettingsView: View {
                 }
             }
             Text(NSLocalizedString("watch.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             Button(NSLocalizedString("watch.add", comment: "")) {
                 if let url = chooseDirectory(initial: nil) {
@@ -630,7 +630,7 @@ struct SettingsView: View {
                 }
             }
             Text(NSLocalizedString("proxy.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
         }
     }
@@ -640,7 +640,7 @@ struct SettingsView: View {
             sectionHeader(NSLocalizedString("settings.section.torrents", comment: ""))
             HStack {
                 Text(NSLocalizedString("settings.torrents.profile", comment: ""))
-                    .font(.subheadline)
+                    .font(NeoFont.f(.subheadline))
                 Spacer()
                 NeoSegmented(selection: settings.torrentPerformanceProfile, titles: [
                     (Aria2PerformanceProfile.balanced, Aria2PerformanceProfile.balanced.localizedName),
@@ -650,17 +650,17 @@ struct SettingsView: View {
                 .frame(maxWidth: 340)
             }
             Text(NSLocalizedString("settings.torrents.profile.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             NeoDivider()
             Toggle(NSLocalizedString("settings.vpnKillSwitch", comment: ""), isOn: settings.vpnKillSwitchEnabled)
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.vpnKillSwitch.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             HStack {
                 Text(NSLocalizedString("settings.vpnInterface", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Spacer()
                 TextField(
                     "utun3",
@@ -677,11 +677,11 @@ struct SettingsView: View {
             )
             .toggleStyle(NeoToggleStyle())
             Text(NSLocalizedString("settings.trackers.autoUpdate.note", comment: ""))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             HStack {
                 Text(NSLocalizedString("settings.trackers.syncInterval", comment: ""))
-                    .font(.subheadline)
+                    .font(NeoFont.f(.subheadline))
                 Spacer()
                 NeoStepper(value: settings.trackerSyncHours, in: 1.0...168.0, step: 1.0) { v in
                     "\(Int(v))h"
@@ -715,7 +715,7 @@ struct SettingsView: View {
             }
             if settings.wrappedValue.runMode == .hidden {
                 Text(NSLocalizedString("settings.runAs.hiddenNote", comment: ""))
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -749,9 +749,9 @@ struct SettingsView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(NSLocalizedString("settings.magnetHandler", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Text(magnetHandlerNote)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -809,7 +809,7 @@ struct SettingsView: View {
         )
         return HStack {
             Text(NSLocalizedString("settings.seedRatio", comment: ""))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             NeoStepper(value: ratio, in: 0...10, step: 0.5) { v in
                 v == 0
@@ -829,7 +829,7 @@ struct SettingsView: View {
         )
         return HStack {
             Text(NSLocalizedString("settings.seedTime", comment: ""))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             NeoStepper(value: minutes, in: 0...10080, step: 30) { v in
                 v == 0
@@ -844,10 +844,10 @@ struct SettingsView: View {
     private func folderRow(for category: DownloadCategory, settings: Binding<AppSettings>) -> some View {
         HStack {
             Text(category.settingsFolderName)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             Text(currentFolderPath(for: category, settings: settings))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -875,7 +875,7 @@ struct SettingsView: View {
         )
         return HStack {
             Text(NSLocalizedString("settings.speedLimit", comment: ""))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Spacer()
             NeoStepper(value: mb, in: 0...2000, step: 1) { v in
                 v == 0

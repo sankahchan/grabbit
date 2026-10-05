@@ -45,7 +45,7 @@ struct LinkGrabberView: View {
     private var header: some View {
         HStack {
             Text(NSLocalizedString("linkgrabber.subtitle", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
             Spacer()
             Button(NSLocalizedString("linkgrabber.newPackage", comment: "")) {
@@ -61,7 +61,7 @@ struct LinkGrabberView: View {
     private var newPackageSheet: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(NSLocalizedString("linkgrabber.newPackage", comment: ""))
-                .font(.title3.weight(.heavy))
+                .font(NeoFont.f(.title3, .heavy))
             TextField(
                 NSLocalizedString("linkgrabber.packageName", comment: ""),
                 text: $newPackageName
@@ -99,12 +99,12 @@ struct LinkGrabberView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             AppIcon("link", size: 14)
-                .font(.system(size: 40))
+                .font(NeoFont.f(40))
                 .foregroundStyle(.secondary)
             Text(NSLocalizedString("linkgrabber.empty.title", comment: ""))
-                .font(.headline)
+                .font(NeoFont.f(.headline))
             Text(NSLocalizedString("linkgrabber.empty.hint", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -125,12 +125,12 @@ struct LinkGrabberView: View {
                     )
                 )
                 .neoTextField()
-                .font(.headline)
+                .font(NeoFont.f(.headline))
                 Text(String(
                     format: NSLocalizedString("linkgrabber.links.count", comment: ""),
                     staged.count
                 ))
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
@@ -178,20 +178,20 @@ struct LinkGrabberView: View {
                     )
                 )
                 .neoTextField()
-                .font(.body)
+                .font(NeoFont.f(.body))
                 HStack(spacing: 6) {
                     Text(link.url.absoluteString)
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if let total = link.totalBytes {
                         Text("• \(formatBytes(total))")
-                            .font(.caption)
+                            .font(NeoFont.f(.caption))
                             .foregroundStyle(.secondary)
                     } else if link.status == .online {
                         Text("• \(NSLocalizedString("linkgrabber.sizeUnknown", comment: ""))")
-                            .font(.caption)
+                            .font(NeoFont.f(.caption))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -228,7 +228,7 @@ struct LinkGrabberView: View {
                     .help(NSLocalizedString("linkgrabber.status.duplicate", comment: ""))
             }
         }
-        .font(.title3)
+        .font(NeoFont.f(.title3))
         .frame(width: 24)
     }
 

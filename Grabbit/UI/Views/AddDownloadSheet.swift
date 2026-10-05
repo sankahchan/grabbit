@@ -39,12 +39,12 @@ struct AddDownloadSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(NSLocalizedString("add.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
 
             // MARK: URL
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("add.url.label", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 HStack(spacing: 8) {
                     TextField(
                         NSLocalizedString("add.url.label", comment: ""),
@@ -61,7 +61,7 @@ struct AddDownloadSheet: View {
             // MARK: Filename (optional rename)
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("add.filename.label", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 TextField(
                     NSLocalizedString("add.filename.label", comment: ""),
                     text: $customFilename,
@@ -73,7 +73,7 @@ struct AddDownloadSheet: View {
             // MARK: Quality chips
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("add.quality", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 HStack(spacing: 8) {
                     ForEach(qualities, id: \.self) { q in
                         Button(qualityLabel(for: q)) {
@@ -101,10 +101,10 @@ struct AddDownloadSheet: View {
             // MARK: Destination
             HStack {
                 Text(NSLocalizedString("add.destination", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 Text(destinationURL.path)
-                    .font(.caption)
+                    .font(NeoFont.f(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -129,7 +129,7 @@ struct AddDownloadSheet: View {
             // 0 = unlimited: falls back to the global Settings cap.
             HStack {
                 Text(NSLocalizedString("add.speedLimit", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 NeoStepper(value: $speedLimitMB, in: 0...2000, step: 1) { v in
                     v == 0
@@ -141,7 +141,7 @@ struct AddDownloadSheet: View {
             // MARK: Queue (Phase 5 named queues)
             HStack {
                 Text(NSLocalizedString("add.queue", comment: ""))
-                    .font(.headline)
+                    .font(NeoFont.f(.headline))
                 Spacer()
                 NeoMenuPicker<UUID?>(
                     selection: $queueID,
@@ -163,7 +163,7 @@ struct AddDownloadSheet: View {
                     headerField(label: "Authorization", text: $authorization)
                     headerField(label: "User-Agent", text: $userAgent)
                     Text(NSLocalizedString("add.headers.note", comment: ""))
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -219,7 +219,7 @@ struct AddDownloadSheet: View {
             } else {
                 HStack(spacing: 6) {
                     Text(String(format: NSLocalizedString("add.site.detected", comment: ""), detectedSite.rawValue.capitalized))
-                        .font(.caption.weight(.bold))
+                        .font(NeoFont.f(.caption, .bold))
                     SourceBadge(site: detectedSite)
                 }
             }
@@ -233,7 +233,7 @@ struct AddDownloadSheet: View {
     private func headerField(label: String, text: Binding<String>) -> some View {
         HStack {
             Text(label)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
                 .frame(width: 110, alignment: .leading)
             TextField(label, text: text)
                 .neoTextField()

@@ -128,12 +128,12 @@ struct GrabberView: View {
             HStack(spacing: 8) {
                 NeoSpinner(size: 16)
                 Text(NSLocalizedString("grabber.extension.working", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
             }
         case .updated:
             VStack(alignment: .leading, spacing: 8) {
                 Text(NSLocalizedString("grabber.extension.updated", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Button(NSLocalizedString("grabber.extension.openExtensions", comment: "")) {
                     ExtensionUpdater.openExtensionsPage()
                 }
@@ -142,7 +142,7 @@ struct GrabberView: View {
         case .saved(let path):
             VStack(alignment: .leading, spacing: 8) {
                 Text(NSLocalizedString("grabber.extension.saved", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Button(NSLocalizedString("grabber.extension.openFolder", comment: "")) {
                     NSWorkspace.shared.activateFileViewerSelecting(
                         [URL(fileURLWithPath: path)])
@@ -151,7 +151,7 @@ struct GrabberView: View {
             }
         case .failed(let message):
             Text("\(NSLocalizedString("grabber.extension.failed", comment: "")) \(message)")
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
                 .foregroundStyle(Neo.red)
         }
     }
@@ -167,7 +167,7 @@ struct GrabberView: View {
                 Text(extensionConnected
                      ? NSLocalizedString("grabber.status.connected", comment: "")
                      : NSLocalizedString("grabber.status.disconnected", comment: ""))
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                 Spacer()
                 if extensionConnected {
                     Button(NSLocalizedString("grabber.updateExtension", comment: "")) {
@@ -188,12 +188,12 @@ struct GrabberView: View {
     private var detectedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(NSLocalizedString("grabber.detected.title", comment: ""))
-                .font(.headline.weight(.heavy))
+                .font(NeoFont.f(.headline, .heavy))
                 .textCase(.uppercase)
 
             if detected.isEmpty {
                 Text(NSLocalizedString("grabber.detected.empty", comment: ""))
-                    .font(.subheadline)
+                    .font(NeoFont.f(.subheadline))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(detected) { media in
@@ -209,7 +209,7 @@ struct GrabberView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(media.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                     .lineLimit(1)
                 SourceBadge(site: media.site)
             }
@@ -247,7 +247,7 @@ struct GrabberView: View {
     private var hintCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(NSLocalizedString("grabber.hint", comment: ""))
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
             if !extensionConnected {
                 Button(NSLocalizedString("grabber.getExtension", comment: "")) {
                     runExtensionUpdate()

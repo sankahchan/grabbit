@@ -16,7 +16,7 @@ struct ExpandableSection<Content: View>: View {
             } label: {
                 HStack(spacing: 6) {
                     AppIcon(isExpanded ? "chevron.down" : "chevron.right", size: 13)
-                        .font(.subheadline.weight(.semibold))
+                        .font(NeoFont.f(.subheadline, .semibold))
                         .frame(width: 16)
                     Text(title)
                     Spacer()
@@ -42,7 +42,7 @@ struct TaskProxySection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(NSLocalizedString("taskProxy.title", comment: ""))
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                 Spacer()
                 NeoSegmented(selection: scope, titles: [
                     (TaskProxy.Scope.global, TaskProxy.Scope.global.localizedName),
@@ -54,7 +54,7 @@ struct TaskProxySection: View {
             if draft.scope == .custom {
                 HStack {
                     Text(NSLocalizedString("proxy.mode.http", comment: ""))
-                        .font(.subheadline)
+                        .font(NeoFont.f(.subheadline))
                         .frame(width: 90, alignment: .leading)
                     NeoSegmented(selection: mode, titles: [
                         (ProxyMode.http, NSLocalizedString("proxy.mode.http", comment: "")),
@@ -69,7 +69,7 @@ struct TaskProxySection: View {
                 }
                 HStack(spacing: 12) {
                     Text(NSLocalizedString("proxy.port", comment: ""))
-                        .font(.subheadline)
+                        .font(NeoFont.f(.subheadline))
                         .frame(width: 90, alignment: .leading)
                     NeoStepper(value: $draft.port, in: 1...65535, step: 1) { "\($0)" }
                     Spacer()
@@ -103,7 +103,7 @@ struct TaskProxySection: View {
     ) -> some View {
         HStack(spacing: 12) {
             Text(label)
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .frame(width: 90, alignment: .leading)
             content()
             Spacer()

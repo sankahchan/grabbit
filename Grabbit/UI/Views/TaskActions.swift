@@ -15,7 +15,7 @@ struct NeoIconButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         if Neo.shape.brutalist {
             configuration.label
-                .font(.subheadline.weight(.bold))
+                .font(NeoFont.f(.subheadline, .bold))
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .frame(width: 30, height: 30)
                 .background(bg)
@@ -36,7 +36,7 @@ struct NeoIconButtonStyle: ButtonStyle {
             // Pulse: edge-lit glass tile — dark fill, saturated border,
             // colored glyph and an outer glow (the reference tile).
             configuration.label
-                .font(.system(size: 13, weight: .bold))
+                .font(NeoFont.f(13, .bold))
                 .foregroundStyle(bg)
                 .frame(width: 30, height: 30)
                 .background(
@@ -58,7 +58,7 @@ struct NeoIconButtonStyle: ButtonStyle {
         } else {
             // Modern: soft tinted circle with the action's color as glyph.
             configuration.label
-                .font(.system(size: 13, weight: .semibold))
+                .font(NeoFont.f(13, .semibold))
                 .foregroundStyle(bg)
                 .frame(width: 30, height: 30)
                 .background(bg.opacity(0.14), in: Circle())

@@ -66,6 +66,8 @@ final class ThemeStyleTests: XCTestCase {
         XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.cardEdgeGlow)
         XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.sidebarIconTiles)
         XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.tileButtons)
+        XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.dotFont)
+        XCTAssertFalse(ThemeCatalog.tokens(for: .classic).shape.dotFont)
         XCTAssertNotNil(ThemeCatalog.tokens(for: .aura).brandDot)
         XCTAssertFalse(ThemeCatalog.tokens(for: .aura).backgroundGlows.isEmpty)
         XCTAssertFalse(ThemeCatalog.tokens(for: .liquid).canvasGradientDark.isEmpty)

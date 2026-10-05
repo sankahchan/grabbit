@@ -64,10 +64,10 @@ struct TaskDetailsSheet: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(NSLocalizedString("task.details.title", comment: ""))
-                .font(.title2.weight(.heavy))
+                .font(NeoFont.f(.title2, .heavy))
             HStack(spacing: 8) {
                 Text(subject.name)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
                     .lineLimit(2)
                 Spacer()
                 statusBadge
@@ -92,7 +92,7 @@ struct TaskDetailsSheet: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.caption2.weight(.bold))
+            .font(NeoFont.f(.caption2, .bold))
             .textCase(.uppercase)
             .foregroundStyle(.secondary)
     }
@@ -113,7 +113,7 @@ struct TaskDetailsSheet: View {
                         set: { downloads.setPriority(id: item.id, priority: $0) }
                     ), in: -5...5, step: 1) { v in "\(v)" }
                     Text(NSLocalizedString("task.details.priorityHint", comment: ""))
-                        .font(.caption)
+                        .font(NeoFont.f(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -134,7 +134,7 @@ struct TaskDetailsSheet: View {
             sectionTitle(NSLocalizedString("task.details.saveTo", comment: ""))
             HStack(spacing: 8) {
                 Text(Self.tildePath(saveDirectory.path))
-                    .font(.subheadline.monospaced())
+                    .font(NeoFont.mono(.subheadline))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
@@ -173,14 +173,14 @@ struct TaskDetailsSheet: View {
                     Text("\(Int((item.progress * 100).rounded()))%")
                         .fontWeight(.bold)
                 }
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 SegmentedProgressBar(segments: item.segments)
                 HStack(spacing: 8) {
                     Text("\(NSLocalizedString("downloads.speed", comment: "")): \(formatSpeed(item.speedBytesPerSec))")
                     Text("•")
                     Text("\(NSLocalizedString("downloads.eta", comment: "")): \(formatETA(item.etaSeconds))")
                 }
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             case .torrent(let item):
                 HStack {
@@ -189,20 +189,20 @@ struct TaskDetailsSheet: View {
                     Text("\(Int((item.progress * 100).rounded()))%")
                         .fontWeight(.bold)
                 }
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 NeoLinearBar(progress: item.progress, fill: Neo.purple)
                 HStack(spacing: 8) {
                     Text("\(NSLocalizedString("torrents.seeds", comment: "")): \(item.numSeeders)")
                     Text("\(NSLocalizedString("torrents.peers", comment: "")): \(item.peers)")
                     Text("\(NSLocalizedString("torrents.ratio", comment: "")): \(String(format: "%.2f", item.ratio))")
                 }
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     Text("↓ \(formatBytes(item.downloadSpeed))/s")
                     Text("↑ \(formatBytes(item.uploadSpeed))/s")
                 }
-                .font(.caption)
+                .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             }
         }
@@ -237,7 +237,7 @@ struct TaskDetailsSheet: View {
     private func linkRow(_ link: String) -> some View {
         HStack(spacing: 8) {
             Text(link)
-                .font(.caption.monospaced())
+                .font(NeoFont.mono(.caption))
                 .lineLimit(2)
                 .truncationMode(.middle)
             Spacer()
@@ -255,9 +255,9 @@ struct TaskDetailsSheet: View {
     private func detailRow(label: String, value: String, copy: String?) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
             Text(value)
-                .font(.subheadline.monospaced())
+                .font(NeoFont.mono(.subheadline))
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()
@@ -287,7 +287,7 @@ struct TaskDetailsSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionTitle(NSLocalizedString("task.details.error", comment: ""))
             Text(message)
-                .font(.subheadline)
+                .font(NeoFont.f(.subheadline))
                 .foregroundStyle(Neo.red)
         }
     }

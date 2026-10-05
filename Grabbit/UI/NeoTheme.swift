@@ -111,6 +111,8 @@ struct NeoCardModifier: ViewModifier {
     var bg: Color?
     /// Optional bright strip along the top edge (the GistHub-style card).
     var accent: Color?
+    /// Inner padding. Compact cards (stat strip) pass a smaller inset.
+    var inset: CGFloat = 14
     @Environment(\.colorScheme) private var scheme
 
     @ViewBuilder
@@ -119,7 +121,7 @@ struct NeoCardModifier: ViewModifier {
         let rect = RoundedRectangle(cornerRadius: shape.cardRadius, style: .continuous)
         if shape.brutalist {
             content
-                .padding(14)
+                .padding(inset)
                 .background(bg ?? Neo.card(scheme))
                 .overlay(alignment: .top) {
                     if let accent {
@@ -143,7 +145,7 @@ struct NeoCardModifier: ViewModifier {
             // border glow instead of a neutral drop shadow.
             let charge = accent ?? Neo.ink(scheme)
             content
-                .padding(14)
+                .padding(inset)
                 .background(bg ?? Neo.card(scheme))
                 .clipShape(rect)
                 .shadow(color: charge.opacity(scheme == .dark ? 0.38 : 0.22), radius: 14)
@@ -162,7 +164,7 @@ struct NeoCardModifier: ViewModifier {
             // border, no hard offset.
             let border = accent?.opacity(0.45) ?? Neo.ink(scheme).opacity(0.10)
             content
-                .padding(14)
+                .padding(inset)
                 .background(bg ?? Neo.card(scheme))
                 .clipShape(rect)
                 .shadow(
@@ -188,7 +190,7 @@ struct NeoBadgeModifier: ViewModifier {
     func body(content: Content) -> some View {
         if Neo.shape.brutalist {
             content
-                .font(.caption2.weight(.bold))
+                .font(NeoFont.f(.caption2, .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .padding(.horizontal, 8)
@@ -200,7 +202,7 @@ struct NeoBadgeModifier: ViewModifier {
         } else if Neo.shape.softBadges {
             // Aura/Liquid: soft tinted chip with the accent as text.
             content
-                .font(.caption2.weight(.bold))
+                .font(NeoFont.f(.caption2, .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(bg)
                 .padding(.horizontal, 8)
@@ -209,7 +211,7 @@ struct NeoBadgeModifier: ViewModifier {
                 .clipShape(Capsule())
         } else {
             content
-                .font(.caption2.weight(.bold))
+                .font(NeoFont.f(.caption2, .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .padding(.horizontal, 8)
@@ -234,7 +236,7 @@ struct NeoButtonStyle: ButtonStyle {
             let radius: CGFloat = compact ? 8 : 10
             let shift: CGFloat = configuration.isPressed ? 1 : shape.buttonHardOffset
             configuration.label
-                .font(compact ? .subheadline.weight(.bold) : .headline.weight(.semibold))
+                .font(NeoFont.f(compact ? .subheadline : .headline, compact ? .bold : .semibold))
                 .textCase(.uppercase)
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .padding(.horizontal, compact ? 10 : 16)
@@ -261,7 +263,7 @@ struct NeoButtonStyle: ButtonStyle {
             // Pulse: glass tile button — dark fill, saturated border and
             // the label in the accent's own color.
             configuration.label
-                .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.bold))
+                .font(NeoFont.f(compact ? .subheadline : .headline, compact ? .semibold : .bold))
                 .foregroundStyle(bg)
                 .padding(.horizontal, compact ? 12 : 18)
                 .padding(.vertical, compact ? 6 : 10)
@@ -283,7 +285,7 @@ struct NeoButtonStyle: ButtonStyle {
                 .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
         } else {
             configuration.label
-                .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.semibold))
+                .font(NeoFont.f(compact ? .subheadline : .headline, .semibold))
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .padding(.horizontal, compact ? 12 : 18)
                 .padding(.vertical, compact ? 6 : 10)
@@ -303,8 +305,10 @@ struct NeoButtonStyle: ButtonStyle {
 extension View {
     /// Neo-brutalist card. Pass `bg` to override the theme-aware paper
     /// default, and `accent` for a bright strip along the top edge.
-    func neoCard(bg: Color? = nil, accent: Color? = nil) -> some View {
-        modifier(NeoCardModifier(bg: bg, accent: accent))
+    func neoCard(
+        bg: Color? = nil, accent: Color? = nil, inset: CGFloat = 14
+    ) -> some View {
+        modifier(NeoCardModifier(bg: bg, accent: accent, inset: inset))
     }
 
     /// Small uppercase pill badge with a 2pt ink border.
@@ -474,7 +478,7 @@ struct NeoToggleStyle: ToggleStyle {
                         )
                     if configuration.isOn {
                         AppIcon("checkmark", size: 12)
-                            .font(.system(size: 13, weight: .black))
+                            .font(NeoFont.f(13, .black))
                             .foregroundStyle(Neo.onAccent(Neo.green, scheme: scheme))
                     }
                 }
@@ -557,7 +561,7 @@ struct NeoSegmented<Value: Hashable>: View {
                 }
                 Text(option.title)
             }
-            .font(.subheadline.weight(modern ? .semibold : .bold))
+            .font(NeoFont.f(.subheadline, modern ? .semibold : .bold))
             .lineLimit(1)
             // Longer localized labels (e.g. "မြန်မာ") must shrink, never
             // truncate with an ellipsis inside a segment.
@@ -624,7 +628,7 @@ struct NeoStepper<V: Strideable>: View {
                 set(value.advanced(by: step.negated()))
             }
             Text(label(value))
-                .font(.subheadline.weight(.semibold))
+                .font(NeoFont.f(.subheadline, .semibold))
                 .frame(minWidth: 72)
                 .multilineTextAlignment(.center)
             stepButton(icon: "plus", disabled: value >= range.upperBound) {
@@ -642,7 +646,7 @@ struct NeoStepper<V: Strideable>: View {
     ) -> some View {
         Button(action: action) {
             AppIcon(icon, size: 11)
-                .font(.system(size: 12, weight: .black))
+                .font(NeoFont.f(12, .black))
                 .foregroundStyle(Neo.ink(scheme))
                 .frame(width: 26, height: 26)
                 .background(Neo.shape.brutalist ? Neo.paper(scheme) : Neo.card(scheme))
@@ -843,7 +847,7 @@ struct NeoPageHeader: View {
             Text(sticker)
                 .neoBadge(bg: accent)
             Text(title)
-                .font(.system(size: 28, weight: .black))
+                .font(NeoFont.f(28, .black))
                 .foregroundStyle(Neo.ink(scheme))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -938,14 +942,14 @@ struct NeoMenuPicker<Value: Hashable>: View {
         } label: {
             HStack(spacing: 8) {
                 Text(currentTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(NeoFont.f(.subheadline, .semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 // Menus don't lay out custom image views reliably
                 // (a custom chevron rendered at its natural 72pt size),
                 // so the native SF chevron stays here.
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .black))
+                    .font(NeoFont.f(11, .black))
             }
             .foregroundStyle(Neo.ink(scheme))
             .padding(.horizontal, 10)

@@ -13,9 +13,9 @@ struct WhatsNewView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 AppIcon("sparkles", size: 20)
-                    .font(.title3.weight(.bold))
+                    .font(NeoFont.f(.title3, .bold))
                 Text(NSLocalizedString("whatsnew.title", comment: ""))
-                    .font(.title2.weight(.heavy))
+                    .font(NeoFont.f(.title2, .heavy))
                 Spacer()
                 Text("v\(version)")
                     .neoBadge(bg: Neo.yellow)
@@ -23,7 +23,7 @@ struct WhatsNewView: View {
 
             if !digest.title.isEmpty {
                 Text(digest.title)
-                    .font(.headline.weight(.bold))
+                    .font(NeoFont.f(.headline, .bold))
             }
 
             ScrollView {
@@ -31,15 +31,15 @@ struct WhatsNewView: View {
                     ForEach(digest.bullets, id: \.self) { bullet in
                         HStack(alignment: .top, spacing: 8) {
                             Text("•")
-                                .font(.headline.weight(.black))
+                                .font(NeoFont.f(.headline, .black))
                             Text(bullet)
-                                .font(.subheadline)
+                                .font(NeoFont.f(.subheadline))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     ForEach(digest.paragraphs, id: \.self) { paragraph in
                         Text(paragraph)
-                            .font(.subheadline)
+                            .font(NeoFont.f(.subheadline))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
