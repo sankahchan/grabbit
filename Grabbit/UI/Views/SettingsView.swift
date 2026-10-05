@@ -76,7 +76,6 @@ struct SettingsView: View {
                 .onChange(of: store.settings.themeStyle) { _, _ in store.save() }
                 .onChange(of: store.settings.language, onLanguageChange)
                 .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
-                .onChange(of: store.settings.autoStartIndexers) { _, _ in store.save() }
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
@@ -102,6 +101,7 @@ struct SettingsView: View {
         func body(content: Content) -> some View {
             content
                 .onChange(of: store.settings.autoClearFailed) { _, _ in store.save() }
+                .onChange(of: store.settings.autoStartIndexers) { _, _ in store.save() }
                 .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
                 .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in
                     store.save()
