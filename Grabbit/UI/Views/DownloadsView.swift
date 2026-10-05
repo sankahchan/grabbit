@@ -228,7 +228,7 @@ struct DownloadsView: View {
     @ViewBuilder private var sortGlyph: some View {
         let bg = Neo.blue
         if Neo.shape.brutalist {
-            AppIcon("arrow.up.arrow.down", size: 14)
+            AppIcon("arrow.up.arrow.down", size: 11)
                 .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
                 .frame(width: 30, height: 30)
                 .background(bg, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -241,7 +241,7 @@ struct DownloadsView: View {
                         .stroke(Neo.ink(scheme), lineWidth: 2)
                         .allowsHitTesting(false))
         } else if Neo.shape.tileButtons && scheme == .dark {
-            AppIcon("arrow.up.arrow.down", size: 14)
+            AppIcon("arrow.up.arrow.down", size: 11)
                 .foregroundStyle(bg)
                 .frame(width: 30, height: 30)
                 .background(
@@ -257,7 +257,7 @@ struct DownloadsView: View {
                 .shadow(color: bg.opacity(0.45), radius: 7)
                 .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         } else {
-            AppIcon("arrow.up.arrow.down", size: 14)
+            AppIcon("arrow.up.arrow.down", size: 11)
                 .foregroundStyle(bg)
                 .frame(width: 30, height: 30)
                 .background(bg.opacity(0.14), in: Circle())
