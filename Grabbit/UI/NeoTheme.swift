@@ -257,6 +257,30 @@ struct NeoButtonStyle: ButtonStyle {
                 )
                 .scaleEffect(configuration.isPressed ? 0.97 : 1)
                 .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        } else if shape.tileButtons && scheme == .dark {
+            // Pulse: glass tile button — dark fill, saturated border and
+            // the label in the accent's own color.
+            configuration.label
+                .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.bold))
+                .foregroundStyle(bg)
+                .padding(.horizontal, compact ? 12 : 18)
+                .padding(.vertical, compact ? 6 : 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Neo.card(scheme).opacity(0.72))
+                )
+                .background(
+                    bg.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(bg.opacity(0.85), lineWidth: 1.5)
+                        .allowsHitTesting(false)
+                )
+                .shadow(color: bg.opacity(0.40), radius: 8)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
         } else {
             configuration.label
                 .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.semibold))
@@ -767,29 +791,39 @@ struct NeoProgressTrack: View {
             }
             .frame(height: 16)
         case .segments:
+            // Reference language: chunky rounded blocks with a thin "now"
+            // line whose glowing dot rides above the blocks.
             Canvas { context, size in
-                let count = 40
-                let gap: CGFloat = 3
-                let block = max(2, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
+                let count = 26
+                let gap: CGFloat = 4
+                let blockHeight: CGFloat = 16
+                let top = size.height - blockHeight
+                let block = max(
+                    3, (size.width - gap * CGFloat(count - 1)) / CGFloat(count))
                 let lit = Int((clamped * Double(count)).rounded())
-                let top = (size.height - 7) / 2
                 for index in 0..<count {
                     let rect = CGRect(
                         x: CGFloat(index) * (block + gap), y: top,
-                        width: block, height: 7)
+                        width: block, height: blockHeight)
                     context.fill(
-                        Path(roundedRect: rect, cornerRadius: 2.5),
+                        Path(roundedRect: rect, cornerRadius: 4),
                         with: .color(index < lit ? color : trackColor))
                 }
                 if shape.progressMarker, clamped > 0, clamped < 1 {
+                    let markerColor: Color = scheme == .dark ? .white : .black
                     let x = CGFloat(lit) * (block + gap) - gap / 2
-                    let marker = CGRect(x: x - 1.25, y: 0, width: 2.5, height: size.height)
+                    let line = CGRect(x: x - 1.25, y: 0, width: 2.5, height: size.height)
                     context.fill(
-                        Path(roundedRect: marker, cornerRadius: 1.25),
-                        with: .color(scheme == .dark ? .white : .black))
+                        Path(roundedRect: line, cornerRadius: 1.25),
+                        with: .color(markerColor))
+                    var dot = context
+                    dot.addFilter(.shadow(color: markerColor.opacity(0.9), radius: 4))
+                    dot.fill(
+                        Path(ellipseIn: CGRect(x: x - 3.5, y: 1.5, width: 7, height: 7)),
+                        with: .color(markerColor))
                 }
             }
-            .frame(height: 16)
+            .frame(height: 22)
         }
     }
 

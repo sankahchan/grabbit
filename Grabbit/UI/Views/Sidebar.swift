@@ -128,18 +128,34 @@ struct Sidebar: View {
         } label: {
             HStack(spacing: 10) {
                 if let tint = iconTileColor(for: item) {
+                    // Pulse's reference tile: dark glass with a saturated,
+                    // edge-lit border. Other tiled themes keep the lighter
+                    // soft-tint treatment.
+                    let glassTile = Neo.shape.tileButtons && scheme == .dark
+                    let radius: CGFloat = glassTile ? 9 : 8
                     ThemedIcon(asset: item.iconAsset, system: item.icon, size: 13)
                         .foregroundStyle(tint)
                         .frame(width: 26, height: 26)
                         .background(
-                            tint.opacity(0.10),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                                .fill(
+                                    glassTile
+                                        ? Neo.card(scheme).opacity(0.72)
+                                        : tint.opacity(0.10)))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(tint.opacity(0.45), lineWidth: 1))
+                            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                                .stroke(
+                                    tint.opacity(glassTile ? 0.85 : 0.45),
+                                    lineWidth: glassTile ? 1.5 : 1)
+                                .allowsHitTesting(false))
                         .shadow(
-                            color: tint.opacity(isSelected ? 0.55 : 0.30),
-                            radius: isSelected ? 8 : 5)
+                            color: tint.opacity(
+                                glassTile
+                                    ? (isSelected ? 0.60 : 0.38)
+                                    : (isSelected ? 0.55 : 0.30)),
+                            radius: glassTile
+                                ? (isSelected ? 9 : 6)
+                                : (isSelected ? 8 : 5))
                 } else {
                     ThemedIcon(asset: item.iconAsset, system: item.icon, size: 15)
                         .frame(width: 22)

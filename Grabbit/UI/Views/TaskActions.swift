@@ -32,6 +32,29 @@ struct NeoIconButtonStyle: ButtonStyle {
                 )
                 .scaleEffect(configuration.isPressed ? 0.94 : 1)
                 .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        } else if Neo.shape.tileButtons && scheme == .dark {
+            // Pulse: edge-lit glass tile — dark fill, saturated border,
+            // colored glyph and an outer glow (the reference tile).
+            configuration.label
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(bg)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Neo.card(scheme).opacity(0.72))
+                )
+                .background(
+                    bg.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(bg.opacity(0.85), lineWidth: 1.5)
+                        .allowsHitTesting(false)
+                )
+                .shadow(color: bg.opacity(0.45), radius: 7)
+                .scaleEffect(configuration.isPressed ? 0.92 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
         } else {
             // Modern: soft tinted circle with the action's color as glyph.
             configuration.label

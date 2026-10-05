@@ -65,6 +65,7 @@ final class ThemeStyleTests: XCTestCase {
     func testSignatureThemeDetailsArePresent() {
         XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.cardEdgeGlow)
         XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.sidebarIconTiles)
+        XCTAssertTrue(ThemeCatalog.tokens(for: .pulse).shape.tileButtons)
         XCTAssertNotNil(ThemeCatalog.tokens(for: .aura).brandDot)
         XCTAssertFalse(ThemeCatalog.tokens(for: .aura).backgroundGlows.isEmpty)
         XCTAssertFalse(ThemeCatalog.tokens(for: .liquid).canvasGradientDark.isEmpty)

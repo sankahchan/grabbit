@@ -98,6 +98,9 @@ struct ThemeShape: Sendable {
     var sidebarIconTiles = false
     /// Aura/Liquid: badges are soft tinted chips instead of solid pills.
     var softBadges = false
+    /// Pulse (dark): buttons and icon buttons become edge-lit glass tiles
+    /// in the reference's language (dark glass, saturated border, glow).
+    var tileButtons = false
 
     var dotGridLight: Double = 0.14
     var dotGridDark: Double = 0.09
@@ -234,9 +237,9 @@ enum ThemeCatalog {
     // MARK: Pulse — neon energy console
 
     private static let pulse = ThemeTokens(
-        paperLight: Color(hex: 0xF5F7FA), paperDark: Color(hex: 0x0A0C10),
-        cardLight: Color(hex: 0xFFFFFF), cardDark: Color(hex: 0x0F1216),
-        sidebarLight: Color(hex: 0xFBFDFF), sidebarDark: Color(hex: 0x0B0E12),
+        paperLight: Color(hex: 0xF5F7FA), paperDark: Color(hex: 0x090C12),
+        cardLight: Color(hex: 0xFFFFFF), cardDark: Color(hex: 0x0E1117),
+        sidebarLight: Color(hex: 0xFBFDFF), sidebarDark: Color(hex: 0x0A0D13),
         inkLight: Color(hex: 0x101418), inkDark: Color(hex: 0xEDF2F5),
         ink2Light: Color(hex: 0x5A6873), ink2Dark: Color(hex: 0x8FA0AC),
         ink3Light: Color(hex: 0x8A97A0), ink3Dark: Color(hex: 0x5A6873),
@@ -257,7 +260,7 @@ enum ThemeCatalog {
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
             progress: .segments, progressMarker: true, cardEdgeGlow: true,
-            sidebarIconTiles: true,
+            sidebarIconTiles: true, tileButtons: true,
             dotGridLight: 0, dotGridDark: 0),
         backgroundGlows: [
             AmbientGlow(color: Color(hex: 0x25E3FF), x: 0.08, y: 0.06, radius: 640,
