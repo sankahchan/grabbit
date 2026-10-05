@@ -54,6 +54,75 @@ struct SettingsView: View {
         .modifier(MediaChangeHandlers())
     }
 
+    // MARK: - Theme gallery
+
+    /// macOS-wallpaper-picker-style theme chooser: one preview thumbnail
+    /// per skin, adapted to the current light/dark appearance.
+    private struct ThemeGallery: View {
+        @Binding var selection: ThemeStyle
+        @Environment(\.colorScheme) private var scheme
+
+        var body: some View {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(ThemeStyle.allCases, id: \.self) { style in
+                        tile(for: style)
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 2)
+            }
+        }
+
+        private func tile(for style: ThemeStyle) -> some View {
+            let isSelected = selection == style
+            return Button {
+                selection = style
+            } label: {
+                VStack(spacing: 6) {
+                    Image(thumbnailAsset(for: style))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 168, height: 105)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(
+                                    isSelected ? Neo.yellow : Neo.ink(scheme).opacity(0.12),
+                                    lineWidth: isSelected ? 2.5 : 1)
+                                .allowsHitTesting(false))
+                        .overlay(alignment: .bottomTrailing) {
+                            if isSelected {
+                                AppIcon("checkmark", size: 9)
+                                    .foregroundStyle(Neo.onAccent(Neo.yellow, scheme: scheme))
+                                    .frame(width: 18, height: 18)
+                                    .background(Neo.yellow, in: Circle())
+                                    .padding(6)
+                            }
+                        }
+                    Text(style.displayName)
+                        .font(.caption.weight(isSelected ? .bold : .semibold))
+                        .foregroundStyle(isSelected ? Neo.ink(scheme) : Neo.ink2(scheme))
+                }
+            }
+            .buttonStyle(.plain)
+            .help(style.displayName)
+        }
+
+        /// Preview asset for the active appearance (Grove has no light
+        /// variant yet, so it always shows its dark render).
+        private func thumbnailAsset(for style: ThemeStyle) -> String {
+            switch style {
+            case .classic: return scheme == .dark ? "ThumbClassicDark" : "ThumbClassicLight"
+            case .aura: return scheme == .dark ? "ThumbAuraDark" : "ThumbAuraLight"
+            case .pulse: return scheme == .dark ? "ThumbPulseDark" : "ThumbPulseLight"
+            case .grove: return "ThumbGroveDark"
+            case .velvet: return scheme == .dark ? "ThumbVelvetDark" : "ThumbVelvetLight"
+            case .liquid: return scheme == .dark ? "ThumbLiquidDark" : "ThumbLiquidLight"
+            }
+        }
+    }
+
     // MARK: - Change handlers
 
     /// The settings screen's `.onChange` save triggers, extracted into
@@ -203,16 +272,9 @@ struct SettingsView: View {
                 Spacer()
             }
             subHeader(NSLocalizedString("settings.section.themeStyle", comment: ""))
-            HStack {
-                // Brand names stay Latin; only "Classic" is localized.
-                Text(NSLocalizedString("settings.themeStyle", comment: ""))
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                NeoMenuPicker(
-                    selection: settings.themeStyle,
-                    options: ThemeStyle.allCases.map { (value: $0, title: $0.displayName) },
-                    maxWidth: 240)
-            }
+            // Wallpaper-picker-style gallery: a preview per theme for the
+            // current appearance, selected one ringed and checkmarked.
+            ThemeGallery(selection: settings.themeStyle)
             subHeader(NSLocalizedString("settings.section.language", comment: ""))
             HStack {
                 // Autonyms are shown in their own language by convention.

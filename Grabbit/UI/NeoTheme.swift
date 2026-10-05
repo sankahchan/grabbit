@@ -892,11 +892,10 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     selection = option.value
                 } label: {
                     if option.value == selection {
-                        Label {
-                            Text(option.title)
-                        } icon: {
-                            AppIcon("checkmark", size: 12)
-                        }
+                        // macOS menus don't lay out custom icon views
+                        // reliably (a Lucide checkmark rendered huge), so
+                        // the native SF checkmark stays here.
+                        Label(option.title, systemImage: "checkmark")
                     } else {
                         Text(option.title)
                     }
