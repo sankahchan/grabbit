@@ -81,7 +81,7 @@ enum TaskAction: Hashable, CaseIterable {
         }
     }
 
-    /// Lucide line icon bundled in Assets (used by Aura).
+    /// Tabler line icon bundled in Assets.
     var iconAsset: String {
         switch self {
         case .pause: "IconPause"

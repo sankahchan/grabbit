@@ -893,7 +893,7 @@ struct NeoMenuPicker<Value: Hashable>: View {
                 } label: {
                     if option.value == selection {
                         // macOS menus don't lay out custom icon views
-                        // reliably (a Lucide checkmark rendered huge), so
+                        // reliably (a custom checkmark rendered huge), so
                         // the native SF checkmark stays here.
                         Label(option.title, systemImage: "checkmark")
                     } else {
@@ -908,7 +908,7 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 // Menus don't lay out custom image views reliably
-                // (the Lucide chevron rendered at its natural 72pt size),
+                // (a custom chevron rendered at its natural 72pt size),
                 // so the native SF chevron stays here.
                 Image(systemName: "chevron.down")
                     .font(.system(size: 11, weight: .black))

@@ -12,7 +12,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
     /// Utility buttons pinned to the sidebar bottom (macOS convention).
     static let bottomTabs: [SidebarSelection] = [.settings, .about]
 
-    /// Lucide line icon bundled in Assets (used by Aura).
+    /// Tabler line icon bundled in Assets.
     var iconAsset: String {
         switch self {
         case .downloads: "IconDownloads"

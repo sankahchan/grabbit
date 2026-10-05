@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 /// Icons that match the theme language: every theme shares the same
-/// bundled Lucide line-icon set (free, ISC), with SF Symbols only as a
+/// bundled Tabler line-icon set (free, MIT), with SF Symbols only as a
 /// fallback for symbols that have no bundled equivalent.
 enum IconMap {
     static func asset(for systemName: String) -> String? {
@@ -44,7 +44,7 @@ enum IconMap {
 
 /// An icon drawn from the shared line-icon set when one exists, falling
 /// back to the SF Symbol otherwise. `size` is the rendered square size in
-/// points (Lucide assets are scaled to it; the SF fallback keeps the
+/// points (Tabler assets are scaled to it; the SF fallback keeps the
 /// surrounding font sizing).
 struct AppIcon: View {
     var system: String
