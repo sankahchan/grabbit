@@ -59,40 +59,42 @@ private struct WindowPaper: NSViewRepresentable {
         // With a transparent titlebar the drag strip gets thin; letting the
         // window move from any background area makes it easy to reposition.
         window.isMovableByWindowBackground = true
+        installDragCatcher(on: window)
+    }
+
+    /// The window uses full-size content with a hidden titlebar background,
+    /// so nothing in the titlebar strip drags the window anymore. Install a
+    /// transparent AppKit catcher over the empty part of the strip (after
+    /// the traffic lights, sidebar toggle and title) that hands the mouse
+    /// down to `NSWindow.performDrag`.
+    private static func installDragCatcher(on window: NSWindow) {
+        guard let themeFrame = window.contentView?.superview else { return }
+        let height: CGFloat = 52
+        let frame = NSRect(
+            x: 150, y: themeFrame.bounds.height - height,
+            width: max(0, themeFrame.bounds.width - 150), height: height)
+        if let existing = themeFrame.subviews.first(where: { $0 is TitlebarDragCatcher }) {
+            existing.frame = frame
+            return
+        }
+        let catcher = TitlebarDragCatcher()
+        catcher.frame = frame
+        catcher.autoresizingMask = [.width, .minYMargin]
+        themeFrame.addSubview(catcher)
     }
 }
 
-/// Invisible strip across the empty part of the titlebar that drags the
-/// window. Uses the native `WindowDragGesture` on macOS 15+; on macOS 14
-/// it moves the window frame manually. Placed after the leading controls
-/// (traffic lights, sidebar toggle, title) so nothing is blocked.
-private struct TitlebarDragStrip: View {
-    @State private var startOrigin: NSPoint?
+/// Transparent strip over the empty titlebar area: dragging it moves the
+/// window via `performDrag`. Sits above the titlebar container so it wins
+/// over the full-size SwiftUI content, but starts after x=150 to leave the
+/// traffic lights, sidebar toggle and title interactive.
+final class TitlebarDragCatcher: NSView {
+    override var mouseDownCanMoveWindow: Bool { true }
 
-    var body: some View {
-        Group {
-            if #available(macOS 15.0, *) {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .gesture(WindowDragGesture())
-            } else {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 1)
-                            .onChanged { value in
-                                guard let window = MainWindowHolder.window else { return }
-                                if startOrigin == nil {
-                                    startOrigin = window.frame.origin
-                                }
-                                guard let start = startOrigin else { return }
-                                window.setFrameOrigin(NSPoint(
-                                    x: start.x + value.translation.width,
-                                    y: start.y - value.translation.height))
-                            }
-                            .onEnded { _ in startOrigin = nil })
-            }
-        }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
     }
 }
 
@@ -127,14 +129,6 @@ struct MainView: View {
             }
         }
         .navigationTitle("Grabbit")
-        // The transparent titlebar has no reliable drag area once SwiftUI
-        // content fills the window; this strip restores easy dragging.
-        .overlay(alignment: .top) {
-            TitlebarDragStrip()
-                .frame(height: 38)
-                .padding(.leading, 330)
-                .ignoresSafeArea(edges: .top)
-        }
         // The system toolbar material paints a white band over the paper in
         // light mode (and a mismatched band in dark). Tint the window toolbar
         // and the titlebar strip to the same paper as the content.
