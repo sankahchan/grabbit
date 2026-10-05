@@ -281,7 +281,7 @@ struct MediaView: View {
                     .neoButton(bg: Neo.green)
                     .disabled(selectedPreset == nil)
                 Button(NSLocalizedString("media.clear", comment: "")) {
-                    Task { await media.reset() }
+                    media.reset()
                 }
                 .neoButton(bg: Neo.paper(scheme))
             }
@@ -325,7 +325,7 @@ struct MediaView: View {
                     .font(NeoFont.f(.subheadline, .bold))
                 Spacer()
                 Button(NSLocalizedString("media.cancel", comment: "")) {
-                    Task { await media.cancel() }
+                    media.cancel()
                 }
                 .neoButton(bg: Neo.red)
             }
@@ -349,7 +349,7 @@ struct MediaView: View {
             .font(NeoFont.f(.headline, .heavy))
             Button(NSLocalizedString("media.new", comment: "")) {
                 urlText = ""
-                Task { await media.reset() }
+                media.reset()
             }
             .neoButton(bg: Neo.paper(scheme))
         }

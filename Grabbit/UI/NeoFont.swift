@@ -42,8 +42,15 @@ enum NeoFont {
 
     static func f(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         usesDotMatrix
-            ? .custom(name(for: weight), size: size)
+            ? .custom(name(for: weight), size: scaled(size))
             : .system(size: size, weight: weight)
+    }
+
+    /// Doto's dots sit visually smaller than a system glyph at the same
+    /// point size. Small UI text (≤16pt) gets a 25% bump so labels stay
+    /// legible; display sizes are left alone.
+    private static func scaled(_ size: CGFloat) -> CGFloat {
+        size <= 16 ? (size * 1.25).rounded() : size
     }
 
     // MARK: - Monospaced variants
@@ -99,10 +106,17 @@ enum NeoFont {
         }
     }
 
+    /// Small text is drawn bold: Doto's regular dots get sparse below
+    /// ~14pt, and the extra dot weight is what keeps captions readable.
     private static func defaultWeight(for style: Font.TextStyle) -> Font.Weight {
         switch style {
-        case .headline: .semibold
-        default: .regular
+        case .headline, .body, .callout, .subheadline, .footnote,
+             .caption, .caption2:
+            .bold
+        case .largeTitle, .title, .title2, .title3:
+            .regular
+        @unknown default:
+            .regular
         }
     }
 
@@ -110,18 +124,18 @@ enum NeoFont {
     /// optical hierarchy as the system font it replaces.
     private static func size(for style: Font.TextStyle) -> CGFloat {
         switch style {
-        case .largeTitle: 26
-        case .title: 22
-        case .title2: 17
-        case .title3: 15
-        case .headline: 13
-        case .body: 13
-        case .callout: 12
-        case .subheadline: 11
-        case .footnote: 10
-        case .caption: 10
-        case .caption2: 9
-        @unknown default: 13
+        case .largeTitle: 28
+        case .title: 24
+        case .title2: 18.5
+        case .title3: 16.5
+        case .headline: 14
+        case .body: 14
+        case .callout: 13
+        case .subheadline: 12.5
+        case .footnote: 11.5
+        case .caption: 11.5
+        case .caption2: 10.5
+        @unknown default: 14
         }
     }
 }

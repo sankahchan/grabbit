@@ -74,6 +74,15 @@ enum NeoPalette {
     static func ink2(_ scheme: ColorScheme) -> Color { tokens.ink2(scheme) }
     static func ink3(_ scheme: ColorScheme) -> Color { tokens.ink3(scheme) }
 
+    /// Pulse's accents (lime/cyan/amber) are tuned for dark surfaces. On
+    /// light paper they read as near-white; this darkens them just enough
+    /// to keep text and chart contrast without changing the hue.
+    static func readable(_ color: Color, scheme: ColorScheme) -> Color {
+        guard scheme == .light else { return color }
+        let blended = NSColor(color).blended(withFraction: 0.38, of: .black)
+        return Color(blended ?? NSColor(color))
+    }
+
     /// Foreground for a filled background: dark ink on bright fills
     /// (yellow/green/blue/…), scheme-adaptive ink on dark fills.
     /// Without this, dark mode renders white text on bright accents

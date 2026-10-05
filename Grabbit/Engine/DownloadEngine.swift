@@ -965,7 +965,7 @@ public final class DownloadEngine {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         cancelSegmentTasks(for: id)
         try? FileManager.default.removeItem(at: resumeStore.partialFileURL(for: items[itemIndex]))
-        try? resumeStore.delete(items[itemIndex].id)
+        resumeStore.delete(items[itemIndex].id)
         for i in items[itemIndex].segments.indices {
             items[itemIndex].segments[i].receivedBytes = 0
         }
@@ -987,7 +987,7 @@ public final class DownloadEngine {
         cancelSegmentTasks(for: id)
         let item = items.remove(at: itemIndex)
         try? FileManager.default.removeItem(at: resumeStore.partialFileURL(for: item))
-        try? resumeStore.delete(item.id)
+        resumeStore.delete(item.id)
         // A manual remove during finalize must not leave a stale journal
         // that relaunch would "complete".
         finalizeJournal.delete(id)
@@ -1123,22 +1123,22 @@ public final class DownloadEngine {
 
         // All transport callbacks hop to @MainActor before touching the model.
         transport.onHTTPError = { [weak self] segmentIndex, status in
-            Task { await self?.handleHTTPError(id: id, status: status, generation: generation) }
+            Task { self?.handleHTTPError(id: id, status: status, generation: generation) }
         }
         transport.onRangeIgnored = { [weak self] in
-            Task { await self?.handleRangeIgnored(id: id, generation: generation) }
+            Task { self?.handleRangeIgnored(id: id, generation: generation) }
         }
         transport.onProgress = { [weak self] segmentIndex, absoluteReceived in
-            Task { await self?.reportProgress(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived) }
+            Task { self?.reportProgress(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived) }
         }
         transport.onComplete = { [weak self] segmentIndex, absoluteReceived in
-            Task { await self?.handleSegmentComplete(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived, generation: generation) }
+            Task { self?.handleSegmentComplete(id: id, segmentIndex: segmentIndex, absoluteReceived: absoluteReceived, generation: generation) }
         }
         transport.onError = { [weak self] segmentIndex, error in
-            Task { await self?.handleSegmentError(id: id, segmentIndex: segmentIndex, error: error, generation: generation) }
+            Task { self?.handleSegmentError(id: id, segmentIndex: segmentIndex, error: error, generation: generation) }
         }
         transport.onFirstResponseHeaders = { [weak self] headers in
-            Task { await self?.validateResumeHeaders(id: id, headers: headers, generation: generation) }
+            Task { self?.validateResumeHeaders(id: id, headers: headers, generation: generation) }
         }
 
         let partialURL = resumeStore.partialFileURL(for: item)
@@ -1328,7 +1328,7 @@ public final class DownloadEngine {
         let delay: Double = received > 0 ? 1.0 : min(30.0, pow(2.0, Double(attempts)))
         Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            await self?.retrySegment(id: id, segmentIndex: segmentIndex, generation: generation)
+            self?.retrySegment(id: id, segmentIndex: segmentIndex, generation: generation)
         }
     }
 
@@ -1652,7 +1652,7 @@ public final class DownloadEngine {
         speedSamples[item.id] = nil
         updateSleepPrevention()
         // No resume state needed for a finished download.
-        try? resumeStore.delete(item.id)
+        resumeStore.delete(item.id)
         if settings.settings.autoClearFinished {
             // The History tab keeps the permanent record — drop the row.
             remove(item.id)

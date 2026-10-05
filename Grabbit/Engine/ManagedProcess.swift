@@ -9,7 +9,9 @@ import Foundation
 /// - stderr is kept in a bounded 256 KB ring buffer for diagnostics; both
 ///   streams also offer line-based callbacks (used for yt-dlp progress).
 /// - Not thread-safe beyond `cancel()`; drive it from one task.
-public final class ManagedProcess {
+// @unchecked Sendable: callbacks fire on the serial io queue / process
+// threads, and model mutation goes through that serialization.
+public final class ManagedProcess: @unchecked Sendable {
     public struct RunResult {
         public var exitCode: Int32
         /// Last up-to-256KB of stderr, decoded lossily.

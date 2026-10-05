@@ -33,8 +33,7 @@ struct DownloadsView: View {
     /// cancel check in the drop delegates (see below).
     @State private var dragGeneration = 0
     @State private var dropExitedWithoutEnter = false
-    /// Phase-2 dashboard header: sort, filters, stats.
-    @State private var sortOrder: DownloadSortOrder = .added
+    /// Phase-2 dashboard header: filters + stats.
     @State private var stateFilter: DownloadFilter = .all
     /// Rolling total-speed samples for the stat chart (one per 10s, last 16).
     @State private var speedSamples: [Double] = []
@@ -168,7 +167,6 @@ struct DownloadsView: View {
             HStack(spacing: 8) {
                 filterRow
                 Spacer()
-                sortMenu
                 Button(NSLocalizedString("downloads.batch", comment: "")) {
                     showingBatch = true
                 }
@@ -206,66 +204,6 @@ struct DownloadsView: View {
                 }
                 .buttonStyle(.plain)
             }
-        }
-    }
-
-    private var sortMenu: some View {
-        Menu {
-            Picker(NSLocalizedString("downloads.sort.title", comment: ""), selection: $sortOrder) {
-                ForEach(DownloadSortOrder.allCases) { order in
-                    Text(order.title).tag(order)
-                }
-            }
-            .pickerStyle(.inline)
-        } label: {
-            sortGlyph
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-    }
-
-    @ViewBuilder private var sortGlyph: some View {
-        let bg = Neo.blue
-        if Neo.shape.brutalist {
-            AppIcon("arrow.up.arrow.down", size: 11)
-                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-                .frame(width: 30, height: 30)
-                .background(bg, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Neo.ink(scheme))
-                        .offset(x: 3, y: 3))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Neo.ink(scheme), lineWidth: 2)
-                        .allowsHitTesting(false))
-        } else if Neo.shape.tileButtons && scheme == .dark {
-            AppIcon("arrow.up.arrow.down", size: 11)
-                .foregroundStyle(bg)
-                .frame(width: 30, height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Neo.card(scheme).opacity(0.72)))
-                .background(
-                    bg.opacity(0.10),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(bg.opacity(0.85), lineWidth: 1.5)
-                        .allowsHitTesting(false))
-                .shadow(color: bg.opacity(0.45), radius: 7)
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        } else {
-            AppIcon("arrow.up.arrow.down", size: 11)
-                .foregroundStyle(bg)
-                .frame(width: 30, height: 30)
-                .background(bg.opacity(0.14), in: Circle())
-                .overlay(
-                    Circle()
-                        .stroke(bg.opacity(0.35), lineWidth: 1)
-                        .allowsHitTesting(false))
-                .contentShape(Circle())
         }
     }
 
@@ -377,21 +315,7 @@ struct DownloadsView: View {
     // MARK: - Dashboard data
 
     private var displayedItems: [DownloadItem] {
-        var items = engine.items.filter { stateFilter.matches($0) }
-        switch sortOrder {
-        case .added:
-            break // Engine order (queue order).
-        case .name:
-            items.sort {
-                $0.filename.localizedCaseInsensitiveCompare($1.filename)
-                    == .orderedAscending
-            }
-        case .progress:
-            items.sort { $0.progress > $1.progress }
-        case .size:
-            items.sort { ($0.totalBytes ?? 0) > ($1.totalBytes ?? 0) }
-        }
-        return items
+        engine.items.filter { stateFilter.matches($0) }
     }
 
     private var activeItems: [DownloadItem] {
@@ -499,7 +423,8 @@ struct DownloadsView: View {
         }) {
             (Neo.yellow, "downloads.live.paused")
         } else {
-            (Neo.ink3(scheme), "downloads.live.idle")
+            // ink3 is nearly invisible on light paper — idle uses ink2.
+            (Neo.ink2(scheme), "downloads.live.idle")
         }
     }
 

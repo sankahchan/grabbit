@@ -93,7 +93,8 @@ struct MiniBarChart: View {
 
     private func fill(for value: Double, peak: Double) -> Color {
         guard value > 0 else { return Neo.ink(scheme).opacity(0.07) }
-        return accent.opacity(0.50 + 0.50 * min(1, value / peak))
+        return Neo.readable(accent, scheme: scheme)
+            .opacity(0.50 + 0.50 * min(1, value / peak))
     }
 
     private func barHeight(for value: Double, peak: Double) -> CGFloat {
@@ -131,7 +132,9 @@ struct NeoStatCard: View {
                     .shadow(color: accent.opacity(0.8), radius: 3)
             }
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                DotMatrixDigits(text: value, color: accent)
+                DotMatrixDigits(
+                    text: value,
+                    color: Neo.readable(accent, scheme: scheme))
                 if let unit {
                     Text(unit)
                         .font(NeoFont.f(.caption2, .semibold))
@@ -180,23 +183,6 @@ enum DownloadFilter: String, CaseIterable, Identifiable {
     }
 }
 
-enum DownloadSortOrder: String, CaseIterable, Identifiable {
-    case added
-    case name
-    case progress
-    case size
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .added: NSLocalizedString("downloads.sort.added", comment: "")
-        case .name: NSLocalizedString("downloads.sort.name", comment: "")
-        case .progress: NSLocalizedString("downloads.sort.progress", comment: "")
-        case .size: NSLocalizedString("downloads.sort.size", comment: "")
-        }
-    }
-}
 
 // MARK: - Shared history math
 
