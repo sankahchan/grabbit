@@ -96,6 +96,10 @@ struct ThemeShape: Sendable {
     var cardEdgeGlow = false
     /// Pulse: sidebar icons sit in colored, glowing rounded tiles.
     var sidebarIconTiles = false
+    /// Aura: use the bundled Lucide line icons instead of SF Symbols.
+    var lineIcons = false
+    /// Aura/Liquid: badges are soft tinted chips instead of solid pills.
+    var softBadges = false
 
     var dotGridLight: Double = 0.14
     var dotGridDark: Double = 0.09
@@ -217,11 +221,11 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 12, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            progress: .dotted,
+            progress: .dotted, lineIcons: true, softBadges: true,
             dotGridLight: 0.06, dotGridDark: 0.045),
         backgroundGlows: [
-            AmbientGlow(color: Color(hex: 0xED4714), x: 0.06, y: -0.08, radius: 700,
-                        opacityLight: 0.13, opacityDark: 0.09),
+            AmbientGlow(color: Color(hex: 0xED4714), x: 0.06, y: -0.08, radius: 620,
+                        opacityLight: 0.10, opacityDark: 0.07),
             AmbientGlow(color: Color(hex: 0x2BA2C3), x: 0.94, y: -0.10, radius: 720,
                         opacityLight: 0.14, opacityDark: 0.10),
             AmbientGlow(color: Color(hex: 0x0EBE82), x: 0.80, y: 1.12, radius: 760,
@@ -364,7 +368,7 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 10, controlBorder: 1, controlDivider: 0,
             fieldRadius: 10, fieldBorder: 1, hairline: 1,
-            progress: .smooth,
+            progress: .smooth, softBadges: true,
             dotGridLight: 0, dotGridDark: 0),
         // The wallpaper behind the glass: pastel swirls in light, the
         // vivid blue-violet flow in dark.

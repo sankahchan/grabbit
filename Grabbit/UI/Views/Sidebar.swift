@@ -12,6 +12,22 @@ enum SidebarSelection: String, Hashable, CaseIterable {
     /// Utility buttons pinned to the sidebar bottom (macOS convention).
     static let bottomTabs: [SidebarSelection] = [.settings, .about]
 
+    /// Lucide line icon bundled in Assets (used by Aura).
+    var iconAsset: String {
+        switch self {
+        case .downloads: "IconDownloads"
+        case .linkgrabber: "IconLinkGrabber"
+        case .torrents: "IconTorrents"
+        case .media: "IconMedia"
+        case .rss: "IconRSS"
+        case .grabber: "IconGrabber"
+        case .history: "IconHistory"
+        case .scheduler: "IconScheduler"
+        case .settings: "IconSettings"
+        case .about: "IconAbout"
+        }
+    }
+
     var icon: String {
         switch self {
         case .downloads: "tray.and.arrow.down"
@@ -112,8 +128,7 @@ struct Sidebar: View {
         } label: {
             HStack(spacing: 10) {
                 if let tint = iconTileColor(for: item) {
-                    Image(systemName: item.icon)
-                        .font(.system(size: 12, weight: .semibold))
+                    ThemedIcon(asset: item.iconAsset, system: item.icon, size: 13)
                         .foregroundStyle(tint)
                         .frame(width: 26, height: 26)
                         .background(
@@ -126,7 +141,7 @@ struct Sidebar: View {
                             color: tint.opacity(isSelected ? 0.55 : 0.30),
                             radius: isSelected ? 8 : 5)
                 } else {
-                    Image(systemName: item.icon)
+                    ThemedIcon(asset: item.iconAsset, system: item.icon, size: 15)
                         .frame(width: 22)
                 }
                 Text(item.localizedTitle)

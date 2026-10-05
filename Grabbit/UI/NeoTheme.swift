@@ -197,6 +197,16 @@ struct NeoBadgeModifier: ViewModifier {
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(Neo.ink(scheme), lineWidth: 2)
                     .allowsHitTesting(false))
+        } else if Neo.shape.softBadges {
+            // Aura/Liquid: soft tinted chip with the accent as text.
+            content
+                .font(.caption2.weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(bg)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(bg.opacity(0.15))
+                .clipShape(Capsule())
         } else {
             content
                 .font(.caption2.weight(.bold))

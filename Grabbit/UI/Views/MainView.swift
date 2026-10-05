@@ -56,6 +56,9 @@ private struct WindowPaper: NSViewRepresentable {
         guard let window else { return }
         window.titlebarAppearsTransparent = true
         window.backgroundColor = color
+        // With a transparent titlebar the drag strip gets thin; letting the
+        // window move from any background area makes it easy to reposition.
+        window.isMovableByWindowBackground = true
     }
 }
 

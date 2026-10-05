@@ -11,24 +11,42 @@ struct NeoIconButtonStyle: ButtonStyle {
     var bg: Color
     @Environment(\.colorScheme) private var scheme
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
-            .frame(width: 30, height: 30)
-            .background(bg)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Neo.ink(scheme))
-                    .offset(x: 3, y: 3)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Neo.ink(scheme), lineWidth: 2)
-            )
-            .scaleEffect(configuration.isPressed ? 0.94 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        if Neo.shape.brutalist {
+            configuration.label
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .frame(width: 30, height: 30)
+                .background(bg)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Neo.ink(scheme))
+                        .offset(x: 3, y: 3)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                        .allowsHitTesting(false)
+                )
+                .scaleEffect(configuration.isPressed ? 0.94 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        } else {
+            // Modern: soft tinted circle with the action's color as glyph.
+            configuration.label
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(bg)
+                .frame(width: 30, height: 30)
+                .background(bg.opacity(0.14), in: Circle())
+                .contentShape(Circle())
+                .overlay(
+                    Circle().stroke(bg.opacity(0.35), lineWidth: 1)
+                        .allowsHitTesting(false)
+                )
+                .scaleEffect(configuration.isPressed ? 0.92 : 1)
+                .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        }
     }
 }
 
@@ -60,6 +78,18 @@ enum TaskAction: Hashable, CaseIterable {
         case .openFolder: "folder"
         case .copyLink: "link"
         case .details: "info.circle"
+        }
+    }
+
+    /// Lucide line icon bundled in Assets (used by Aura).
+    var iconAsset: String {
+        switch self {
+        case .pause: "IconPause"
+        case .resume: "IconResume"
+        case .delete: "IconDelete"
+        case .openFolder: "IconOpenFolder"
+        case .copyLink: "IconCopyLink"
+        case .details: "IconDetails"
         }
     }
 
@@ -147,7 +177,8 @@ struct TaskActionBar: View {
                 Button {
                     onAction(action)
                 } label: {
-                    Image(systemName: action.systemImage)
+                    ThemedIcon(
+                        asset: action.iconAsset, system: action.systemImage, size: 14)
                 }
                 .buttonStyle(NeoIconButtonStyle(bg: action.fill))
                 .help(action.label)
