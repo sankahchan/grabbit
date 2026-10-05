@@ -48,9 +48,27 @@ enum TorznabDiscovery {
         return nil
     }
 
-    static var prowlarrConfigURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/Prowlarr/config.xml")
+    /// The macOS .app build keeps its data under Application Support; the
+    /// core (tar.gz) build and Linux use ~/.config. Both are checked in
+    /// order.
+    static var prowlarrConfigURLs: [URL] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appendingPathComponent(
+                "Library/Application Support/Prowlarr/config.xml"),
+            home.appendingPathComponent(".config/Prowlarr/config.xml"),
+        ]
+    }
+
+    /// First candidate that exists and parses.
+    static func prowlarrConfig() -> ProwlarrConfig? {
+        for url in prowlarrConfigURLs {
+            guard let data = try? Data(contentsOf: url),
+                  let config = parseProwlarrConfig(data: data)
+            else { continue }
+            return config
+        }
+        return nil
     }
 
     // MARK: - Pure parsing (tested)
@@ -113,8 +131,19 @@ enum TorznabDiscovery {
 
     // MARK: - Discovery
 
-    static func discover(session: URLSession = .shared) async -> [Found] {
+    struct DiscoveryOutcome {
+        let found: [Found]
+        /// Servers that were reachable but contributed no indexers (e.g.
+        /// Prowlarr before anything is added) — surfaced in the UI note
+        /// instead of a misleading "nothing found".
+        let emptyServers: [String]
+    }
+
+    static func discover(
+        session: URLSession = .shared
+    ) async -> DiscoveryOutcome {
         var found: [Found] = []
+        var emptyServers: [String] = []
 
         if let config = jackettConfig(),
            await isReachable(port: config.port, session: session)
@@ -127,13 +156,13 @@ enum TorznabDiscovery {
                 source: "Jackett"))
         }
 
-        if let data = try? Data(contentsOf: prowlarrConfigURL),
-           let config = parseProwlarrConfig(data: data),
-           await isReachable(port: config.port, session: session),
-           let list = try? await fetchProwlarrIndexers(
-               port: config.port, apiKey: config.apiKey, session: session)
+        if let config = prowlarrConfig(),
+           await isReachable(port: config.port, session: session)
         {
-            for indexer in enabledTorrentIndexers(data: list) {
+            let list = try? await fetchProwlarrIndexers(
+                port: config.port, apiKey: config.apiKey, session: session)
+            let indexers = list.map(enabledTorrentIndexers(data:)) ?? []
+            for indexer in indexers {
                 found.append(Found(
                     id: "prowlarr-\(indexer.id)",
                     name: indexer.name,
@@ -142,9 +171,12 @@ enum TorznabDiscovery {
                     apiKey: config.apiKey,
                     source: "Prowlarr"))
             }
+            if indexers.isEmpty {
+                emptyServers.append("Prowlarr")
+            }
         }
 
-        return found
+        return DiscoveryOutcome(found: found, emptyServers: emptyServers)
     }
 
     private static func isReachable(

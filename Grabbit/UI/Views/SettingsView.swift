@@ -710,7 +710,8 @@ struct SettingsView: View {
         detectingIndexers = true
         discoveryNote = nil
         Task { @MainActor in
-            let found = await TorznabDiscovery.discover()
+            let outcome = await TorznabDiscovery.discover()
+            let found = outcome.found
             var added = 0
             for item in found {
                 let exists = store.settings.torznabIndexers.contains {
@@ -726,7 +727,12 @@ struct SettingsView: View {
                 added += 1
             }
             store.save()
-            if found.isEmpty {
+            if found.isEmpty, let server = outcome.emptyServers.first {
+                discoveryNote = String(
+                    format: NSLocalizedString(
+                        "settings.indexers.detect.emptyServer", comment: ""),
+                    server)
+            } else if found.isEmpty {
                 discoveryNote = NSLocalizedString(
                     "settings.indexers.detect.none", comment: "")
             } else if added == 0 {

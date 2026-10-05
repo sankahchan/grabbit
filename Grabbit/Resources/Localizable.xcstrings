@@ -8127,6 +8127,23 @@
           }
         }
       }
+    },
+    "settings.indexers.detect.emptyServer": {
+      "comment": "Note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is running but has no usable indexers yet."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ run နေပါသည်၊ သို့သော် အသုံးပြုနိုင်သော indexer မရှိသေးပါ။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
