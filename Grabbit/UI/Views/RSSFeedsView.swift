@@ -89,10 +89,6 @@ struct RSSFeedsView: View {
             AppIcon("dot.radiowaves.left.and.right", size: 44)
                 .font(NeoFont.f(52))
                 .foregroundStyle(Neo.ink(scheme))
-            Text(NSLocalizedString("rss.empty", comment: ""))
-                .font(NeoFont.f(.subheadline))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
             Button(NSLocalizedString("rss.add", comment: "")) {
                 newURL = ""
                 showingAdd = true
