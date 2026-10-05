@@ -907,7 +907,10 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                AppIcon("chevron.down", size: 14)
+                // Menus don't lay out custom image views reliably
+                // (the Lucide chevron rendered at its natural 72pt size),
+                // so the native SF chevron stays here.
+                Image(systemName: "chevron.down")
                     .font(.system(size: 11, weight: .black))
             }
             .foregroundStyle(Neo.ink(scheme))
