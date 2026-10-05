@@ -8110,6 +8110,23 @@
           }
         }
       }
+    },
+    "torrents.source.notTorrent": {
+      "comment": "Error",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The link did not serve a .torrent file."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒီ link က .torrent ဖိုင် မပေးပါ။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

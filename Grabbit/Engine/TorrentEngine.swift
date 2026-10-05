@@ -274,15 +274,26 @@ public final class TorrentEngine: TorrentEngineProtocol {
         let input = magnetOrURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { throw TorrentError.invalidInput }
         let dir = resolvedSaveDir(savePath)
-        // A .torrent file URL: fetch the bytes first, then addTorrent.
-        if input.lowercased().hasSuffix(".torrent"),
+        // Any HTTP(S) source is fetched ourselves: indexers (Jackett,
+        // trackers) commonly 302 their download links to a magnet, which
+        // aria2 rejects as a redirect target ("code 6"). The resolver
+        // captures that magnet, or returns real .torrent bytes.
+        if !MagnetParser.isMagnet(input),
            let url = URL(string: input),
            url.scheme?.lowercased().hasPrefix("http") == true
         {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            try await addTorrentFile(
-                data, savePath: dir,
-                name: Self.resolveDisplayName(magnetOrURL: input, displayName: displayName))
+            switch try await TorrentSourceResolver.resolve(url: url) {
+            case .magnet(let magnet):
+                try await add(
+                    magnetOrURL: magnet, savePath: dir,
+                    displayName: displayName, proxy: proxy)
+            case .torrentFile(let data):
+                try await addTorrentFile(
+                    data, savePath: dir,
+                    name: Self.resolveDisplayName(
+                        magnetOrURL: input, displayName: displayName),
+                    proxy: proxy)
+            }
             return
         }
         try await ensureStarted()

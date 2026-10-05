@@ -186,6 +186,16 @@ final class TorrentSearchTests: XCTestCase {
             results[1].source, "http://host/download/2.torrent")
     }
 
+    // MARK: - Torrent source resolver
+
+    func testIsTorrentBytesAcceptsBencodeRejectsHTML() {
+        let torrent = Data("d8:announce28:http://tracker.example/announce4:infod".utf8)
+        XCTAssertTrue(TorrentSourceResolver.isTorrentBytes(torrent))
+        XCTAssertFalse(TorrentSourceResolver.isTorrentBytes(
+            Data("<html><body>Login</body></html>".utf8)))
+        XCTAssertFalse(TorrentSourceResolver.isTorrentBytes(Data("d".utf8)))
+    }
+
     // MARK: - URL builders
 
     func testURLBuilders() throws {
