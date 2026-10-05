@@ -317,7 +317,7 @@ struct DownloadsView: View {
 
     private var statsStrip: some View {
         HStack(spacing: 12) {
-            DownloadsStatCard(
+            NeoStatCard(
                 label: NSLocalizedString("downloads.stats.active", comment: ""),
                 value: "\(activeCount)",
                 unit: nil,
@@ -331,7 +331,7 @@ struct DownloadsView: View {
                     slots: 14,
                     accent: Neo.blue))
 
-            DownloadsStatCard(
+            NeoStatCard(
                 label: NSLocalizedString("downloads.stats.completed", comment: ""),
                 value: "\(completedToday)",
                 unit: nil,
@@ -342,7 +342,7 @@ struct DownloadsView: View {
                     slots: 8,
                     accent: Neo.green))
 
-            DownloadsStatCard(
+            NeoStatCard(
                 label: NSLocalizedString("downloads.stats.speed", comment: ""),
                 value: speedDigits.value,
                 unit: speedDigits.unit,

@@ -106,8 +106,9 @@ struct MiniBarChart: View {
 
 /// One dashboard card: small-caps label, dot-matrix value + unit, live
 /// subtitle and the mini chart. `neoCard(accent:)` gives it the edge-lit
-/// treatment automatically on themes that use it (Pulse).
-struct DownloadsStatCard: View {
+/// treatment automatically on themes that use it (Pulse). Shared by the
+/// Downloads, Torrents and Media headers.
+struct NeoStatCard: View {
     let label: String
     let value: String
     let unit: String?
@@ -194,5 +195,82 @@ enum DownloadSortOrder: String, CaseIterable, Identifiable {
         case .progress: NSLocalizedString("downloads.sort.progress", comment: "")
         case .size: NSLocalizedString("downloads.sort.size", comment: "")
         }
+    }
+}
+
+// MARK: - Shared history math
+
+/// Small pure helpers behind the stat strips (Downloads/Torrents/Media).
+/// History is the one source all three can share.
+enum NeoStats {
+    static func completed(
+        entries: [HistoryEntry], kind: HistoryKind
+    ) -> [HistoryEntry] {
+        entries.filter { $0.kind == kind && $0.status == .completed }
+    }
+
+    static func completedTodayCount(
+        entries: [HistoryEntry], kind: HistoryKind, now: Date = Date()
+    ) -> Int {
+        let calendar = Calendar.current
+        return completed(entries: entries, kind: kind)
+            .filter { calendar.isDateInToday($0.finishedAt) }
+            .count
+    }
+
+    /// Completion counts in 3-hour buckets across today (8 bars).
+    static func completedBuckets(
+        entries: [HistoryEntry], kind: HistoryKind, now: Date = Date()
+    ) -> [Double] {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: now)
+        var buckets = [Double](repeating: 0, count: 8)
+        for entry in completed(entries: entries, kind: kind)
+        where calendar.isDateInToday(entry.finishedAt) {
+            let hours = entry.finishedAt.timeIntervalSince(dayStart) / 3600
+            buckets[min(7, max(0, Int(hours / 3)))] += 1
+        }
+        return buckets
+    }
+
+    /// Completed bytes in 3-hour buckets across today (8 bars).
+    static func byteBuckets(
+        entries: [HistoryEntry], kind: HistoryKind, now: Date = Date()
+    ) -> [Double] {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: now)
+        var buckets = [Double](repeating: 0, count: 8)
+        for entry in completed(entries: entries, kind: kind)
+        where calendar.isDateInToday(entry.finishedAt) {
+            let hours = entry.finishedAt.timeIntervalSince(dayStart) / 3600
+            buckets[min(7, max(0, Int(hours / 3)))] += Double(entry.totalBytes ?? 0)
+        }
+        return buckets
+    }
+
+    static func todayBytes(
+        entries: [HistoryEntry], kind: HistoryKind, now: Date = Date()
+    ) -> Int64 {
+        let calendar = Calendar.current
+        return completed(entries: entries, kind: kind)
+            .filter { calendar.isDateInToday($0.finishedAt) }
+            .reduce(0) { $0 + ($1.totalBytes ?? 0) }
+    }
+
+    static func lastCompletedText(
+        entries: [HistoryEntry], kind: HistoryKind
+    ) -> String {
+        let last = completed(entries: entries, kind: kind)
+            .map(\.finishedAt).max()
+        guard let last else {
+            return NSLocalizedString(
+                "downloads.stats.completed.none", comment: "")
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return String(
+            format: NSLocalizedString(
+                "downloads.stats.completed.last", comment: ""),
+            formatter.localizedString(for: last, relativeTo: Date()))
     }
 }

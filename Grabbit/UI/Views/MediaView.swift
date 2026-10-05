@@ -7,6 +7,7 @@ import AppKit
 /// independent yt-dlp updater.
 struct MediaView: View {
     @Environment(MediaEngine.self) private var media
+    @Environment(HistoryStore.self) private var historyStore: HistoryStore
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
@@ -23,6 +24,7 @@ struct MediaView: View {
                     sticker: NSLocalizedString("page.media.sticker", comment: ""),
                     title: NSLocalizedString("media.title", comment: ""),
                     accent: Neo.blue)
+                statsStrip
                 runtimeCard
                 urlCard
                 switch media.state {
@@ -46,6 +48,73 @@ struct MediaView: View {
         }
         .navigationTitle(NSLocalizedString("media.title", comment: ""))
         .onAppear(perform: refreshRuntime)
+    }
+
+    // MARK: - Stats strip
+
+    private var statsStrip: some View {
+        HStack(spacing: 12) {
+            NeoStatCard(
+                label: NSLocalizedString("media.stats.active", comment: ""),
+                value: media.state == .downloading ? "1" : "0",
+                unit: nil,
+                subtitle: media.state == .downloading
+                    ? (media.statusLine.isEmpty
+                        ? NSLocalizedString("state.downloading", comment: "")
+                        : media.statusLine)
+                    : NSLocalizedString("media.stats.active.idle", comment: ""),
+                accent: Neo.blue,
+                chart: MiniBarChart(
+                    values: media.state == .downloading ? [media.progress] : [],
+                    slots: 14,
+                    accent: Neo.blue))
+
+            NeoStatCard(
+                label: NSLocalizedString("downloads.stats.completed", comment: ""),
+                value: "\(completedToday)",
+                unit: nil,
+                subtitle: NeoStats.lastCompletedText(
+                    entries: historyStore.entries, kind: .media),
+                accent: Neo.green,
+                chart: MiniBarChart(
+                    values: NeoStats.completedBuckets(
+                        entries: historyStore.entries, kind: .media),
+                    slots: 8,
+                    accent: Neo.green))
+
+            NeoStatCard(
+                label: NSLocalizedString("media.stats.data", comment: ""),
+                value: dataDigits.value,
+                unit: dataDigits.unit,
+                subtitle: NSLocalizedString(
+                    "media.stats.data.subtitle", comment: ""),
+                accent: Neo.yellow,
+                chart: MiniBarChart(
+                    values: NeoStats.byteBuckets(
+                        entries: historyStore.entries, kind: .media),
+                    slots: 8,
+                    accent: Neo.yellow))
+        }
+    }
+
+    private var completedToday: Int {
+        NeoStats.completedTodayCount(
+            entries: historyStore.entries, kind: .media)
+    }
+
+    private var dataDigits: (value: String, unit: String) {
+        let bytes = NeoStats.todayBytes(
+            entries: historyStore.entries, kind: .media)
+        if bytes >= 1_000_000_000 {
+            return (String(format: "%.1f", Double(bytes) / 1_000_000_000), "GB")
+        }
+        if bytes >= 1_000_000 {
+            return (String(format: "%.0f", Double(bytes) / 1_000_000), "MB")
+        }
+        if bytes >= 1_000 {
+            return (String(format: "%.0f", Double(bytes) / 1_000), "KB")
+        }
+        return ("0", "KB")
     }
 
     // MARK: - Runtime status

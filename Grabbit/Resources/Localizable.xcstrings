@@ -7770,6 +7770,108 @@
           }
         }
       }
+    },
+    "torrents.stats.active": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active torrents"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်နေသော torrent"
+          }
+        }
+      }
+    },
+    "torrents.stats.upload": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↑ %@/s upload"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↑ %@/s တင်နေသည်"
+          }
+        }
+      }
+    },
+    "media.stats.active": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်နေသည်"
+          }
+        }
+      }
+    },
+    "media.stats.active.idle": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "idle"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အနားယူနေသည်"
+          }
+        }
+      }
+    },
+    "media.stats.data": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data today"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယနေ့ ဒေတာ"
+          }
+        }
+      }
+    },
+    "media.stats.data.subtitle": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "saved today"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယနေ့ သိမ်းဆည်းပြီး"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

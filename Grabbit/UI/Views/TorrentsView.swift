@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 /// and seeding limits. Driven by the aria2-next daemon via `TorrentEngine`.
 struct TorrentsView: View {
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+    @Environment(HistoryStore.self) private var historyStore: HistoryStore
     @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(\.colorScheme) private var scheme
 
@@ -14,6 +15,8 @@ struct TorrentsView: View {
     @State private var showingSearch = false
     @State private var removingItem: TorrentItem?
     @State private var detailsSubject: TaskDetailsSheet.Subject?
+    /// Rolling total-speed samples for the stat card (one per 10s, last 16).
+    @State private var speedSamples: [Double] = []
 
     var body: some View {
         VStack(spacing: 12) {
@@ -21,6 +24,7 @@ struct TorrentsView: View {
                 sticker: NSLocalizedString("page.torrents.sticker", comment: ""),
                 title: NSLocalizedString("torrents.title", comment: ""),
                 accent: Neo.purple)
+            statsStrip
             statusCard
 
             if torrentEngine.vpnHolding {
@@ -71,6 +75,16 @@ struct TorrentsView: View {
             // Lazily boot the daemon when the tab first appears.
             try? await torrentEngine.ensureStarted()
         }
+        .task {
+            // Speed history for the "Total speed" stat card.
+            while !Task.isCancelled {
+                speedSamples.append(totalDownloadSpeed)
+                if speedSamples.count > 16 {
+                    speedSamples.removeFirst(speedSamples.count - 16)
+                }
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
         .sheet(isPresented: $showingAdd) {
             TorrentAddSheet()
         }
@@ -83,6 +97,95 @@ struct TorrentsView: View {
         .sheet(item: $detailsSubject) { subject in
             TaskDetailsSheet(subject: subject)
         }
+    }
+
+    // MARK: - Stats strip
+
+    private var statsStrip: some View {
+        HStack(spacing: 12) {
+            NeoStatCard(
+                label: NSLocalizedString("torrents.stats.active", comment: ""),
+                value: "\(activeTorrents.count)",
+                unit: nil,
+                subtitle: String(
+                    format: NSLocalizedString(
+                        "downloads.stats.active.addedToday", comment: ""),
+                    addedToday),
+                accent: Neo.purple,
+                chart: MiniBarChart(
+                    values: activeTorrents.map(\.progress),
+                    slots: 14,
+                    accent: Neo.purple))
+
+            NeoStatCard(
+                label: NSLocalizedString("downloads.stats.completed", comment: ""),
+                value: "\(completedToday)",
+                unit: nil,
+                subtitle: NeoStats.lastCompletedText(
+                    entries: historyStore.entries, kind: .torrent),
+                accent: Neo.green,
+                chart: MiniBarChart(
+                    values: NeoStats.completedBuckets(
+                        entries: historyStore.entries, kind: .torrent),
+                    slots: 8,
+                    accent: Neo.green))
+
+            NeoStatCard(
+                label: NSLocalizedString("downloads.stats.speed", comment: ""),
+                value: speedDigits.value,
+                unit: speedDigits.unit,
+                subtitle: uploadSubtitle,
+                accent: Neo.yellow,
+                chart: MiniBarChart(
+                    values: speedSamples,
+                    slots: 16,
+                    accent: Neo.yellow))
+        }
+    }
+
+    private var activeTorrents: [TorrentItem] {
+        torrentEngine.torrents.filter { $0.state == .downloading }
+    }
+
+    private var addedToday: Int {
+        let calendar = Calendar.current
+        return torrentEngine.torrents.filter {
+            calendar.isDateInToday($0.addedAt)
+        }.count
+    }
+
+    private var completedToday: Int {
+        NeoStats.completedTodayCount(
+            entries: historyStore.entries, kind: .torrent)
+    }
+
+    private var totalDownloadSpeed: Double {
+        activeTorrents.reduce(0) { $0 + Double($1.downloadSpeed) }
+    }
+
+    private var totalUploadSpeed: Double {
+        torrentEngine.torrents
+            .filter { $0.state == .downloading || $0.state == .seeding }
+            .reduce(0) { $0 + Double($1.uploadSpeed) }
+    }
+
+    private var speedDigits: (value: String, unit: String) {
+        if totalDownloadSpeed >= 1_000_000 {
+            return (String(format: "%.1f", totalDownloadSpeed / 1_000_000), "MB/s")
+        }
+        if totalDownloadSpeed >= 1_000 {
+            return (String(format: "%.0f", totalDownloadSpeed / 1_000), "KB/s")
+        }
+        return ("0", "KB/s")
+    }
+
+    private var uploadSubtitle: String {
+        guard totalUploadSpeed > 0 else {
+            return NSLocalizedString("downloads.stats.speed.live", comment: "")
+        }
+        return String(
+            format: NSLocalizedString("torrents.stats.upload", comment: ""),
+            formatBytes(Int64(totalUploadSpeed)) + "/s")
     }
 
     // MARK: - Status
