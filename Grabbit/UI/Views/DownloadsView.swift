@@ -440,17 +440,7 @@ struct DownloadsView: View {
                 .font(NeoFont.f(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            HStack(spacing: 10) {
-                Button(NSLocalizedString("downloads.batch", comment: "")) {
-                    showingBatch = true
-                }
-                .neoButton(bg: Neo.blue)
-                Button(NSLocalizedString("downloads.add", comment: "")) {
-                    showingAdd = true
-                }
-                .neoButton(bg: Neo.yellow)
-            }
-            .padding(.top, 4)
+            // Batch / Add Download live in the header — no duplicates here.
         }
         .padding()
     }
