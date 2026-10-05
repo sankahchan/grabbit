@@ -12,7 +12,7 @@ struct WhatsNewView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Image(systemName: "sparkles")
+                AppIcon("sparkles", size: 20)
                     .font(.title3.weight(.bold))
                 Text(NSLocalizedString("whatsnew.title", comment: ""))
                     .font(.title2.weight(.heavy))

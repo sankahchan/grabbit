@@ -134,7 +134,7 @@ struct HistoryView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "clock.arrow.circlepath")
+            AppIcon("clock.arrow.circlepath", size: 44)
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("history.empty.title", comment: ""))
@@ -152,7 +152,7 @@ struct HistoryView: View {
     private func historyRow(for entry: HistoryEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Image(systemName: entry.kind.systemImage)
+                AppIcon(entry.kind.systemImage, size: 20)
                     .font(.title3.weight(.bold))
                     .frame(width: 28)
                 Text(entry.name)
@@ -201,7 +201,7 @@ struct HistoryView: View {
             Button {
                 FinderReveal.reveal(directory: dir, named: saveFilename(for: entry))
             } label: {
-                Image(systemName: "folder")
+                AppIcon("folder", size: 14)
             }
             .neoIconButton(bg: Neo.blue)
             .help(NSLocalizedString("task.action.openFolder", comment: ""))
@@ -212,7 +212,7 @@ struct HistoryView: View {
             Button {
                 Clipboard.copy(entry.sourceURL)
             } label: {
-                Image(systemName: "link")
+                AppIcon("link", size: 14)
             }
             .neoIconButton(bg: Neo.purple)
             .help(NSLocalizedString("task.action.copyLink", comment: ""))
@@ -223,7 +223,7 @@ struct HistoryView: View {
             Button {
                 redownload(entry)
             } label: {
-                Image(systemName: "arrow.clockwise")
+                AppIcon("arrow.clockwise", size: 14)
             }
             .neoIconButton(bg: Neo.green)
             .help(NSLocalizedString("history.redownload", comment: ""))
@@ -233,7 +233,7 @@ struct HistoryView: View {
         Button {
             history.remove(id: entry.id)
         } label: {
-            Image(systemName: "trash")
+            AppIcon("trash", size: 14)
         }
         .neoIconButton(bg: Neo.red)
         .help(NSLocalizedString("common.delete", comment: ""))

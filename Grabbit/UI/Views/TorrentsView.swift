@@ -118,7 +118,7 @@ struct TorrentsView: View {
 
     private var vpnWarningCard: some View {
         HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.shield.fill")
+            AppIcon("exclamationmark.shield.fill", size: 13)
             Text(NSLocalizedString("torrents.vpn.suspended", comment: ""))
                 .font(.subheadline.weight(.semibold))
             Spacer()
@@ -133,7 +133,7 @@ struct TorrentsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "magnet")
+            AppIcon("magnet", size: 44)
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("torrents.empty", comment: ""))
@@ -544,7 +544,7 @@ struct TorrentFilesSheet: View {
                 Button {
                     toggleExpanded(node.id)
                 } label: {
-                    Image(systemName: expanded.contains(node.id)
+                    AppIcon(expanded.contains(node.id)
                         ? "chevron.down" : "chevron.right")
                         .font(.caption)
                         .frame(width: 16)
@@ -592,7 +592,7 @@ struct TorrentFilesSheet: View {
                 selected.formUnion(indices)
             }
         } label: {
-            Image(systemName: systemName)
+            AppIcon(systemName, size: 20)
                 .foregroundStyle(state == .none ? .secondary : Neo.green)
                 .font(.title3)
         }
@@ -708,14 +708,14 @@ struct TorrentSeedingSheet: View {
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Button { decrease() } label: {
-                Image(systemName: "minus")
+                AppIcon("minus", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
             Text(value)
                 .font(.subheadline.monospacedDigit())
                 .frame(minWidth: 120)
             Button { increase() } label: {
-                Image(systemName: "plus")
+                AppIcon("plus", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
         }

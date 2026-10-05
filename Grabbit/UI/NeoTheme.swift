@@ -449,7 +449,7 @@ struct NeoToggleStyle: ToggleStyle {
                                     lineWidth: Neo.shape.brutalist ? 2.5 : 1.5)
                         )
                     if configuration.isOn {
-                        Image(systemName: "checkmark")
+                        AppIcon("checkmark", size: 12)
                             .font(.system(size: 13, weight: .black))
                             .foregroundStyle(Neo.onAccent(Neo.green, scheme: scheme))
                     }
@@ -529,7 +529,7 @@ struct NeoSegmented<Value: Hashable>: View {
         } label: {
             HStack(spacing: 4) {
                 if let icon = option.icon {
-                    Image(systemName: icon)
+                    AppIcon(icon, size: 14)
                 }
                 Text(option.title)
             }
@@ -617,7 +617,7 @@ struct NeoStepper<V: Strideable>: View {
         icon: String, disabled: Bool, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
+            AppIcon(icon, size: 11)
                 .font(.system(size: 12, weight: .black))
                 .foregroundStyle(Neo.ink(scheme))
                 .frame(width: 26, height: 26)
@@ -892,7 +892,11 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     selection = option.value
                 } label: {
                     if option.value == selection {
-                        Label(option.title, systemImage: "checkmark")
+                        Label {
+                            Text(option.title)
+                        } icon: {
+                            AppIcon("checkmark", size: 12)
+                        }
                     } else {
                         Text(option.title)
                     }
@@ -904,7 +908,7 @@ struct NeoMenuPicker<Value: Hashable>: View {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Image(systemName: "chevron.down")
+                AppIcon("chevron.down", size: 14)
                     .font(.system(size: 11, weight: .black))
             }
             .foregroundStyle(Neo.ink(scheme))

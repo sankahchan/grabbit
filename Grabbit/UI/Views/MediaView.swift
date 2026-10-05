@@ -75,8 +75,11 @@ struct MediaView: View {
                 Button {
                     Task { await checkForUpdate() }
                 } label: {
-                    Label(NSLocalizedString("media.runtime.checkUpdate", comment: ""),
-                          systemImage: "arrow.triangle.2.circlepath")
+                    Label {
+                        Text(NSLocalizedString("media.runtime.checkUpdate", comment: ""))
+                    } icon: {
+                        AppIcon("arrow.triangle.2.circlepath", size: 13)
+                    }
                 }
                 .neoButton(bg: Neo.paper(scheme))
                 .disabled(checkingUpdate)
@@ -266,7 +269,7 @@ struct MediaView: View {
     private var completedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
+                AppIcon("checkmark.circle.fill", size: 14)
                 Text(NSLocalizedString("media.completed", comment: ""))
                     .lineLimit(1)
             }
@@ -285,7 +288,11 @@ struct MediaView: View {
 
     private func errorCard(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(NSLocalizedString("media.failed", comment: ""), systemImage: "exclamationmark.triangle.fill")
+            Label {
+                Text(NSLocalizedString("media.failed", comment: ""))
+            } icon: {
+                AppIcon("exclamationmark.triangle.fill", size: 15)
+            }
                 .font(.headline.weight(.heavy))
             Text(message)
                 .font(.subheadline)

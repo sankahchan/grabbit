@@ -138,7 +138,7 @@ struct SchedulerView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "clock")
+            AppIcon("clock", size: 44)
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("scheduler.empty", comment: ""))
@@ -178,7 +178,7 @@ struct SchedulerView: View {
             Button {
                 scheduler.remove(id: entry.id)
             } label: {
-                Image(systemName: "trash")
+                AppIcon("trash", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }

@@ -244,7 +244,7 @@ struct TaskDetailsSheet: View {
             Button {
                 Clipboard.copy(link)
             } label: {
-                Image(systemName: "doc.on.doc")
+                AppIcon("doc.on.doc", size: 14)
             }
             .buttonStyle(NeoIconButtonStyle(bg: Neo.purple))
             .help(NSLocalizedString("task.action.copyLink", comment: ""))
@@ -265,7 +265,7 @@ struct TaskDetailsSheet: View {
                 Button {
                     Clipboard.copy(copy)
                 } label: {
-                    Image(systemName: "doc.on.doc")
+                    AppIcon("doc.on.doc", size: 14)
                 }
                 .buttonStyle(NeoIconButtonStyle(bg: Neo.purple))
                 .help(NSLocalizedString("task.action.copyLink", comment: ""))

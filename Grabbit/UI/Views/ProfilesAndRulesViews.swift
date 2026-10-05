@@ -58,13 +58,13 @@ struct HostProfilesSection: View {
             Button {
                 editTarget = profile
             } label: {
-                Image(systemName: "pencil")
+                AppIcon("pencil", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
             Button {
                 store.remove(id: profile.id)
             } label: {
-                Image(systemName: "trash")
+                AppIcon("trash", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }
@@ -246,13 +246,13 @@ struct PackagizerRulesSection: View {
             Button {
                 editTarget = rule
             } label: {
-                Image(systemName: "pencil")
+                AppIcon("pencil", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
             Button {
                 store.remove(id: rule.id)
             } label: {
-                Image(systemName: "trash")
+                AppIcon("trash", size: 14)
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
         }

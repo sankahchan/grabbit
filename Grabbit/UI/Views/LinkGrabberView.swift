@@ -98,7 +98,7 @@ struct LinkGrabberView: View {
 
     private var emptyState: some View {
         VStack(spacing: 10) {
-            Image(systemName: "link")
+            AppIcon("link", size: 14)
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
             Text(NSLocalizedString("linkgrabber.empty.title", comment: ""))
@@ -145,7 +145,7 @@ struct LinkGrabberView: View {
                 Button(role: .destructive) {
                     store.removePackage(package.id)
                 } label: {
-                    Image(systemName: "trash")
+                    AppIcon("trash", size: 14)
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
             }
@@ -200,7 +200,7 @@ struct LinkGrabberView: View {
             Button(role: .destructive) {
                 store.remove(ids: [link.id])
             } label: {
-                Image(systemName: "xmark")
+                AppIcon("xmark", size: 14)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -215,15 +215,15 @@ struct LinkGrabberView: View {
                 NeoSpinner(size: 14)
                     .help(NSLocalizedString("linkgrabber.status.checking", comment: ""))
             case .online:
-                Image(systemName: "checkmark.circle.fill")
+                AppIcon("checkmark.circle.fill", size: 14)
                     .foregroundStyle(Neo.green)
                     .help(NSLocalizedString("linkgrabber.status.online", comment: ""))
             case .offline:
-                Image(systemName: "xmark.circle.fill")
+                AppIcon("xmark.circle.fill", size: 14)
                     .foregroundStyle(Neo.red)
                     .help(NSLocalizedString("linkgrabber.status.offline", comment: ""))
             case .duplicate:
-                Image(systemName: "doc.badge.plus")
+                AppIcon("doc.badge.plus", size: 14)
                     .foregroundStyle(Neo.orange)
                     .help(NSLocalizedString("linkgrabber.status.duplicate", comment: ""))
             }

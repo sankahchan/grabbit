@@ -86,7 +86,7 @@ struct RSSFeedsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "dot.radiowaves.left.and.right")
+            AppIcon("dot.radiowaves.left.and.right", size: 44)
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("rss.empty", comment: ""))
@@ -127,14 +127,14 @@ struct RSSFeedsView: View {
                         checking.remove(feed.id)
                     }
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    AppIcon("arrow.clockwise", size: 14)
                 }
                 .buttonStyle(NeoIconButtonStyle(bg: Neo.paper(scheme)))
                 .help(NSLocalizedString("rss.checkNow", comment: ""))
                 Button(role: .destructive) {
                     feedToRemove = feed
                 } label: {
-                    Image(systemName: "trash")
+                    AppIcon("trash", size: 14)
                 }
                 .buttonStyle(NeoIconButtonStyle(bg: Neo.red))
             }

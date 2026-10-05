@@ -521,7 +521,7 @@ struct SettingsView: View {
                         downloadEngine.reassignQueue(from: queue.id)
                     }
                 } label: {
-                    Image(systemName: "trash")
+                    AppIcon("trash", size: 14)
                 }
                 .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
                 .accessibilityLabel(NSLocalizedString("queue.delete", comment: ""))
@@ -557,7 +557,7 @@ struct SettingsView: View {
                     Button {
                         watchFolderStore.remove(id: folder.id)
                     } label: {
-                        Image(systemName: "trash")
+                        AppIcon("trash", size: 14)
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.red, compact: true))
                     .accessibilityLabel(NSLocalizedString("common.delete", comment: ""))

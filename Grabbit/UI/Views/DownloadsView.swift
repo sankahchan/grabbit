@@ -161,7 +161,7 @@ struct DownloadsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "tray.and.arrow.down")
+            AppIcon("tray.and.arrow.down", size: 44)
                 .font(.system(size: 52))
                 .foregroundStyle(Neo.ink(scheme))
             Text(NSLocalizedString("downloads.empty.title", comment: ""))

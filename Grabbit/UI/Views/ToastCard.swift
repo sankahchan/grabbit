@@ -23,7 +23,7 @@ struct ToastCard: View {
                 Button {
                     toastCenter.dismiss(id: toast.id)
                 } label: {
-                    Image(systemName: "xmark")
+                    AppIcon("xmark", size: 12)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -58,13 +58,13 @@ struct ToastCard: View {
         Group {
             switch kind {
             case .completed:
-                Image(systemName: "checkmark.circle.fill")
+                AppIcon("checkmark.circle.fill", size: 14)
                     .foregroundStyle(Neo.green)
             case .failed:
-                Image(systemName: "xmark.circle.fill")
+                AppIcon("xmark.circle.fill", size: 14)
                     .foregroundStyle(Neo.red)
             case .info:
-                Image(systemName: "info.circle.fill")
+                AppIcon("info.circle.fill", size: 14)
                     .foregroundStyle(Neo.blue)
             }
         }

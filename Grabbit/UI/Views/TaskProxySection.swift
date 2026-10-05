@@ -15,7 +15,7 @@ struct ExpandableSection<Content: View>: View {
                 withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    AppIcon(isExpanded ? "chevron.down" : "chevron.right", size: 13)
                         .font(.subheadline.weight(.semibold))
                         .frame(width: 16)
                     Text(title)
