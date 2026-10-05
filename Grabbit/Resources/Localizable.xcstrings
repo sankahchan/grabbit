@@ -8042,6 +8042,74 @@
           }
         }
       }
+    },
+    "settings.indexers.detect": {
+      "comment": "Button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-detect"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလိုအလျောက် ရှာ"
+          }
+        }
+      }
+    },
+    "settings.indexers.detect.none": {
+      "comment": "Note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No local Jackett or Prowlarr found. Make sure it is running."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "local Jackett/Prowlarr မတွေ့ပါ။ run နေကြောင်း သေချာပါ။"
+          }
+        }
+      }
+    },
+    "settings.indexers.detect.added": {
+      "comment": "Note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added %d indexer(s)."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "indexer %d ခု ထည့်ပြီးပါပြီ။"
+          }
+        }
+      }
+    },
+    "settings.indexers.detect.already": {
+      "comment": "Note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything detected is already added."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တွေ့သမျှ ထည့်ပြီးသား ဖြစ်နေပါသည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

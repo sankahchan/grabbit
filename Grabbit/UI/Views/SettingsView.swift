@@ -19,6 +19,8 @@ struct SettingsView: View {
     /// Torznab indexer add/remove flow.
     @State private var showingIndexerSheet = false
     @State private var indexerToRemove: TorznabIndexer?
+    @State private var detectingIndexers = false
+    @State private var discoveryNote: String?
 
     var body: some View {
         @Bindable var store = store
@@ -701,11 +703,63 @@ struct SettingsView: View {
 
     // MARK: - Torznab indexers
 
+    /// Scans the default Jackett/Prowlarr config locations, probes the
+    /// servers, and folds every discovered indexer into settings (keys to
+    /// the Keychain). Existing entries are left alone.
+    private func detectIndexers() {
+        detectingIndexers = true
+        discoveryNote = nil
+        Task { @MainActor in
+            let found = await TorznabDiscovery.discover()
+            var added = 0
+            for item in found {
+                let exists = store.settings.torznabIndexers.contains {
+                    $0.urlString == item.urlString && $0.name == item.name
+                }
+                guard !exists else { continue }
+                let indexer = TorznabIndexer(
+                    name: item.name, urlString: item.urlString)
+                store.settings.torznabIndexers.append(indexer)
+                if !item.apiKey.isEmpty {
+                    TorznabVault.saveKey(item.apiKey, for: indexer.id)
+                }
+                added += 1
+            }
+            store.save()
+            if found.isEmpty {
+                discoveryNote = NSLocalizedString(
+                    "settings.indexers.detect.none", comment: "")
+            } else if added == 0 {
+                discoveryNote = NSLocalizedString(
+                    "settings.indexers.detect.already", comment: "")
+            } else {
+                discoveryNote = String(
+                    format: NSLocalizedString(
+                        "settings.indexers.detect.added", comment: ""),
+                    added)
+            }
+            detectingIndexers = false
+        }
+    }
+
     private func indexersSection(settings: Binding<AppSettings>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 8) {
                 subHeader(NSLocalizedString("settings.indexers.title", comment: ""))
                 Spacer()
+                Button {
+                    detectIndexers()
+                } label: {
+                    if detectingIndexers {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text(NSLocalizedString(
+                            "settings.indexers.detect", comment: ""))
+                    }
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.purple, compact: true))
+                .disabled(detectingIndexers)
                 Button(NSLocalizedString("settings.indexers.add", comment: "")) {
                     showingIndexerSheet = true
                 }
@@ -714,6 +768,11 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.indexers.note", comment: ""))
                 .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
+            if let discoveryNote {
+                Text(discoveryNote)
+                    .font(NeoFont.f(.caption))
+                    .foregroundStyle(Neo.green)
+            }
             let indexers = settings.wrappedValue.torznabIndexers
             if indexers.isEmpty {
                 Text(NSLocalizedString("settings.indexers.empty", comment: ""))
