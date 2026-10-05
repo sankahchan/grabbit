@@ -7,11 +7,11 @@ import SwiftUI
 struct DotMatrixDigits: View {
     let text: String
     var color: Color
-    var dot: CGFloat = 3.6
-    var spacing: CGFloat = 2.2
+    var dot: CGFloat = 2.9
+    var spacing: CGFloat = 1.7
 
     private static let glyphs: [Character: [String]] = [
-        "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+        "0": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
         "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
         "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
         "3": ["11111", "00010", "00100", "00010", "00001", "10001", "01110"],
@@ -72,7 +72,7 @@ struct MiniBarChart: View {
     var values: [Double]
     var slots: Int
     var accent: Color
-    var height: CGFloat = 30
+    var height: CGFloat = 20
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -92,7 +92,7 @@ struct MiniBarChart: View {
     }
 
     private func fill(for value: Double, peak: Double) -> Color {
-        guard value > 0 else { return Neo.ink(scheme).opacity(0.10) }
+        guard value > 0 else { return Neo.ink(scheme).opacity(0.07) }
         return accent.opacity(0.50 + 0.50 * min(1, value / peak))
     }
 
@@ -117,7 +117,7 @@ struct DownloadsStatCard: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(label.uppercased())
                     .font(.system(size: 9, weight: .bold))
@@ -126,14 +126,14 @@ struct DownloadsStatCard: View {
                 Spacer()
                 Circle()
                     .fill(accent)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 5, height: 5)
                     .shadow(color: accent.opacity(0.8), radius: 3)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
                 DotMatrixDigits(text: value, color: accent)
                 if let unit {
                     Text(unit)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(Neo.ink2(scheme))
                 }
             }
@@ -144,9 +144,9 @@ struct DownloadsStatCard: View {
             Spacer(minLength: 0)
             chart
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
-        .neoCard(accent: accent)
+        // neoCard supplies its own 14pt inset — no extra padding here.
+        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
+        .neoCard(accent: accent.opacity(0.75))
     }
 }
 

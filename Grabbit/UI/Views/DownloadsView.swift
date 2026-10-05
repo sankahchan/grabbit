@@ -32,11 +32,9 @@ struct DownloadsView: View {
     /// cancel check in the drop delegates (see below).
     @State private var dragGeneration = 0
     @State private var dropExitedWithoutEnter = false
-    /// Phase-2 dashboard header: search, sort, stats.
-    @State private var searchText = ""
+    /// Phase-2 dashboard header: sort, filters, stats.
     @State private var sortOrder: DownloadSortOrder = .added
     @State private var stateFilter: DownloadFilter = .all
-    @FocusState private var searchFocused: Bool
     /// Rolling total-speed samples for the stat chart (one per 10s, last 16).
     @State private var speedSamples: [Double] = []
 
@@ -64,13 +62,6 @@ struct DownloadsView: View {
                 searchEmptyState
                 Spacer()
             } else {
-                HStack {
-                    Spacer()
-                    Button(NSLocalizedString("downloads.batch", comment: "")) {
-                        showingBatch = true
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
-                }
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         ForEach(displayedItems) { item in
@@ -155,16 +146,9 @@ struct DownloadsView: View {
     // MARK: - Dashboard header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                searchField
-                Spacer()
-                sortMenu
-                addButton
-                avatarChip
-            }
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .bottom, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(NSLocalizedString("page.downloads.sticker", comment: ""))
                         .neoBadge(bg: Neo.yellow)
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -180,7 +164,17 @@ struct DownloadsView: View {
                 livePill
             }
             statsStrip
-            filterRow
+            HStack(spacing: 8) {
+                filterRow
+                Spacer()
+                sortMenu
+                Button(NSLocalizedString("downloads.batch", comment: "")) {
+                    showingBatch = true
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+                addButton
+                avatarChip
+            }
         }
     }
 
@@ -211,50 +205,7 @@ struct DownloadsView: View {
                 }
                 .buttonStyle(.plain)
             }
-            Spacer()
         }
-    }
-
-    private var searchField: some View {
-        HStack(spacing: 7) {
-            AppIcon("magnifyingglass", size: 13)
-                .foregroundStyle(Neo.ink2(scheme))
-            TextField(
-                NSLocalizedString("downloads.search", comment: ""),
-                text: $searchText,
-                prompt: Text(NSLocalizedString("downloads.search", comment: ""))
-            )
-            .textFieldStyle(.plain)
-            .font(.subheadline)
-            .focused($searchFocused)
-            Text("⌘K")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Neo.ink2(scheme))
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(
-                    Neo.ink2(scheme).opacity(0.10),
-                    in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            Button {
-                searchFocused = true
-            } label: {
-                Text("")
-            }
-            .keyboardShortcut("k", modifiers: .command)
-            .buttonStyle(.plain)
-            .opacity(0)
-            .frame(width: 0, height: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            Neo.paper(scheme),
-            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Neo.ink(scheme).opacity(0.12), lineWidth: 1)
-                .allowsHitTesting(false))
-        .frame(maxWidth: 320)
     }
 
     private var sortMenu: some View {
@@ -420,15 +371,6 @@ struct DownloadsView: View {
 
     private var displayedItems: [DownloadItem] {
         var items = engine.items.filter { stateFilter.matches($0) }
-        let query = searchText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-        if !query.isEmpty {
-            items = items.filter {
-                $0.filename.lowercased().contains(query)
-                    || ($0.url.host ?? "").lowercased().contains(query)
-            }
-        }
         switch sortOrder {
         case .added:
             break // Engine order (queue order).

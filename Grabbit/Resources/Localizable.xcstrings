@@ -7386,13 +7386,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No matching downloads."
+            "value": "No downloads match this filter."
           }
         },
         "my": {
           "stringUnit": {
             "state": "translated",
-            "value": "ကိုက်ညီသော download မတွေ့ပါ။"
+            "value": "ဒီ filter နဲ့ ကိုက်ညီသော download မရှိပါ။"
           }
         }
       }
