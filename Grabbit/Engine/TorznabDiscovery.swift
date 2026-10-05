@@ -24,9 +24,28 @@ enum TorznabDiscovery {
 
     // MARK: - Config locations
 
-    static var jackettConfigURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/Jackett/ServerConfig.json")
+    /// Modern Jackett (macOS .NET build) stores its config under
+    /// Application Support; older builds used ~/.config. Both are checked
+    /// in order.
+    static var jackettConfigURLs: [URL] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appendingPathComponent(
+                "Library/Application Support/Jackett/ServerConfig.json"),
+            home.appendingPathComponent(
+                ".config/Jackett/ServerConfig.json"),
+        ]
+    }
+
+    /// First candidate that exists and parses.
+    static func jackettConfig() -> JackettConfig? {
+        for url in jackettConfigURLs {
+            guard let data = try? Data(contentsOf: url),
+                  let config = parseJackettConfig(data: data)
+            else { continue }
+            return config
+        }
+        return nil
     }
 
     static var prowlarrConfigURL: URL {
@@ -97,8 +116,7 @@ enum TorznabDiscovery {
     static func discover(session: URLSession = .shared) async -> [Found] {
         var found: [Found] = []
 
-        if let data = try? Data(contentsOf: jackettConfigURL),
-           let config = parseJackettConfig(data: data),
+        if let config = jackettConfig(),
            await isReachable(port: config.port, session: session)
         {
             found.append(Found(
