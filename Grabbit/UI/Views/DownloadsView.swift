@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 /// also offers an Add button.
 struct DownloadsView: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
+    @Environment(HistoryStore.self) private var historyStore: HistoryStore
     @Environment(ToastCenter.self) private var toastCenter: ToastCenter
     @Environment(\.colorScheme) private var scheme
     @State private var showingAdd = false
@@ -31,13 +32,17 @@ struct DownloadsView: View {
     /// cancel check in the drop delegates (see below).
     @State private var dragGeneration = 0
     @State private var dropExitedWithoutEnter = false
+    /// Phase-2 dashboard header: search, sort, stats.
+    @State private var searchText = ""
+    @State private var sortOrder: DownloadSortOrder = .added
+    @State private var stateFilter: DownloadFilter = .all
+    @FocusState private var searchFocused: Bool
+    /// Rolling total-speed samples for the stat chart (one per 10s, last 16).
+    @State private var speedSamples: [Double] = []
 
     var body: some View {
         VStack(spacing: 12) {
-            NeoPageHeader(
-                sticker: NSLocalizedString("page.downloads.sticker", comment: ""),
-                title: NSLocalizedString("downloads.title", comment: ""),
-                accent: Neo.yellow)
+            header
             if engine.recoveredCount > 0 {
                 recoveryBanner
             }
@@ -54,6 +59,10 @@ struct DownloadsView: View {
                 Spacer()
                 emptyState
                 Spacer()
+            } else if displayedItems.isEmpty {
+                Spacer()
+                searchEmptyState
+                Spacer()
             } else {
                 HStack {
                     Spacer()
@@ -61,14 +70,10 @@ struct DownloadsView: View {
                         showingBatch = true
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
-                    Button(NSLocalizedString("downloads.add", comment: "")) {
-                        showingAdd = true
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
                 }
                 ScrollView {
                     LazyVStack(spacing: 16) {
-                        ForEach(engine.items) { item in
+                        ForEach(displayedItems) { item in
                             downloadCard(for: item)
                                 // Backlog #7: drag a card onto another to
                                 // reorder the queue.
@@ -134,6 +139,418 @@ struct DownloadsView: View {
         }
         .sheet(item: $detailsSubject) { subject in
             TaskDetailsSheet(subject: subject)
+        }
+        .task {
+            // Speed history for the "Total speed" stat card.
+            while !Task.isCancelled {
+                speedSamples.append(totalSpeed)
+                if speedSamples.count > 16 {
+                    speedSamples.removeFirst(speedSamples.count - 16)
+                }
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
+    }
+
+    // MARK: - Dashboard header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                searchField
+                Spacer()
+                sortMenu
+                addButton
+                avatarChip
+            }
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(NSLocalizedString("page.downloads.sticker", comment: ""))
+                        .neoBadge(bg: Neo.yellow)
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(NSLocalizedString("downloads.title", comment: ""))
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundStyle(Neo.ink(scheme))
+                        Text(summaryLine)
+                            .font(.caption)
+                            .foregroundStyle(Neo.ink2(scheme))
+                    }
+                }
+                Spacer()
+                livePill
+            }
+            statsStrip
+            filterRow
+        }
+    }
+
+    private var filterRow: some View {
+        HStack(spacing: 6) {
+            ForEach(DownloadFilter.allCases) { filter in
+                let selected = stateFilter == filter
+                Button {
+                    stateFilter = filter
+                } label: {
+                    Text(filter.title.uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundStyle(selected ? Neo.blue : Neo.ink2(scheme))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            selected ? Neo.blue.opacity(0.14) : .clear,
+                            in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    selected
+                                        ? Neo.blue.opacity(0.7)
+                                        : Neo.ink2(scheme).opacity(0.25),
+                                    lineWidth: 1)
+                                .allowsHitTesting(false))
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 7) {
+            AppIcon("magnifyingglass", size: 13)
+                .foregroundStyle(Neo.ink2(scheme))
+            TextField(
+                NSLocalizedString("downloads.search", comment: ""),
+                text: $searchText,
+                prompt: Text(NSLocalizedString("downloads.search", comment: ""))
+            )
+            .textFieldStyle(.plain)
+            .font(.subheadline)
+            .focused($searchFocused)
+            Text("⌘K")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Neo.ink2(scheme))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(
+                    Neo.ink2(scheme).opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            Button {
+                searchFocused = true
+            } label: {
+                Text("")
+            }
+            .keyboardShortcut("k", modifiers: .command)
+            .buttonStyle(.plain)
+            .opacity(0)
+            .frame(width: 0, height: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Neo.paper(scheme),
+            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Neo.ink(scheme).opacity(0.12), lineWidth: 1)
+                .allowsHitTesting(false))
+        .frame(maxWidth: 320)
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker(NSLocalizedString("downloads.sort.title", comment: ""), selection: $sortOrder) {
+                ForEach(DownloadSortOrder.allCases) { order in
+                    Text(order.title).tag(order)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            sortGlyph
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+
+    @ViewBuilder private var sortGlyph: some View {
+        let bg = Neo.blue
+        if Neo.shape.brutalist {
+            AppIcon("arrow.up.arrow.down", size: 14)
+                .foregroundStyle(Neo.onAccent(bg, scheme: scheme))
+                .frame(width: 30, height: 30)
+                .background(bg, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Neo.ink(scheme))
+                        .offset(x: 3, y: 3))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Neo.ink(scheme), lineWidth: 2)
+                        .allowsHitTesting(false))
+        } else if Neo.shape.tileButtons && scheme == .dark {
+            AppIcon("arrow.up.arrow.down", size: 14)
+                .foregroundStyle(bg)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Neo.card(scheme).opacity(0.72)))
+                .background(
+                    bg.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(bg.opacity(0.85), lineWidth: 1.5)
+                        .allowsHitTesting(false))
+                .shadow(color: bg.opacity(0.45), radius: 7)
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        } else {
+            AppIcon("arrow.up.arrow.down", size: 14)
+                .foregroundStyle(bg)
+                .frame(width: 30, height: 30)
+                .background(bg.opacity(0.14), in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(bg.opacity(0.35), lineWidth: 1)
+                        .allowsHitTesting(false))
+                .contentShape(Circle())
+        }
+    }
+
+    private var addButton: some View {
+        Button {
+            showingAdd = true
+        } label: {
+            HStack(spacing: 6) {
+                AppIcon("plus", size: 13)
+                Text(NSLocalizedString("downloads.add", comment: ""))
+            }
+        }
+        .buttonStyle(NeoButtonStyle(bg: Neo.yellow))
+    }
+
+    private var avatarChip: some View {
+        Text("G")
+            .font(.system(size: 15, weight: .black))
+            .foregroundStyle(Neo.green)
+            .frame(width: 34, height: 34)
+            .background(Neo.card(scheme), in: Circle())
+            .overlay(
+                Circle()
+                    .stroke(Neo.green.opacity(0.7), lineWidth: 1.5)
+                    .allowsHitTesting(false))
+            .help("Grabbit")
+    }
+
+    private var livePill: some View {
+        let live = liveState
+        return HStack(spacing: 5) {
+            Circle()
+                .fill(live.color)
+                .frame(width: 6, height: 6)
+                .shadow(color: live.color.opacity(0.8), radius: 3)
+            Text("LIVE")
+                .font(.system(size: 9, weight: .heavy))
+                .tracking(1.1)
+        }
+        .foregroundStyle(live.color)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(live.color.opacity(0.12), in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(live.color.opacity(0.45), lineWidth: 1)
+                .allowsHitTesting(false))
+        .help(NSLocalizedString(live.helpKey, comment: ""))
+    }
+
+    private var statsStrip: some View {
+        HStack(spacing: 12) {
+            DownloadsStatCard(
+                label: NSLocalizedString("downloads.stats.active", comment: ""),
+                value: "\(activeCount)",
+                unit: nil,
+                subtitle: String(
+                    format: NSLocalizedString(
+                        "downloads.stats.active.addedToday", comment: ""),
+                    addedToday),
+                accent: Neo.blue,
+                chart: MiniBarChart(
+                    values: activeProgress,
+                    slots: 14,
+                    accent: Neo.blue))
+
+            DownloadsStatCard(
+                label: NSLocalizedString("downloads.stats.completed", comment: ""),
+                value: "\(completedToday)",
+                unit: nil,
+                subtitle: lastCompletedText,
+                accent: Neo.green,
+                chart: MiniBarChart(
+                    values: completedBuckets,
+                    slots: 8,
+                    accent: Neo.green))
+
+            DownloadsStatCard(
+                label: NSLocalizedString("downloads.stats.speed", comment: ""),
+                value: speedDigits.value,
+                unit: speedDigits.unit,
+                subtitle: speedSubtitle,
+                accent: Neo.yellow,
+                chart: MiniBarChart(
+                    values: speedSamples,
+                    slots: 16,
+                    accent: Neo.yellow))
+        }
+    }
+
+    private var searchEmptyState: some View {
+        VStack(spacing: 10) {
+            AppIcon("magnifyingglass", size: 26)
+                .font(.system(size: 30))
+                .foregroundStyle(Neo.ink(scheme))
+            Text(NSLocalizedString("downloads.search.empty", comment: ""))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+
+    // MARK: - Dashboard data
+
+    private var displayedItems: [DownloadItem] {
+        var items = engine.items.filter { stateFilter.matches($0) }
+        let query = searchText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        if !query.isEmpty {
+            items = items.filter {
+                $0.filename.lowercased().contains(query)
+                    || ($0.url.host ?? "").lowercased().contains(query)
+            }
+        }
+        switch sortOrder {
+        case .added:
+            break // Engine order (queue order).
+        case .name:
+            items.sort {
+                $0.filename.localizedCaseInsensitiveCompare($1.filename)
+                    == .orderedAscending
+            }
+        case .progress:
+            items.sort { $0.progress > $1.progress }
+        case .size:
+            items.sort { ($0.totalBytes ?? 0) > ($1.totalBytes ?? 0) }
+        }
+        return items
+    }
+
+    private var activeItems: [DownloadItem] {
+        engine.items.filter { $0.state == .downloading }
+    }
+
+    private var activeCount: Int {
+        engine.items.filter {
+            $0.state == .downloading || $0.state == .queued
+        }.count
+    }
+
+    private var activeProgress: [Double] {
+        activeItems.map(\.progress)
+    }
+
+    private var addedToday: Int {
+        let calendar = Calendar.current
+        return engine.items.filter { calendar.isDateInToday($0.addedAt) }.count
+    }
+
+    private var completedToday: Int {
+        let calendar = Calendar.current
+        return historyStore.entries.filter {
+            $0.kind == .download && $0.status == .completed
+                && calendar.isDateInToday($0.finishedAt)
+        }.count
+    }
+
+    /// Completion counts in 3-hour buckets across today (8 bars).
+    private var completedBuckets: [Double] {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: Date())
+        var buckets = [Double](repeating: 0, count: 8)
+        for entry in historyStore.entries
+        where entry.kind == .download && entry.status == .completed
+            && calendar.isDateInToday(entry.finishedAt)
+        {
+            let hours = entry.finishedAt.timeIntervalSince(dayStart) / 3600
+            buckets[min(7, max(0, Int(hours / 3)))] += 1
+        }
+        return buckets
+    }
+
+    private var lastCompletedText: String {
+        let last = historyStore.entries
+            .filter { $0.kind == .download && $0.status == .completed }
+            .map(\.finishedAt).max()
+        guard let last else {
+            return NSLocalizedString(
+                "downloads.stats.completed.none", comment: "")
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return String(
+            format: NSLocalizedString(
+                "downloads.stats.completed.last", comment: ""),
+            formatter.localizedString(for: last, relativeTo: Date()))
+    }
+
+    private var totalSpeed: Double {
+        activeItems.reduce(0) { $0 + $1.speedBytesPerSec }
+    }
+
+    private var summaryLine: String {
+        String(
+            format: NSLocalizedString("downloads.header.summary", comment: ""),
+            activeCount,
+            formatBytes(Int64(totalSpeed)) + "/s")
+    }
+
+    private var speedDigits: (value: String, unit: String) {
+        if totalSpeed >= 1_000_000 {
+            return (String(format: "%.1f", totalSpeed / 1_000_000), "MB/s")
+        }
+        if totalSpeed >= 1_000 {
+            return (String(format: "%.0f", totalSpeed / 1_000), "KB/s")
+        }
+        return ("0", "KB/s")
+    }
+
+    private var speedSubtitle: String {
+        let samples = speedSamples.filter { $0 > 0 }
+        guard !samples.isEmpty else {
+            return NSLocalizedString("downloads.stats.speed.live", comment: "")
+        }
+        let average = samples.reduce(0, +) / Double(samples.count)
+        let delta = totalSpeed - average
+        guard delta > 1_000 else {
+            return NSLocalizedString("downloads.stats.speed.live", comment: "")
+        }
+        return String(
+            format: NSLocalizedString(
+                "downloads.stats.speed.overAverage", comment: ""),
+            formatBytes(Int64(delta)) + "/s")
+    }
+
+    private var liveState: (color: Color, helpKey: String) {
+        if activeCount > 0 {
+            (Neo.blue, "downloads.live.active")
+        } else if engine.items.contains(where: { $0.state == .failed }) {
+            (Neo.red, "downloads.live.failed")
+        } else if engine.items.contains(where: {
+            $0.state == .paused || $0.state == .queued
+        }) {
+            (Neo.yellow, "downloads.live.paused")
+        } else {
+            (Neo.ink3(scheme), "downloads.live.idle")
         }
     }
 

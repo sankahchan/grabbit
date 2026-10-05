@@ -7362,6 +7362,414 @@
           }
         }
       }
+    },
+    "downloads.search": {
+      "comment": "Search field",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search downloads…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "download ရှာပါ…"
+          }
+        }
+      }
+    },
+    "downloads.search.empty": {
+      "comment": "Empty search results",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching downloads."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကိုက်ညီသော download မတွေ့ပါ။"
+          }
+        }
+      }
+    },
+    "downloads.header.summary": {
+      "comment": "Header summary line",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d active · %2$@ total"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်နေသည် %1$d ခု · စုစုပေါင်း %2$@"
+          }
+        }
+      }
+    },
+    "downloads.stats.active": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active transfers"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်နေသော transfer"
+          }
+        }
+      }
+    },
+    "downloads.stats.active.addedToday": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%d today"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယနေ့ +%d"
+          }
+        }
+      }
+    },
+    "downloads.stats.completed": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed today"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယနေ့ ပြီးစီး"
+          }
+        }
+      }
+    },
+    "downloads.stats.completed.none": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "none yet"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မရှိသေးပါ"
+          }
+        }
+      }
+    },
+    "downloads.stats.completed.last": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "last %@"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ဆုံး %@"
+          }
+        }
+      }
+    },
+    "downloads.stats.speed": {
+      "comment": "Stat card label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total speed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စုစုပေါင်း အမြန်နှုန်း"
+          }
+        }
+      }
+    },
+    "downloads.stats.speed.live": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "live now"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အခု live"
+          }
+        }
+      }
+    },
+    "downloads.stats.speed.overAverage": {
+      "comment": "Stat card subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$@ over average"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပျမ်းမျှထက် +%1$@"
+          }
+        }
+      }
+    },
+    "downloads.sort.title": {
+      "comment": "Sort menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စီရန်"
+          }
+        }
+      }
+    },
+    "downloads.sort.added": {
+      "comment": "Sort option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date added"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်သည့်အချိန်"
+          }
+        }
+      }
+    },
+    "downloads.sort.name": {
+      "comment": "Sort option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမည်"
+          }
+        }
+      }
+    },
+    "downloads.sort.progress": {
+      "comment": "Sort option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တိုးတက်မှု"
+          }
+        }
+      }
+    },
+    "downloads.sort.size": {
+      "comment": "Sort option",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရွယ်အစား"
+          }
+        }
+      }
+    },
+    "downloads.live.active": {
+      "comment": "LIVE pill tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfers running"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer များ လုပ်ဆောင်နေသည်"
+          }
+        }
+      }
+    },
+    "downloads.live.failed": {
+      "comment": "LIVE pill tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some transfers failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer အချို့ မအောင်မြင်ပါ"
+          }
+        }
+      }
+    },
+    "downloads.live.paused": {
+      "comment": "LIVE pill tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfers paused or queued"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer များ ရပ်ထားသည် သို့မဟုတ် စောင့်နေသည်"
+          }
+        }
+      }
+    },
+    "downloads.live.idle": {
+      "comment": "LIVE pill tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active transfers"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုပ်ဆောင်နေသော transfer မရှိပါ"
+          }
+        }
+      }
+    },
+    "downloads.filter.all": {
+      "comment": "Queue filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး"
+          }
+        }
+      }
+    },
+    "downloads.filter.downloading": {
+      "comment": "Queue filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဆွဲနေသည်"
+          }
+        }
+      }
+    },
+    "downloads.filter.paused": {
+      "comment": "Queue filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရပ်ထားသည်"
+          }
+        }
+      }
+    },
+    "downloads.filter.failed": {
+      "comment": "Queue filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မအောင်မြင်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
