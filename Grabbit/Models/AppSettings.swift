@@ -75,6 +75,8 @@ public struct AppSettings: Codable {
     public var trackerSyncHours = 24.0
     /// User-added Torznab indexers for the torrent search sheet.
     public var torznabIndexers: [TorznabIndexer] = []
+    /// Start configured Jackett/Prowlarr servers with Grabbit.
+    public var autoStartIndexers = true
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -133,7 +135,7 @@ extension AppSettings {
         case defaultConnections, folders
         case vpnKillSwitchEnabled, vpnInterfaceName
         case autoUpdateTrackers, trackerSyncHours, torrentPerformanceProfile
-        case torznabIndexers
+        case torznabIndexers, autoStartIndexers
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -168,6 +170,7 @@ extension AppSettings {
         autoUpdateTrackers = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateTrackers) ?? true
         trackerSyncHours = try c.decodeIfPresent(Double.self, forKey: .trackerSyncHours) ?? 24
         torznabIndexers = try c.decodeIfPresent([TorznabIndexer].self, forKey: .torznabIndexers) ?? []
+        autoStartIndexers = try c.decodeIfPresent(Bool.self, forKey: .autoStartIndexers) ?? true
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0

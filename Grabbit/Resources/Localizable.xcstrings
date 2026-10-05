@@ -8144,6 +8144,40 @@
           }
         }
       }
+    },
+    "settings.indexers.autoStart": {
+      "comment": "Indexer auto-start",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Jackett/Prowlarr with Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ဖွင့်ရင် Jackett/Prowlarr ပါ ဖွင့်"
+          }
+        }
+      }
+    },
+    "settings.indexers.autoStart.note": {
+      "comment": "Indexer auto-start",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When Grabbit launches and a configured indexer server isn't running, it starts it in the background."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit စဖွင့်ချိန် configured server မရှိရင် background မှာ အလိုအလျောက် စတင်ပေးမည်။"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

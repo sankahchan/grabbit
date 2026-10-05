@@ -76,6 +76,7 @@ struct SettingsView: View {
                 .onChange(of: store.settings.themeStyle) { _, _ in store.save() }
                 .onChange(of: store.settings.language, onLanguageChange)
                 .onChange(of: store.settings.clipboardMonitorEnabled) { _, _ in store.save() }
+                .onChange(of: store.settings.autoStartIndexers) { _, _ in store.save() }
                 .onChange(of: store.settings.autoResumeOnLaunch) { _, _ in store.save() }
                 .onChange(of: store.settings.autoClearFinished) { _, _ in store.save() }
                 .onChange(of: store.settings.autoUpdateTrackers) { _, _ in store.save() }
@@ -772,6 +773,15 @@ struct SettingsView: View {
                 .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
             }
             Text(NSLocalizedString("settings.indexers.note", comment: ""))
+                .font(NeoFont.f(.caption))
+                .foregroundStyle(.secondary)
+            Toggle(
+                NSLocalizedString("settings.indexers.autoStart", comment: ""),
+                isOn: settings.autoStartIndexers
+            )
+            .toggleStyle(NeoToggleStyle())
+            Text(NSLocalizedString(
+                "settings.indexers.autoStart.note", comment: ""))
                 .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
             if let discoveryNote {

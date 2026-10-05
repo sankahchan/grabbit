@@ -179,8 +179,8 @@ enum TorznabDiscovery {
         return DiscoveryOutcome(found: found, emptyServers: emptyServers)
     }
 
-    private static func isReachable(
-        port: Int, session: URLSession
+    static func isReachable(
+        port: Int, session: URLSession = .shared
     ) async -> Bool {
         guard let url = URL(string: "http://localhost:\(port)/")
         else { return false }

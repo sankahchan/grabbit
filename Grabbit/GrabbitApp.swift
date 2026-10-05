@@ -63,6 +63,10 @@ struct GrabbitApp: App {
         // failures across downloads/torrents/media land in a single log.
         let sharedHistory = HistoryStore()
         _settings = State(initialValue: sharedSettings)
+        // Set-and-forget: bring up configured indexer servers that are down
+        // (Settings → Torznab indexers toggle controls this).
+        IndexerLauncher.autoStartIfNeeded(
+            enabled: sharedSettings.settings.autoStartIndexers)
         _historyStore = State(initialValue: sharedHistory)
         // Phase 5 named queues: one store shared by the engine and the UI.
         let sharedQueues = QueueStore()
