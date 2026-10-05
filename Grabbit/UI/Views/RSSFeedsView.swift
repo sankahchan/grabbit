@@ -28,8 +28,6 @@ struct RSSFeedsView: View {
             header
             if store.feeds.isEmpty {
                 Spacer()
-                emptyState
-                Spacer()
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -82,15 +80,6 @@ struct RSSFeedsView: View {
             }
             .buttonStyle(NeoButtonStyle(bg: Neo.yellow, compact: true))
         }
-    }
-
-    private var emptyState: some View {
-        // The header already carries "Add feed"; the empty state is just
-        // the placeholder glyph.
-        AppIcon("dot.radiowaves.left.and.right", size: 44)
-            .font(NeoFont.f(52))
-            .foregroundStyle(Neo.ink(scheme))
-            .padding()
     }
 
     // MARK: - Feed card
