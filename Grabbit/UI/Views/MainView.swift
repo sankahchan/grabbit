@@ -62,6 +62,40 @@ private struct WindowPaper: NSViewRepresentable {
     }
 }
 
+/// Invisible strip across the empty part of the titlebar that drags the
+/// window. Uses the native `WindowDragGesture` on macOS 15+; on macOS 14
+/// it moves the window frame manually. Placed after the leading controls
+/// (traffic lights, sidebar toggle, title) so nothing is blocked.
+private struct TitlebarDragStrip: View {
+    @State private var startOrigin: NSPoint?
+
+    var body: some View {
+        Group {
+            if #available(macOS 15.0, *) {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(WindowDragGesture())
+            } else {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 1)
+                            .onChanged { value in
+                                guard let window = MainWindowHolder.window else { return }
+                                if startOrigin == nil {
+                                    startOrigin = window.frame.origin
+                                }
+                                guard let start = startOrigin else { return }
+                                window.setFrameOrigin(NSPoint(
+                                    x: start.x + value.translation.width,
+                                    y: start.y - value.translation.height))
+                            }
+                            .onEnded { _ in startOrigin = nil })
+            }
+        }
+    }
+}
+
 /// Root view: NavigationSplitView with a chunky neo-brutalist sidebar.
 ///
 /// Add affordances live inside each tab (Downloads and Torrents each have
@@ -93,6 +127,14 @@ struct MainView: View {
             }
         }
         .navigationTitle("Grabbit")
+        // The transparent titlebar has no reliable drag area once SwiftUI
+        // content fills the window; this strip restores easy dragging.
+        .overlay(alignment: .top) {
+            TitlebarDragStrip()
+                .frame(height: 38)
+                .padding(.leading, 330)
+                .ignoresSafeArea(edges: .top)
+        }
         // The system toolbar material paints a white band over the paper in
         // light mode (and a mismatched band in dark). Tint the window toolbar
         // and the titlebar strip to the same paper as the content.

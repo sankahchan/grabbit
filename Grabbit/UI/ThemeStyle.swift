@@ -259,7 +259,7 @@ enum ThemeCatalog {
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
             progress: .segments, progressMarker: true, cardEdgeGlow: true,
-            sidebarIconTiles: true,
+            sidebarIconTiles: true, lineIcons: true,
             dotGridLight: 0, dotGridDark: 0),
         backgroundGlows: [
             AmbientGlow(color: Color(hex: 0x25E3FF), x: 0.08, y: 0.06, radius: 640,
@@ -295,7 +295,7 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            progress: .smooth,
+            progress: .smooth, lineIcons: true,
             dotGridLight: 0, dotGridDark: 0),
         backgroundGlows: [
             AmbientGlow(color: Color(hex: 0xE0A94E), x: 0.92, y: 1.08, radius: 620,
@@ -331,7 +331,7 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 999, controlBorder: 1, controlDivider: 0,
             fieldRadius: 12, fieldBorder: 1, hairline: 1,
-            progress: .segments,
+            progress: .segments, lineIcons: true,
             dotGridLight: 0, dotGridDark: 0),
         backgroundGlows: [
             AmbientGlow(color: Color(hex: 0xA8456B), x: 0.86, y: -0.10, radius: 700,
@@ -368,7 +368,7 @@ enum ThemeCatalog {
             buttonRadius: 999, buttonBorder: 0, buttonHardOffset: 0,
             controlRadius: 10, controlBorder: 1, controlDivider: 0,
             fieldRadius: 10, fieldBorder: 1, hairline: 1,
-            progress: .smooth, softBadges: true,
+            progress: .smooth, lineIcons: true, softBadges: true,
             dotGridLight: 0, dotGridDark: 0),
         // The wallpaper behind the glass: pastel swirls in light, the
         // vivid blue-violet flow in dark.
