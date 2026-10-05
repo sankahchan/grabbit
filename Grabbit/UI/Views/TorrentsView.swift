@@ -191,30 +191,38 @@ struct TorrentsView: View {
     // MARK: - Status
 
     private var statusCard: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 10, height: 10)
-            Text(torrentEngine.daemonState.localizedName)
-                .font(NeoFont.f(.subheadline, .semibold))
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 7, height: 7)
+                    .shadow(color: statusColor.opacity(0.8), radius: 3)
+                Text(torrentEngine.daemonState.localizedName)
+                    .font(NeoFont.f(.caption, .semibold))
+                    .foregroundStyle(Neo.ink(scheme))
+                Spacer()
+                switch torrentEngine.daemonState {
+                case .failed, .stopped:
+                    Button {
+                        Task { try? await torrentEngine.ensureStarted() }
+                    } label: {
+                        AppIcon("arrow.clockwise", size: 13)
+                    }
+                    .buttonStyle(NeoIconButtonStyle(bg: Neo.green))
+                    .help(NSLocalizedString("torrents.retry", comment: ""))
+                case .starting, .running, .suspendedVPN:
+                    EmptyView()
+                }
+            }
+            // Only a failure grows the strip — the reason stays visible.
             if case .failed(let message) = torrentEngine.daemonState {
                 Text(message)
-                    .font(NeoFont.f(.caption))
+                    .font(NeoFont.f(.caption2))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            Spacer()
-            switch torrentEngine.daemonState {
-            case .failed, .stopped:
-                Button(NSLocalizedString("torrents.retry", comment: "")) {
-                    Task { try? await torrentEngine.ensureStarted() }
-                }
-                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-            case .starting, .running, .suspendedVPN:
-                EmptyView()
-            }
         }
-        .neoCard(accent: statusColor)
+        .neoCard(accent: statusColor, inset: 10)
     }
 
     private var statusColor: Color {
