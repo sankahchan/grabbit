@@ -220,8 +220,6 @@ struct MainView: View {
             MediaView()
         case .rss:
             RSSFeedsView()
-        case .grabber:
-            GrabberView()
         case .history:
             HistoryView(selection: Binding(
                 get: { navigation.selection },

@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, rss, grabber, linkgrabber, scheduler, history, settings, about
+    case downloads, torrents, media, rss, linkgrabber, scheduler, history, settings, about
 
     /// Main tabs, top-to-bottom order. History is content (the record of
     /// finished work), so it lives with the work areas rather than with the
     /// app-level utilities pinned to the bottom.
     static let mainTabs: [SidebarSelection] = [
-        .downloads, .torrents, .media, .rss, .grabber, .linkgrabber, .scheduler, .history,
+        .downloads, .torrents, .media, .rss, .linkgrabber, .scheduler, .history,
     ]
     /// Utility buttons pinned to the sidebar bottom (macOS convention).
     static let bottomTabs: [SidebarSelection] = [.settings, .about]
@@ -20,7 +20,6 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .torrents: "IconMagnet"
         case .media: "IconMedia"
         case .rss: "IconRSS"
-        case .grabber: "IconGrabber"
         case .history: "IconHistory"
         case .scheduler: "IconScheduler"
         case .settings: "IconSettings"
@@ -35,7 +34,6 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .torrents: "arrow.triangle.2.circlepath" // "magnet" is not a real SF Symbol — renders blank
         case .media: "play.rectangle"
         case .rss: "dot.radiowaves.left.and.right"
-        case .grabber: "globe"
         case .history: "clock.arrow.circlepath"
         case .scheduler: "clock"
         case .settings: "gearshape"
@@ -50,7 +48,6 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .torrents: NSLocalizedString("nav.torrents", comment: "")
         case .media: NSLocalizedString("nav.media", comment: "")
         case .rss: NSLocalizedString("nav.rss", comment: "")
-        case .grabber: NSLocalizedString("nav.grabber", comment: "")
         case .history: NSLocalizedString("nav.history", comment: "")
         case .scheduler: NSLocalizedString("nav.scheduler", comment: "")
         case .settings: NSLocalizedString("nav.settings", comment: "")
@@ -214,7 +211,6 @@ struct Sidebar: View {
         case .torrents: return Neo.green
         case .media: return Neo.orange
         case .rss: return Neo.red
-        case .grabber: return Neo.ink(scheme)
         case .linkgrabber: return Neo.blue
         case .scheduler: return Neo.orange
         case .history: return Neo.ink(scheme)
@@ -254,7 +250,7 @@ struct Sidebar: View {
             n = active ? 1 : 0
         case .linkgrabber:
             n = linkGrabberStore.stagedCount
-        case .grabber, .rss, .history, .scheduler, .settings, .about:
+        case .rss, .history, .scheduler, .settings, .about:
             return nil
         }
         return n > 0 ? n : nil

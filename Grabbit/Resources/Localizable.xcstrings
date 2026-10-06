@@ -8178,6 +8178,40 @@
           }
         }
       }
+    },
+    "settings.section.grabber": {
+      "comment": "Grabber merge",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser extension"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser extension"
+          }
+        }
+      }
+    },
+    "linkgrabber.browserMedia": {
+      "comment": "Grabber merge",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser မှ media"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

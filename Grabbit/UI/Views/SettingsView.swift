@@ -21,6 +21,9 @@ struct SettingsView: View {
     @State private var indexerToRemove: TorznabIndexer?
     @State private var detectingIndexers = false
     @State private var discoveryNote: String?
+    /// Browser-extension (Grabber) setup — moved in from its old tab.
+    @State private var extensionConnected = false
+    @State private var updateState: ExtensionUpdateState = .idle
 
     var body: some View {
         @Bindable var store = store
@@ -40,6 +43,7 @@ struct SettingsView: View {
                 basicCard(settings: settings)
                 downloadsCard(settings: settings)
                 mediaCard(settings: settings)
+                grabberSection(settings: settings)
                 automationCard
                 torrentsCard(settings: settings)
             }
@@ -51,7 +55,12 @@ struct SettingsView: View {
         .onAppear {
             refreshMagnetHandler()
             syncOpenAtLogin()
+            refreshConnectionStatus()
         }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: NSApplication.didBecomeActiveNotification)
+        ) { _ in refreshConnectionStatus() }
         .modifier(SettingsChangeHandlers(
             onLanguageChange: handleLanguageChange,
             onOpenAtLogin: applyOpenAtLogin))
@@ -700,6 +709,132 @@ struct SettingsView: View {
             magnetHandlerRow()
         }
         .neoCard()
+    }
+
+    // MARK: - Browser extension (Grabber)
+
+    enum ExtensionUpdateState: Equatable {
+        case idle
+        case working
+        case updated
+        case saved(path: String)
+        case failed(String)
+    }
+
+    /// The browser can reach Grabbit iff the native-messaging manifest is
+    /// installed for a supported browser.
+    private static func hostManifestInstalled() -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let dirs = [
+            "Library/Application Support/Google/Chrome/NativeMessagingHosts",
+            "Library/Application Support/Chromium/NativeMessagingHosts",
+            "Library/Application Support/Microsoft Edge/NativeMessagingHosts",
+            "Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts",
+            "Library/Application Support/Mozilla/NativeMessagingHosts",
+        ]
+        return dirs.contains { dir in
+            FileManager.default.fileExists(atPath:
+                home.appendingPathComponent(
+                    dir + "/com.sankahchan.grabbit.json").path)
+        }
+    }
+
+    private func refreshConnectionStatus() {
+        extensionConnected = Self.hostManifestInstalled()
+    }
+
+    private func runExtensionUpdate() {
+        updateState = .working
+        Task { @MainActor in
+            do {
+                let zip = try await ExtensionUpdater.downloadLatest()
+                defer { try? FileManager.default.removeItem(at: zip) }
+                let copies = ExtensionUpdater.findUnpackedCopies()
+                if copies.isEmpty {
+                    let base = try ExtensionUpdater.saveForManualInstall(zip: zip)
+                    updateState = .saved(path: base.path)
+                } else {
+                    for copy in copies {
+                        try ExtensionUpdater.install(zip: zip, into: copy.folder)
+                    }
+                    updateState = .updated
+                }
+            } catch {
+                updateState = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatusView: some View {
+        switch updateState {
+        case .idle:
+            EmptyView()
+        case .working:
+            HStack(spacing: 8) {
+                NeoSpinner(size: 16)
+                Text(NSLocalizedString("grabber.extension.working", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+            }
+        case .updated:
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("grabber.extension.updated", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Button(NSLocalizedString("grabber.extension.openExtensions", comment: "")) {
+                    ExtensionUpdater.openExtensionsPage()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+            }
+        case .saved(let path):
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("grabber.extension.saved", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Button(NSLocalizedString("grabber.extension.openFolder", comment: "")) {
+                    NSWorkspace.shared.activateFileViewerSelecting(
+                        [URL(fileURLWithPath: path)])
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.paper(scheme), compact: true))
+            }
+        case .failed(let message):
+            Text("\(NSLocalizedString("grabber.extension.failed", comment: "")) \(message)")
+                .font(NeoFont.f(.subheadline, .semibold))
+                .foregroundStyle(Neo.red)
+        }
+    }
+
+    private func grabberSection(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(NSLocalizedString("settings.section.grabber", comment: ""))
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(extensionConnected ? Neo.green : Neo.red)
+                    .frame(width: 7, height: 7)
+                    .shadow(
+                        color: (extensionConnected ? Neo.green : Neo.red)
+                            .opacity(0.8),
+                        radius: 3)
+                Text(extensionConnected
+                     ? NSLocalizedString("grabber.status.connected", comment: "")
+                     : NSLocalizedString("grabber.status.disconnected", comment: ""))
+                    .font(NeoFont.f(.caption, .semibold))
+                Spacer()
+                Button(extensionConnected
+                       ? NSLocalizedString("grabber.updateExtension", comment: "")
+                       : NSLocalizedString("grabber.getExtension", comment: "")) {
+                    runExtensionUpdate()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+                .disabled(updateState == .working)
+            }
+            updateStatusView
+            if !extensionConnected {
+                Text(NSLocalizedString("grabber.hint", comment: ""))
+                    .font(NeoFont.f(.caption))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .neoCard(accent: Neo.pink)
     }
 
     // MARK: - Torznab indexers
