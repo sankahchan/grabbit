@@ -2,8 +2,9 @@ import Foundation
 import Observation
 
 /// Polls RSS subscriptions and hands new items to the download engines:
-/// media enclosures go to the direct engine (podcasts), page links go to
-/// yt-dlp via the media engine (video channels).
+/// torrent enclosures (bittorrent MIME, .torrent URLs, magnets) go to the
+/// torrent engine, media enclosures go to the direct engine (podcasts),
+/// page links go to yt-dlp via the media engine (video channels).
 ///
 /// The first check after a feed is added only marks the current items as
 /// seen — no back-catalogue flood. Items stay remembered (capped) so a
@@ -18,6 +19,7 @@ public final class RSSMonitor {
     private weak var settings: SettingsStore?
     private weak var downloadEngine: DownloadEngine?
     private weak var mediaEngine: MediaEngine?
+    private weak var torrentEngine: TorrentEngine?
 
     private var timer: Timer?
     private var isChecking = false
@@ -33,12 +35,14 @@ public final class RSSMonitor {
         store: RSSStore,
         settings: SettingsStore,
         downloadEngine: DownloadEngine,
-        mediaEngine: MediaEngine
+        mediaEngine: MediaEngine,
+        torrentEngine: TorrentEngine
     ) {
         self.store = store
         self.settings = settings
         self.downloadEngine = downloadEngine
         self.mediaEngine = mediaEngine
+        self.torrentEngine = torrentEngine
 
         timer?.invalidate()
         timer = Timer.scheduledTimer(
@@ -103,9 +107,25 @@ public final class RSSMonitor {
 
     // MARK: - Enqueueing
 
+    /// Torrent-ish feed items: a bittorrent MIME type (Jackett/Prowlarr
+    /// torznab feeds), a `.torrent` URL (Nyaa), or a magnet link. These go
+    /// to the torrent engine — which resolves /dl-style links that 302 to
+    /// a magnet itself.
+    nonisolated static func isTorrentItem(enclosureType: String?, url: URL) -> Bool {
+        if enclosureType?.lowercased().contains("bittorrent") == true {
+            return true
+        }
+        if url.scheme?.lowercased() == "magnet" { return true }
+        return url.path.lowercased().hasSuffix(".torrent")
+    }
+
     private func enqueue(_ item: RSSItem) {
         guard let settings, let downloadEngine else { return }
         if let enclosure = item.enclosureURL, let url = URL(string: enclosure) {
+            if Self.isTorrentItem(enclosureType: item.enclosureType, url: url) {
+                enqueueTorrent(magnetOrURL: enclosure, title: item.title)
+                return
+            }
             let category = Self.category(for: item.enclosureType, url: url)
             let directory = settings.folderURL(for: category)
             let name = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -119,7 +139,25 @@ public final class RSSMonitor {
             return
         }
         guard let link = URL(string: item.link) else { return }
+        if Self.isTorrentItem(enclosureType: nil, url: link) {
+            enqueueTorrent(magnetOrURL: item.link, title: item.title)
+            return
+        }
         enqueueMedia(url: link, title: item.title)
+    }
+
+    /// Torrent feeds add straight to the torrent queue (same destination
+    /// the manual Add Torrent sheet uses).
+    private func enqueueTorrent(magnetOrURL: String, title: String) {
+        guard let settings, let torrentEngine else { return }
+        let directory = settings.folderURL(for: .other)
+        let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task { @MainActor in
+            try? await torrentEngine.add(
+                magnetOrURL: magnetOrURL,
+                savePath: directory,
+                displayName: name.isEmpty ? nil : name)
+        }
     }
 
     private func enqueueMedia(url: URL, title: String) {

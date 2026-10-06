@@ -160,4 +160,34 @@ final class RSSFeedTests: XCTestCase {
         store.remove(id: feed.id)
         XCTAssertTrue(RSSStore(directory: dir).feeds.isEmpty)
     }
+
+    // MARK: - Torrent routing classifier
+
+    func testTorrentClassifierMatchesTorznabAndNyaaAndMagnet() {
+        // Jackett/Prowlarr torznab enclosures: no .torrent suffix, but the
+        // bittorrent MIME marks them.
+        XCTAssertTrue(RSSMonitor.isTorrentItem(
+            enclosureType: "application/x-bittorrent",
+            url: URL(string: "http://localhost:9117/dl/1337x/?path=abc&file=show.1080p")!))
+        // Nyaa-style .torrent link.
+        XCTAssertTrue(RSSMonitor.isTorrentItem(
+            enclosureType: nil,
+            url: URL(string: "https://nyaa.si/download/123.torrent")!))
+        // Magnet links.
+        XCTAssertTrue(RSSMonitor.isTorrentItem(
+            enclosureType: nil,
+            url: URL(string: "magnet:?xt=urn:btih:abc")!))
+    }
+
+    func testTorrentClassifierRejectsPodcastsAndPages() {
+        XCTAssertFalse(RSSMonitor.isTorrentItem(
+            enclosureType: "audio/mpeg",
+            url: URL(string: "https://example.com/episode-01.mp3")!))
+        XCTAssertFalse(RSSMonitor.isTorrentItem(
+            enclosureType: nil,
+            url: URL(string: "https://youtube.com/watch?v=abc")!))
+        XCTAssertFalse(RSSMonitor.isTorrentItem(
+            enclosureType: "video/mp4",
+            url: URL(string: "https://example.com/movie.torrent.mp4")!))
+    }
 }

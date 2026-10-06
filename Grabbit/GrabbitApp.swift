@@ -307,7 +307,8 @@ struct GrabbitApp: App {
                         store: rssStore,
                         settings: settings,
                         downloadEngine: downloadEngine,
-                        mediaEngine: mediaEngine)
+                        mediaEngine: mediaEngine,
+                        torrentEngine: torrentEngine)
                     // Browser-extension mode: stdin/stdout are the
                     // native-messaging channel, not a normal launch.
                     if CommandLine.arguments.contains("--native-messaging") {
