@@ -1,0 +1,44 @@
+name: Mirror to GitLab
+
+# Mirrors every branch and tag to a GitLab project. GitHub stays the
+# primary (releases/appcast live here); GitLab is a replica.
+#
+# Setup (one-time, on GitHub):
+#   - Settings → Secrets and variables → Actions
+#       secret   GITLAB_TOKEN : a GitLab token with the write_repository scope
+#       variable GITLAB_REPO  : e.g. gitlab.com/<username>/grabbit.git
+# Then run this workflow once from the Actions tab (Run workflow).
+# Without both values the job skips quietly.
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    name: Push mirror
+    runs-on: ubuntu-latest
+    if: github.repository == 'sankahchan/grabbit'
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push branches and tags to GitLab
+        env:
+          TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          REPO: ${{ vars.GITLAB_REPO }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$REPO" ]; then
+            echo "GITLAB_TOKEN secret or GITLAB_REPO variable not set — skipping mirror."
+            exit 0
+          fi
+          git remote add gitlab "https://oauth2:${TOKEN}@${REPO}"
+          git fetch --prune --tags origin "+refs/heads/*:refs/remotes/origin/*"
+          git push --prune gitlab \
+            "+refs/remotes/origin/*:refs/heads/*" \
+            "+refs/tags/*:refs/tags/*"
