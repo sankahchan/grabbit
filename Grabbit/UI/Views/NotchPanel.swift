@@ -3,20 +3,31 @@ import Observation
 import SwiftUI
 
 /// The floating "island" at the top-center of the screen (under the notch
-/// on notch Macs, under the menu bar everywhere else). Drag a link, magnet
-/// or .torrent onto it and Grabbit routes it to the right engine; while
-/// downloads run it shows a progress ring. Phase B adds the mascot states.
+/// on notch Macs, under the menu bar everywhere else).
+///
+/// Primary flow (boring.notch / nochi style): copy a link in the browser,
+/// click the pill — it expands into a small action menu with the detected
+/// link (magnet / torrent / video / direct) plus pause/resume and
+/// open-app actions. Drag & drop still works too. While downloads run the
+/// pill shows a progress ring.
 @Observable
 @MainActor
 final class NotchController {
+    struct Offer: Equatable {
+        let kind: NotchLinkKind
+        let label: String
+        let icon: String
+    }
+
     enum State: Equatable {
-        case idle
+        case idle(Offer?)
+        case menu(Offer?)
         case active(progress: Double, speedBytes: Double)
         case done(String)
         case failed(String)
     }
 
-    private(set) var state: State = .idle
+    private(set) var state: State = .idle(nil)
     /// A drag is hovering the pill — brighten the border and grow slightly.
     var isDragHover = false
 
@@ -24,6 +35,9 @@ final class NotchController {
     private var timer: Timer?
     private var wasActive = false
     private var transientExpiry: Date?
+
+    private var clipboardOffer: Offer?
+    private var lastClipboardChangeCount = 0
 
     private weak var settings: SettingsStore?
     private weak var downloadEngine: DownloadEngine?
@@ -102,8 +116,12 @@ final class NotchController {
 
     static func pillSize(for state: State, dragHover: Bool) -> NSSize {
         switch state {
-        case .idle:
-            NSSize(width: dragHover ? 190 : 170, height: dragHover ? 34 : 30)
+        case .idle(let offer):
+            NSSize(
+                width: (offer == nil ? 170 : 200) + (dragHover ? 12 : 0),
+                height: dragHover ? 34 : 30)
+        case .menu:
+            NSSize(width: 300, height: 122)
         case .active:
             NSSize(width: 340, height: 48)
         case .done, .failed:
@@ -123,6 +141,11 @@ final class NotchController {
     }
 
     private func tick() {
+        watchClipboard()
+
+        // While the menu is open, don't fight the user's interaction.
+        if case .menu = state { return }
+
         guard let downloadEngine, let torrentEngine else { return }
         let downloads = downloadEngine.items.filter { $0.state == .downloading }
         let torrents = torrentEngine.torrents.filter { $0.state == .downloading }
@@ -151,11 +174,121 @@ final class NotchController {
             transientExpiry = Date().addingTimeInterval(2.5)
             wasActive = false
         } else if let expiry = transientExpiry, Date() > expiry {
-            state = .idle
+            state = .idle(clipboardOffer)
             transientExpiry = nil
+        } else {
+            // Keep the idle badge in sync with a freshly copied link.
+            state = .idle(clipboardOffer)
         }
 
         positionPanel(animated: true)
+    }
+
+    // MARK: - Clipboard (copy in browser → click the pill)
+
+    private func watchClipboard() {
+        let pasteboard = NSPasteboard.general
+        guard pasteboard.changeCount != lastClipboardChangeCount else { return }
+        lastClipboardChangeCount = pasteboard.changeCount
+        let text = pasteboard.string(forType: .string)
+            ?? pasteboard.string(forType: .URL)
+        clipboardOffer = Self.offer(from: text)
+        if case .idle = state {
+            state = .idle(clipboardOffer)
+            positionPanel(animated: true)
+        }
+    }
+
+    static func offer(from text: String?) -> Offer? {
+        guard let text else { return nil }
+        let kind = NotchLinkClassifier.classify(droppedText: text)
+        guard kind != .invalid else { return nil }
+        switch kind {
+        case .magnet(let magnet):
+            return Offer(
+                kind: kind,
+                label: MagnetParser.displayName(for: magnet) ?? "magnet",
+                icon: "arrow.triangle.2.circlepath")
+        case .torrentURL(let url):
+            return Offer(
+                kind: kind, label: url.lastPathComponent,
+                icon: "arrow.triangle.2.circlepath")
+        case .torrentFile(let url):
+            return Offer(
+                kind: kind, label: url.lastPathComponent,
+                icon: "arrow.triangle.2.circlepath")
+        case .mediaPage(let url, _):
+            return Offer(
+                kind: kind, label: url.host ?? "media",
+                icon: "play.rectangle")
+        case .direct(let url):
+            return Offer(
+                kind: kind,
+                label: url.lastPathComponent.isEmpty
+                    ? (url.host ?? "file")
+                    : url.lastPathComponent,
+                icon: "doc.fill")
+        case .invalid:
+            return nil
+        }
+    }
+
+    // MARK: - Tap (open/close the action menu)
+
+    func handleTap() {
+        if case .menu = state {
+            collapse()
+            return
+        }
+        state = .menu(clipboardOffer)
+        positionPanel(animated: true)
+    }
+
+    func collapse() {
+        state = .idle(clipboardOffer)
+        positionPanel(animated: true)
+    }
+
+    func addFromClipboard() {
+        guard let offer = clipboardOffer else {
+            collapse()
+            return
+        }
+        // Consume: same clipboard contents won't re-offer until something
+        // new is copied.
+        lastClipboardChangeCount = NSPasteboard.general.changeCount
+        clipboardOffer = nil
+        route(offer.kind)
+        collapse()
+    }
+
+    func pauseAll() {
+        downloadEngine?.pauseAll()
+        torrentEngine?.pauseAll()
+        collapse()
+    }
+
+    func resumeAll() {
+        downloadEngine?.startAllEligible()
+        torrentEngine?.resumeAllEligible()
+        collapse()
+    }
+
+    func openApp() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.windows.first { $0.canBecomeKey }?.makeKeyAndOrderFront(nil)
+        collapse()
+    }
+
+    /// Any download running right now (for the pause/resume row label).
+    var isBusy: Bool {
+        let downloads = downloadEngine?.items.contains {
+            $0.state == .downloading
+        } ?? false
+        let torrents = torrentEngine?.torrents.contains {
+            $0.state == .downloading || $0.state == .seeding
+        } ?? false
+        return downloads || torrents
     }
 
     // MARK: - Drops
@@ -271,10 +404,10 @@ struct NotchPillView: View {
     var body: some View {
         let state = controller.state
         ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(hex: 0x101318).opacity(0.94))
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .fill(Color(hex: 0x101318).opacity(0.95))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
                         .stroke(border(for: state), lineWidth: 1.5)
                         .allowsHitTesting(false))
             content(for: state)
@@ -283,6 +416,7 @@ struct NotchPillView: View {
         .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
         .background(
             NotchDropZone(
+                onTap: { controller.handleTap() },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
                 onDragChange: { controller.setDragHover($0) })
@@ -294,18 +428,63 @@ struct NotchPillView: View {
     @ViewBuilder
     private func content(for state: NotchController.State) -> some View {
         switch state {
-        case .idle:
+        case .idle(let offer):
             HStack(spacing: 7) {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Neo.yellow)
+                    .foregroundStyle(offer == nil ? Neo.yellow : Neo.blue)
                 Text("Grabbit")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
-                Text(NSLocalizedString("notch.pill.hint", comment: ""))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.55))
+                if let offer {
+                    Image(systemName: offer.icon)
+                        .font(.system(size: 10))
+                        .foregroundStyle(Neo.blue)
+                    Text(NSLocalizedString("notch.pill.add", comment: ""))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                } else {
+                    Text(NSLocalizedString("notch.pill.click", comment: ""))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
             }
+
+        case .menu(let offer):
+            VStack(spacing: 0) {
+                if let offer {
+                    row(icon: offer.icon, color: Neo.blue, label: offer.label) {
+                        controller.addFromClipboard()
+                    }
+                    Divider().overlay(Color.white.opacity(0.10))
+                } else {
+                    Text(NSLocalizedString("notch.menu.noLink", comment: ""))
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(.vertical, 10)
+                    Divider().overlay(Color.white.opacity(0.10))
+                }
+                row(
+                    icon: controller.isBusy ? "pause.fill" : "play.fill",
+                    color: controller.isBusy ? Neo.yellow : Neo.green,
+                    label: NSLocalizedString(
+                        controller.isBusy
+                            ? "notch.menu.pauseAll"
+                            : "notch.menu.resumeAll", comment: "")) {
+                    if controller.isBusy {
+                        controller.pauseAll()
+                    } else {
+                        controller.resumeAll()
+                    }
+                }
+                Divider().overlay(Color.white.opacity(0.10))
+                row(icon: "macwindow", color: .white.opacity(0.8),
+                    label: NSLocalizedString("notch.menu.open", comment: "")) {
+                    controller.openApp()
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
 
         case .active(let progress, let speed):
             HStack(spacing: 12) {
@@ -329,7 +508,12 @@ struct NotchPillView: View {
                         .font(.system(size: 9.5, weight: .semibold))
                         .foregroundStyle(Neo.blue)
                 }
+                Spacer()
+                Image(systemName: "chevron.up.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.45))
             }
+            .padding(.horizontal, 14)
 
         case .done:
             HStack(spacing: 7) {
@@ -353,13 +537,44 @@ struct NotchPillView: View {
         }
     }
 
+    private func row(
+        icon: String,
+        color: Color,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 16)
+                Text(label)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+            }
+            .padding(.vertical, 7)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func border(for state: NotchController.State) -> Color {
         if controller.isDragHover { return Neo.yellow }
         switch state {
-        case .idle: return Neo.blue.opacity(0.55)
-        case .active: return Neo.blue
-        case .done: return Neo.green
-        case .failed: return Neo.red
+        case .idle(let offer):
+            return offer == nil ? Neo.blue.opacity(0.55) : Neo.yellow.opacity(0.9)
+        case .menu:
+            return Neo.blue
+        case .active:
+            return Neo.blue
+        case .done:
+            return Neo.green
+        case .failed:
+            return Neo.red
         }
     }
 
@@ -372,29 +587,35 @@ struct NotchPillView: View {
 
 // MARK: - Drop zone
 
-/// NSView that accepts link/magnet/text drags. Dragging a URL out of a
-/// browser delivers `.URL`/`.string`; Finder files deliver `.fileURL`.
+/// NSView that accepts link/magnet/text drags and reports clicks. Dragging
+/// a URL out of a browser delivers `.URL`/`.string`; Finder files deliver
+/// `.fileURL`.
 struct NotchDropZone: NSViewRepresentable {
+    var onTap: () -> Void
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
     var onDragChange: (Bool) -> Void
 
     func makeNSView(context: Context) -> DropCatcherView {
         let view = DropCatcherView()
-        view.onDropText = onDropText
-        view.onDropFile = onDropFile
-        view.onDragChange = onDragChange
+        sync(view)
         return view
     }
 
     func updateNSView(_ nsView: DropCatcherView, context: Context) {
-        nsView.onDropText = onDropText
-        nsView.onDropFile = onDropFile
-        nsView.onDragChange = onDragChange
+        sync(nsView)
+    }
+
+    private func sync(_ view: DropCatcherView) {
+        view.onTap = onTap
+        view.onDropText = onDropText
+        view.onDropFile = onDropFile
+        view.onDragChange = onDragChange
     }
 }
 
 final class DropCatcherView: NSView {
+    var onTap: (() -> Void)?
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
     var onDragChange: ((Bool) -> Void)?
@@ -411,6 +632,10 @@ final class DropCatcherView: NSView {
         registerForDraggedTypes([
             .fileURL, .URL, .string,
         ])
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onTap?()
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {

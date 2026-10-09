@@ -8331,6 +8331,108 @@
           }
         }
       }
+    },
+    "notch.pill.add": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to add"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နှိပ်ပြီး ထည့်"
+          }
+        }
+      }
+    },
+    "notch.pill.click": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နှိပ်ပါ"
+          }
+        }
+      }
+    },
+    "notch.menu.noLink": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy a link in your browser first"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser မှာ link ကူးပြီးမှ နှိပ်ပါ"
+          }
+        }
+      }
+    },
+    "notch.menu.pauseAll": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကုန် ရပ်"
+          }
+        }
+      }
+    },
+    "notch.menu.resumeAll": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အကုန် ပြန်စ"
+          }
+        }
+      }
+    },
+    "notch.menu.open": {
+      "comment": "Notch pill menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit ဖွင့်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
