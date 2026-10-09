@@ -30,6 +30,8 @@ final class NotchController {
     private(set) var state: State = .idle(nil)
     /// A drag is hovering the pill — brighten the border and grow slightly.
     var isDragHover = false
+    /// The mouse is over the island (boring.notch-style reveal).
+    var isHover = false
 
     private var panel: NSPanel?
     private var timer: Timer?
@@ -121,7 +123,7 @@ final class NotchController {
 
     private func positionPanel(animated: Bool) {
         guard let panel, let screen = NSScreen.screens.first else { return }
-        let size = Self.pillSize(for: state, dragHover: isDragHover)
+        let size = Self.pillSize(for: state, dragHover: isDragHover, hover: isHover)
         let menuBarHeight = NSStatusBar.system.thickness
         let origin = NSPoint(
             x: screen.frame.midX - size.width / 2,
@@ -129,18 +131,22 @@ final class NotchController {
         panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
     }
 
-    static func pillSize(for state: State, dragHover: Bool) -> NSSize {
+    static func pillSize(
+        for state: State, dragHover: Bool, hover: Bool
+    ) -> NSSize {
         switch state {
         case .idle(let offer):
-            NSSize(
-                width: (offer == nil ? 170 : 200) + (dragHover ? 12 : 0),
-                height: dragHover ? 34 : 30)
+            if offer != nil {
+                return NSSize(width: 192, height: 30)
+            }
+            return NSSize(
+                width: hover ? 150 : 116, height: 30)
         case .menu:
-            NSSize(width: 300, height: 134)
+            return NSSize(width: 300, height: 134)
         case .active:
-            NSSize(width: 340, height: 48)
+            return NSSize(width: 300, height: 46)
         case .done, .failed:
-            NSSize(width: 240, height: 34)
+            return NSSize(width: 206, height: 32)
         }
     }
 
@@ -335,6 +341,12 @@ final class NotchController {
         positionPanel(animated: true)
     }
 
+    func setHover(_ hovering: Bool) {
+        guard isHover != hovering else { return }
+        isHover = hovering
+        positionPanel(animated: true)
+    }
+
     func handleDrop(text: String) {
         isDragHover = false
         route(NotchLinkClassifier.classify(droppedText: text))
@@ -471,6 +483,7 @@ struct NotchPillView: View {
         .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
         .background(
             NotchDropZone(
+                onHover: { controller.setHover($0) },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
                 onDragChange: { controller.setDragHover($0) })
@@ -517,9 +530,6 @@ struct NotchPillView: View {
                 MochiView(
                     mood: offer == nil ? .idle : .excited,
                     size: 16)
-                Text("Grabbit")
-                    .font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(.white)
                 if let offer {
                     Image(systemName: offer.icon)
                         .font(.system(size: 10))
@@ -527,7 +537,10 @@ struct NotchPillView: View {
                     Text(NSLocalizedString("notch.pill.add", comment: ""))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                } else {
+                } else if controller.isHover {
+                    Text("Grabbit")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundStyle(.white)
                     Text(NSLocalizedString("notch.pill.click", comment: ""))
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.55))
@@ -600,9 +613,11 @@ struct NotchPillView: View {
                         .foregroundStyle(Neo.blue)
                 }
                 Spacer()
-                Image(systemName: "chevron.up.circle.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.45))
+                if controller.isHover {
+                    Image(systemName: "chevron.up.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
             }
             .padding(.horizontal, 14)
 
@@ -652,24 +667,17 @@ struct NotchPillView: View {
     }
 
     private func border(for state: NotchController.State) -> Color {
-        if controller.isDragHover { return Neo.yellow }
-        switch state {
-        case .idle(let offer):
-            return offer == nil ? Neo.blue.opacity(0.55) : Neo.yellow.opacity(0.9)
-        case .menu:
-            return Neo.blue
-        case .active:
-            return Neo.blue
-        case .done:
-            return Neo.green
-        case .failed:
-            return Neo.red
-        }
+        // The island merges into the menu bar: hairline white only. Hover
+        // and drags brighten it instead of flashing theme accents.
+        if controller.isDragHover { return .white.opacity(0.35) }
+        if controller.isHover { return .white.opacity(0.18) }
+        return .white.opacity(0.09)
     }
 
     private func size(for state: NotchController.State) -> CGSize {
         let ns = NotchController.pillSize(
-            for: state, dragHover: controller.isDragHover)
+            for: state, dragHover: controller.isDragHover,
+            hover: controller.isHover)
         return CGSize(width: ns.width, height: ns.height)
     }
 }
@@ -845,6 +853,7 @@ struct MochiView: View {
 /// a URL out of a browser delivers `.URL`/`.string`; Finder files deliver
 /// `.fileURL`.
 struct NotchDropZone: NSViewRepresentable {
+    var onHover: (Bool) -> Void
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
     var onDragChange: (Bool) -> Void
@@ -860,6 +869,7 @@ struct NotchDropZone: NSViewRepresentable {
     }
 
     private func sync(_ view: DropCatcherView) {
+        view.onHover = onHover
         view.onDropText = onDropText
         view.onDropFile = onDropFile
         view.onDragChange = onDragChange
@@ -867,6 +877,7 @@ struct NotchDropZone: NSViewRepresentable {
 }
 
 final class DropCatcherView: NSView {
+    var onHover: ((Bool) -> Void)?
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
     var onDragChange: ((Bool) -> Void)?
@@ -883,6 +894,27 @@ final class DropCatcherView: NSView {
         registerForDraggedTypes([
             .fileURL, .URL, .string,
         ])
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil)
+        addTrackingArea(area)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        onHover?(true)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        onHover?(false)
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
