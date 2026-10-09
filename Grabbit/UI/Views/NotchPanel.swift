@@ -275,9 +275,24 @@ final class NotchController {
     }
 
     func openApp() {
+        navigation?.selection = activeSection()
         NSApp.activate(ignoringOtherApps: true)
         NSApp.windows.first { $0.canBecomeKey }?.makeKeyAndOrderFront(nil)
         collapse()
+    }
+
+    /// Where the user should land: the tab that's actually doing work.
+    private func activeSection() -> SidebarSelection {
+        if torrentEngine?.torrents.contains(where: {
+            $0.state == .downloading || $0.state == .seeding
+        }) == true {
+            return .torrents
+        }
+        if let media = mediaEngine?.state,
+           media == .downloading || media == .probing {
+            return .media
+        }
+        return .downloads
     }
 
     /// Any download running right now (for the pause/resume row label).
@@ -341,8 +356,22 @@ final class NotchController {
             navigation?.selection = .media
             NSApp.activate(ignoringOtherApps: true)
             let media = mediaEngine
+            // yt-dlp is serial: if a media download is already running,
+            // just take the user there instead of starting a second one.
+            if media?.state == .downloading || media?.state == .probing {
+                return
+            }
+            let directory = settings.folderURL(for: .video)
             Task { @MainActor in
-                await media?.probe(url: url, headers: nil)
+                // downloadStream probes, picks the "Best" preset (first
+                // available as fallback) and starts immediately.
+                media?.speedLimitBytesPerSec =
+                    settings.settings.speedLimitBytesPerSec
+                await media?.downloadStream(
+                    url: url,
+                    to: directory,
+                    headers: [:],
+                    preferredName: nil)
             }
 
         case .direct(let url):
