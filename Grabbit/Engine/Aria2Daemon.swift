@@ -135,8 +135,14 @@ public final class Aria2Daemon {
                 return (rpc, m)
             }
             await Self.terminate(pid: m.pid)
+            // The manifest pid may be long gone while a foreign daemon
+            // still listens on the port — evict the real holder too.
+            await Self.killPortHolder(port: m.rpcPort)
         case .killStale(let pid):
             await Self.terminate(pid: pid)
+            if let stored {
+                await Self.killPortHolder(port: stored.rpcPort)
+            }
         case .startFresh:
             break
         }
@@ -353,6 +359,37 @@ public final class Aria2Daemon {
         Self.saveManifest(manifest)
         self.manifest = manifest
         return (rpc, manifest)
+    }
+
+    /// PIDs currently listening on a TCP port (via lsof). Used to evict a
+    /// foreign daemon that holds a port but doesn't answer to our secret —
+    /// e.g. a Debug build run from Xcode whose daemon outlived it while a
+    /// stale manifest pointed elsewhere.
+    static func listenerPIDs(port: UInt16) -> [Int32] {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        task.arguments = ["-ti", "tcp:\(port)"]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+        do {
+            try task.run()
+            task.waitUntilExit()
+        } catch {
+            return []
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(decoding: data, as: UTF8.self)
+            .split(separator: "\n")
+            .compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) }
+    }
+
+    /// Terminates whatever is actually listening on the port (never our own
+    /// process).
+    static func killPortHolder(port: UInt16) async {
+        for pid in listenerPIDs(port: port) where pid != getpid() {
+            await terminate(pid: pid)
+        }
     }
 
     /// SIGTERM, 2s grace, then SIGKILL if still alive.
