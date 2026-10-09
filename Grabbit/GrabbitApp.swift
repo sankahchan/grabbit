@@ -46,6 +46,8 @@ struct GrabbitApp: App {
     /// Sidebar selection shared with the URL-scheme handlers so incoming
     /// grabs switch to the tab that shows them.
     @State private var navigation = AppNavigation()
+    /// Floating notch/menu-bar island: drop links + live progress.
+    @State private var notchController: NotchController
 
     // @MainActor: TorrentEngine is main-actor-isolated, so it must be built here.
     @MainActor
@@ -74,6 +76,7 @@ struct GrabbitApp: App {
         _watchFolderStore = State(initialValue: WatchFolderStore())
         _linkGrabberStore = State(initialValue: LinkGrabberStore())
         _toastCenter = State(initialValue: ToastCenter())
+        _notchController = State(initialValue: NotchController())
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         // Toast cards: both engines push completion/failure cards here.
@@ -127,6 +130,17 @@ struct GrabbitApp: App {
                 sharedSettings.settings.autoUpdateEnabled
             _updater = State(initialValue: controller)
         }
+        // The notch/pill drop zone: routes drops into the right engine and
+        // shows live aggregate progress.
+        _notchController.wrappedValue.configure(
+            settings: sharedSettings,
+            downloadEngine: _downloadEngine.wrappedValue,
+            torrentEngine: _torrentEngine.wrappedValue,
+            mediaEngine: _mediaEngine.wrappedValue,
+            toastCenter: _toastCenter.wrappedValue,
+            navigation: navigation)
+        _notchController.wrappedValue.setEnabled(
+            sharedSettings.settings.notchModeEnabled)
     }
 
     /// Extension media naming: the page title when present; otherwise a
@@ -181,6 +195,7 @@ struct GrabbitApp: App {
                 .environment(rssStore)
                 .environment(rssMonitor)
                 .environment(navigation)
+                .environment(notchController)
                 .onOpenURL { url in
                     NSLog("[Grabbit] onOpenURL: %@", url.absoluteString)
                     // In tray mode the window is hidden — a link click

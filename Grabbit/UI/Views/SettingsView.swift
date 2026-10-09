@@ -105,12 +105,17 @@ struct SettingsView: View {
         @Environment(SettingsStore.self) private var store: SettingsStore
         @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
         @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
+        @Environment(NotchController.self) private var notchController: NotchController
         var onOpenAtLogin: (Bool) -> Void
 
         func body(content: Content) -> some View {
             content
                 .onChange(of: store.settings.autoClearFailed) { _, _ in store.save() }
                 .onChange(of: store.settings.autoStartIndexers) { _, _ in store.save() }
+                .onChange(of: store.settings.notchModeEnabled) { _, newValue in
+                    store.save()
+                    notchController.setEnabled(newValue)
+                }
                 .onChange(of: store.settings.defaultConnections) { _, _ in store.save() }
                 .onChange(of: store.settings.speedLimitBytesPerSec) { _, _ in
                     store.save()
@@ -271,6 +276,18 @@ struct SettingsView: View {
             .toggleStyle(NeoToggleStyle())
             runAsRow(settings: settings)
             NeoDivider()
+            NeoDivider()
+            HStack {
+                Text(NSLocalizedString("settings.notchMode", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Spacer()
+                Toggle("", isOn: settings.notchModeEnabled)
+                    .toggleStyle(NeoToggleStyle())
+                    .labelsHidden()
+            }
+            Text(NSLocalizedString("settings.notchMode.note", comment: ""))
+                .font(NeoFont.f(.caption))
+                .foregroundStyle(.secondary)
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
             .toggleStyle(NeoToggleStyle())

@@ -88,7 +88,7 @@ public enum DownloadCategory: String, Codable, CaseIterable, Sendable {
     }
 }
 
-public enum SourceSite: String, Codable {
+public enum SourceSite: String, Codable, Sendable {
     case direct
     case youtube
     case x

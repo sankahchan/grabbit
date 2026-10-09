@@ -8212,6 +8212,125 @@
           }
         }
       }
+    },
+    "settings.notchMode": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch / pill drop zone"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch / pill drop zone"
+          }
+        }
+      }
+    },
+    "settings.notchMode.note": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A floating island under the notch (or the menu bar): drop a link, magnet or .torrent to add it, with live progress."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch (သို့) menu bar အောက်မှာ floating island — link, magnet, .torrent ချပြီး ထည့်နိုင်၊ live progress ပြ။"
+          }
+        }
+      }
+    },
+    "notch.pill.hint": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop link"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "link ချပါ"
+          }
+        }
+      }
+    },
+    "notch.added": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်ပြီး"
+          }
+        }
+      }
+    },
+    "notch.done": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download complete"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download ပြီးပါပြီ"
+          }
+        }
+      }
+    },
+    "notch.failed.invalid": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not a download link"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "download link မဟုတ်ပါ"
+          }
+        }
+      }
+    },
+    "notch.failed.readFile": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the torrent file"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".torrent ဖိုင် မဖတ်နိုင်ပါ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
