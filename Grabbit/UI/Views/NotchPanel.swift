@@ -193,8 +193,15 @@ final class NotchController {
     private func tick() {
         watchClipboard()
 
-        // While the menu is open, don't fight the user's interaction.
-        if case .menu = state { return }
+        // While the menu is open, don't fight the user's interaction —
+        // but fold it back when the mouse has wandered off. Catches
+        // tracking-area exits missed while the window was morphing.
+        if case .menu = state {
+            if let panel, !panel.frame.contains(NSEvent.mouseLocation) {
+                collapse()
+            }
+            return
+        }
 
         guard let downloadEngine, let torrentEngine else { return }
         let downloads = downloadEngine.items.filter { $0.state == .downloading }
@@ -380,6 +387,12 @@ final class NotchController {
     func setHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
         isHover = hovering
+        // Leaving the island folds an open menu back into the tab — it
+        // never lingers open (boring.notch behavior).
+        if !hovering, case .menu = state {
+            collapse()
+            return
+        }
         positionPanel(animated: true)
     }
 
