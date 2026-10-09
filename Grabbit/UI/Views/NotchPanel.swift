@@ -414,9 +414,13 @@ struct NotchPillView: View {
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
         .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
+        // Clicks land on this SwiftUI layer (the backing NSView is behind
+        // it), so the tap gesture lives here — menu buttons still win over
+        // the pill-wide tap in their own areas.
+        .contentShape(Rectangle())
+        .onTapGesture { controller.handleTap() }
         .background(
             NotchDropZone(
-                onTap: { controller.handleTap() },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
                 onDragChange: { controller.setDragHover($0) })
@@ -591,7 +595,6 @@ struct NotchPillView: View {
 /// a URL out of a browser delivers `.URL`/`.string`; Finder files deliver
 /// `.fileURL`.
 struct NotchDropZone: NSViewRepresentable {
-    var onTap: () -> Void
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
     var onDragChange: (Bool) -> Void
@@ -607,7 +610,6 @@ struct NotchDropZone: NSViewRepresentable {
     }
 
     private func sync(_ view: DropCatcherView) {
-        view.onTap = onTap
         view.onDropText = onDropText
         view.onDropFile = onDropFile
         view.onDragChange = onDragChange
@@ -615,7 +617,6 @@ struct NotchDropZone: NSViewRepresentable {
 }
 
 final class DropCatcherView: NSView {
-    var onTap: (() -> Void)?
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
     var onDragChange: ((Bool) -> Void)?
@@ -632,10 +633,6 @@ final class DropCatcherView: NSView {
         registerForDraggedTypes([
             .fileURL, .URL, .string,
         ])
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        onTap?()
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
