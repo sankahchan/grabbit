@@ -39,12 +39,27 @@ final class NotchController {
     private var clipboardOffer: Offer?
     private var lastClipboardChangeCount = 0
 
-    private weak var settings: SettingsStore?
-    private weak var downloadEngine: DownloadEngine?
-    private weak var torrentEngine: TorrentEngine?
-    private weak var mediaEngine: MediaEngine?
-    private weak var toastCenter: ToastCenter?
-    private weak var navigation: AppNavigation?
+    private var settings: SettingsStore?
+    private var downloadEngine: DownloadEngine?
+    private var torrentEngine: TorrentEngine?
+    private var mediaEngine: MediaEngine?
+    private var toastCenter: ToastCenter?
+    private var navigation: AppNavigation?
+
+    /// NSLog isn't reliably captured for this app, so notch diagnostics go
+    /// to a plain file (~/Library/Logs/Grabbit-notch.log).
+    private func debugLog(_ message: String) {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/Grabbit-notch.log")
+        let line = "\(Date()) \(message)\n"
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile()
+            handle.write(Data(line.utf8))
+            try? handle.close()
+        } else {
+            try? line.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
 
     init() {}
 
@@ -237,9 +252,11 @@ final class NotchController {
 
     func handleTap() {
         if case .menu = state {
+            debugLog("handleTap: closing menu")
             collapse()
             return
         }
+        debugLog("handleTap: opening menu (offer=\(String(describing: clipboardOffer)))")
         state = .menu(clipboardOffer)
         positionPanel(animated: true)
     }
@@ -275,7 +292,9 @@ final class NotchController {
     }
 
     func openApp() {
-        navigation?.selection = activeSection()
+        let target = activeSection()
+        debugLog("openApp: target=\(target.rawValue) current=\(navigation?.selection.rawValue ?? "nil")")
+        navigation?.selection = target
         NSApp.activate(ignoringOtherApps: true)
         NSApp.windows.first { $0.canBecomeKey }?.makeKeyAndOrderFront(nil)
         collapse()
@@ -283,13 +302,15 @@ final class NotchController {
 
     /// Where the user should land: the tab that's actually doing work.
     private func activeSection() -> SidebarSelection {
-        if torrentEngine?.torrents.contains(where: {
+        let torrents = torrentEngine?.torrents.filter {
             $0.state == .downloading || $0.state == .seeding
-        }) == true {
+        }.count ?? 0
+        let media = mediaEngine?.state
+        debugLog("activeSection: torrents=\(torrents) media=\(String(describing: media))")
+        if torrents > 0 {
             return .torrents
         }
-        if let media = mediaEngine?.state,
-           media == .downloading || media == .probing {
+        if let media, media == .downloading || media == .probing {
             return .media
         }
         return .downloads
@@ -325,6 +346,7 @@ final class NotchController {
     }
 
     private func route(_ kind: NotchLinkKind) {
+        debugLog("route: \(kind)")
         guard let settings else { return }
         switch kind {
         case .magnet(let magnet):
@@ -432,22 +454,21 @@ struct NotchPillView: View {
 
     var body: some View {
         let state = controller.state
-        ZStack {
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(Color(hex: 0x101318).opacity(0.95))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(border(for: state), lineWidth: 1.5)
-                        .allowsHitTesting(false))
-            content(for: state)
+        Group {
+            if case .menu = state {
+                menuBody(state)
+            } else {
+                // The whole pill is one real button in every non-menu state
+                // — no parent tap gesture that could swallow menu rows.
+                Button {
+                    controller.handleTap()
+                } label: {
+                    capsule(for: state)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .frame(width: size(for: state).width, height: size(for: state).height)
         .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
-        // Clicks land on this SwiftUI layer (the backing NSView is behind
-        // it), so the tap gesture lives here — menu buttons still win over
-        // the pill-wide tap in their own areas.
-        .contentShape(Rectangle())
-        .onTapGesture { controller.handleTap() }
         .background(
             NotchDropZone(
                 onDropText: { controller.handleDrop(text: $0) },
@@ -456,6 +477,36 @@ struct NotchPillView: View {
         )
         .animation(.easeInOut(duration: 0.18), value: controller.state)
         .animation(.easeInOut(duration: 0.12), value: controller.isDragHover)
+    }
+
+    /// Menu: rows stay clickable (they sit on top); tapping anywhere else
+    /// collapses via the full-size clear button underneath.
+    @ViewBuilder
+    private func menuBody(_ state: NotchController.State) -> some View {
+        ZStack {
+            Button {
+                controller.collapse()
+            } label: {
+                Color.clear
+            }
+            .buttonStyle(.plain)
+            capsule(for: state)
+        }
+        .frame(width: size(for: state).width, height: size(for: state).height)
+    }
+
+    private func capsule(for state: NotchController.State) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .fill(Color(hex: 0x101318).opacity(0.95))
+                .allowsHitTesting(false)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .stroke(border(for: state), lineWidth: 1.5)
+                        .allowsHitTesting(false))
+            content(for: state)
+        }
+        .frame(width: size(for: state).width, height: size(for: state).height)
     }
 
     @ViewBuilder

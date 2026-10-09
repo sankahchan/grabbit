@@ -44,8 +44,10 @@ struct GrabbitApp: App {
     @State private var nativeMessagingHost: NativeMessagingHost?
     @State private var trayController: TrayController
     /// Sidebar selection shared with the URL-scheme handlers so incoming
-    /// grabs switch to the tab that shows them.
-    @State private var navigation = AppNavigation()
+    /// grabs switch to the tab that shows them. Created explicitly in init
+    /// (not an inline default) so every consumer — including the notch
+    /// controller — sees the very same instance.
+    @State private var navigation: AppNavigation
     /// Floating notch/menu-bar island: drop links + live progress.
     @State private var notchController: NotchController
 
@@ -77,6 +79,7 @@ struct GrabbitApp: App {
         _linkGrabberStore = State(initialValue: LinkGrabberStore())
         _toastCenter = State(initialValue: ToastCenter())
         _notchController = State(initialValue: NotchController())
+        _navigation = State(initialValue: AppNavigation())
         _downloadEngine = State(initialValue: DownloadEngine(history: sharedHistory, settings: sharedSettings, queues: sharedQueues))
         _torrentEngine = State(initialValue: TorrentEngine(settings: sharedSettings, history: sharedHistory))
         // Toast cards: both engines push completion/failure cards here.
