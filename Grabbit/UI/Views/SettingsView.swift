@@ -288,6 +288,14 @@ struct SettingsView: View {
             Text(NSLocalizedString("settings.notchMode.note", comment: ""))
                 .font(NeoFont.f(.caption))
                 .foregroundStyle(.secondary)
+            HStack {
+                Text(NSLocalizedString("settings.notchSounds", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Spacer()
+                Toggle("", isOn: settings.notchSoundsEnabled)
+                    .toggleStyle(NeoToggleStyle())
+                    .labelsHidden()
+            }
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
             .toggleStyle(NeoToggleStyle())

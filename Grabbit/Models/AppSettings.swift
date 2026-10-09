@@ -79,6 +79,8 @@ public struct AppSettings: Codable {
     public var autoStartIndexers = true
     /// Floating notch/menu-bar drop zone with live progress.
     public var notchModeEnabled = true
+    /// Cute system blips for Mochi's little animations.
+    public var notchSoundsEnabled = true
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -138,6 +140,7 @@ extension AppSettings {
         case vpnKillSwitchEnabled, vpnInterfaceName
         case autoUpdateTrackers, trackerSyncHours, torrentPerformanceProfile
         case torznabIndexers, autoStartIndexers, notchModeEnabled
+        case notchSoundsEnabled
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -174,6 +177,7 @@ extension AppSettings {
         torznabIndexers = try c.decodeIfPresent([TorznabIndexer].self, forKey: .torznabIndexers) ?? []
         autoStartIndexers = try c.decodeIfPresent(Bool.self, forKey: .autoStartIndexers) ?? true
         notchModeEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchModeEnabled) ?? true
+        notchSoundsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchSoundsEnabled) ?? true
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0

@@ -8433,6 +8433,23 @@
           }
         }
       }
+    },
+    "settings.notchSounds": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi sounds"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi အသံ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

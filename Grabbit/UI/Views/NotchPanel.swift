@@ -66,6 +66,25 @@ final class NotchController {
         }
     }
 
+    private var soundCache: [String: NSSound] = [:]
+    private var lastSoundAt: [String: Date] = [:]
+
+    /// Tiny macOS system blips for Mochi's moments. Gated by settings and
+    /// rate-limited so bursts (many completions at once) stay polite.
+    private func playSound(_ name: String) {
+        guard settings?.settings.notchSoundsEnabled != false else { return }
+        let now = Date()
+        if let last = lastSoundAt[name],
+           now.timeIntervalSince(last) < 0.4 {
+            return
+        }
+        lastSoundAt[name] = now
+        let sound = soundCache[name] ?? NSSound(named: name)
+        soundCache[name] = sound
+        sound?.stop()
+        sound?.play()
+    }
+
     init() {}
 
     func configure(
@@ -145,19 +164,18 @@ final class NotchController {
         let hasNotch = topInset > 0
         switch state {
         case .idle(let offer):
-            let tabHeight: CGFloat = hasNotch ? topInset + 30 : 32
             if offer != nil || hover || dragHover {
-                return NSSize(width: 208, height: tabHeight)
+                return NSSize(width: 224, height: topInset + 40)
             }
             // Rest: on notch Macs this is exactly the notch itself
             // (invisible); everywhere else a slim fake-notch tab.
-            return NSSize(width: 200, height: tabHeight)
+            return NSSize(width: 204, height: hasNotch ? topInset : 36)
         case .menu:
-            return NSSize(width: 320, height: topInset + 172)
+            return NSSize(width: 320, height: topInset + 182)
         case .active:
-            return NSSize(width: 320, height: topInset + 52)
+            return NSSize(width: 320, height: topInset + 56)
         case .done, .failed:
-            return NSSize(width: 240, height: topInset + 34)
+            return NSSize(width: 240, height: topInset + 40)
         }
     }
 
@@ -200,8 +218,10 @@ final class NotchController {
                 ?? torrentEngine.torrents.first { $0.state == .failed }?.name
             if let failedName {
                 state = .failed(failedName)
+                playSound("Basso")
             } else {
                 state = .done("")
+                playSound("Glass")
             }
             transientExpiry = Date().addingTimeInterval(2.5)
             wasActive = false
@@ -224,7 +244,11 @@ final class NotchController {
         lastClipboardChangeCount = pasteboard.changeCount
         let text = pasteboard.string(forType: .string)
             ?? pasteboard.string(forType: .URL)
-        clipboardOffer = Self.offer(from: text)
+        let offer = Self.offer(from: text)
+        if let offer, offer != clipboardOffer {
+            playSound("Pop")
+        }
+        clipboardOffer = offer
         if case .idle = state {
             state = .idle(clipboardOffer)
             positionPanel(animated: true)
@@ -274,6 +298,7 @@ final class NotchController {
             return
         }
         debugLog("handleTap: opening menu (offer=\(String(describing: clipboardOffer)))")
+        playSound("Tink")
         state = .menu(clipboardOffer)
         positionPanel(animated: true)
     }
@@ -371,6 +396,7 @@ final class NotchController {
     private func route(_ kind: NotchLinkKind) {
         debugLog("route: \(kind)")
         guard let settings else { return }
+        if case .invalid = kind {} else { playSound("Purr") }
         switch kind {
         case .magnet(let magnet):
             addTorrentSource(magnet)
@@ -503,6 +529,9 @@ struct NotchPillView: View {
         )
         .animation(.easeInOut(duration: 0.18), value: controller.state)
         .animation(.easeInOut(duration: 0.12), value: controller.isDragHover)
+        .animation(
+            .spring(response: 0.30, dampingFraction: 0.72),
+            value: controller.isHover)
     }
 
     /// Menu: rows stay clickable (they sit on top); tapping anywhere else
@@ -583,7 +612,7 @@ struct NotchPillView: View {
 
         case .done:
             HStack(spacing: 7) {
-                MochiView(mood: .done, size: 18)
+                MochiView(mood: .done, size: 24)
                 Text(NSLocalizedString("notch.done", comment: ""))
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
@@ -591,7 +620,7 @@ struct NotchPillView: View {
 
         case .failed(let name):
             HStack(spacing: 7) {
-                MochiView(mood: .sad, size: 18)
+                MochiView(mood: .sad, size: 24)
                 Text(name)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
@@ -606,7 +635,8 @@ struct NotchPillView: View {
         HStack(spacing: 7) {
             MochiView(
                 mood: offer == nil ? .idle : .excited,
-                size: 16)
+                size: offer == nil ? (controller.isHover ? 26 : 22) : 24,
+                lively: controller.isHover)
             if let offer {
                     Image(systemName: offer.icon)
                         .font(.system(size: 10))
@@ -630,7 +660,9 @@ struct NotchPillView: View {
         VStack(spacing: 0) {
                 HStack {
                     Spacer()
-                    MochiView(mood: offer == nil ? .idle : .excited, size: 20)
+                    MochiView(
+                        mood: offer == nil ? .idle : .excited,
+                        size: 32, lively: true)
                     Spacer()
                 }
                 .padding(.top, 4)
@@ -673,7 +705,7 @@ struct NotchPillView: View {
     @ViewBuilder
     private func activeRow(progress: Double, speed: Double) -> some View {
         HStack(spacing: 10) {
-                MochiView(mood: .working(progress), size: 24)
+                MochiView(mood: .working(progress), size: 30, lively: true)
                 ZStack {
                     Circle()
                         .stroke(.white.opacity(0.14), lineWidth: 3.5)
@@ -749,56 +781,96 @@ enum MochiMood: Equatable {
 }
 
 /// A soft cream mochi drawn with plain SwiftUI shapes — no image assets.
-/// Idle it breathes and blinks, it bounces with sparkles when a link is
-/// ready, chomps while downloads run, celebrates on completion and droops
-/// with a teardrop on failure.
+/// It is never truly still: it breathes, looks around, blinks (double
+/// blinks when it feels fancy), hops every few seconds, puffs up when the
+/// mouse comes close, bounces with sparkles when a link is ready, chomps
+/// while downloads run, celebrates on completion and droops on failure.
 struct MochiView: View {
     var mood: MochiMood = .idle
     var size: CGFloat = 18
+    /// Extra liveliness for hover moments (pops up + sparkles).
+    var lively: Bool = false
 
-    @State private var breathe = false
-    @State private var hop = false
+    @State private var pop = false
 
     private var isWorking: Bool {
         if case .working = mood { return true }
         return false
     }
 
-    private var isExcited: Bool {
-        mood == .excited || (isWorking && controllerHops)
+    private var isExcited: Bool { mood == .excited }
+    private var isIdle: Bool { mood == .idle }
+    private var sparkles: Bool {
+        isExcited || isWorking || mood == .done || lively
     }
 
-    private var controllerHops: Bool { false }
-
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.08)) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
             ZStack {
-                bodyShape
+                bodyShape(t: t)
                 face(t: t)
             }
             .frame(width: size, height: size)
+            .scaleEffect(
+                x: pop ? 1.10 : 1,
+                y: (pop ? 1.10 : 1) * breathing(t: t),
+                anchor: .bottom)
+            .offset(y: bounce(t: t))
+            .rotationEffect(.degrees(tilt(t: t)))
         }
-        .scaleEffect(
-            y: mood == .sad
-                ? 0.82
-                : (mood == .idle || mood == .done ? (breathe ? 1.06 : 0.95) : 1),
-            anchor: .bottom)
-        .offset(y: hop ? -1.6 : 1.6)
-        .rotationEffect(.degrees(isWorking ? (hop ? 4 : -4) : 0))
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
-                breathe = true
-            }
-            if isExcited || isWorking {
-                withAnimation(.easeInOut(duration: 0.30).repeatForever(autoreverses: true)) {
-                    hop = true
-                }
+        .onChange(of: lively) { _, on in
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+                pop = on
             }
         }
     }
 
-    private var bodyShape: some View {
+    // MARK: Motion
+
+    /// Slow breathing, plus a squash-and-stretch hop every ~8 seconds.
+    private func breathing(t: TimeInterval) -> CGFloat {
+        guard isIdle || mood == .done else { return 1 }
+        let breath = 1 + 0.045 * sin(t * 2 * .pi / 2.8)
+        let c = t.truncatingRemainder(dividingBy: 8)
+        if c > 7.30, c < 7.90 {
+            let p = (c - 7.30) / 0.60
+            return breath * (1 - 0.16 * sin(p * .pi))
+        }
+        return breath
+    }
+
+    /// Little hops: calm states every ~8s, excited bounces, working bobs.
+    private func bounce(t: TimeInterval) -> CGFloat {
+        if isExcited { return -2.2 * abs(sin(t * 5)) }
+        if isWorking { return -1.6 * abs(sin(t * 7)) }
+        if mood == .sad { return 1.2 }
+        guard isIdle, !lively else { return 0 }
+        let c = t.truncatingRemainder(dividingBy: 8)
+        guard c > 7.35, c < 7.85 else { return 0 }
+        let p = (c - 7.35) / 0.50
+        return -5.5 * sin(p * .pi)
+    }
+
+    private func tilt(t: TimeInterval) -> Double {
+        if isWorking { return 3.5 * sin(t * 8) }
+        if mood == .sad { return -3 }
+        return 0
+    }
+
+    private func blinking(t: TimeInterval) -> Bool {
+        let c = t.truncatingRemainder(dividingBy: 3.6)
+        return (c > 3.40 && c < 3.56) || (c > 3.62 && c < 3.74)
+    }
+
+    /// The eyes drift slowly side to side — it is watching the world.
+    private func lookAround(t: TimeInterval) -> CGFloat {
+        size * 0.07 * sin(t * 2 * .pi / 5.4)
+    }
+
+    // MARK: Body
+
+    private func bodyShape(t: TimeInterval) -> some View {
         Ellipse()
             .fill(
                 LinearGradient(
@@ -818,12 +890,13 @@ struct MochiView: View {
                 .offset(y: size * 0.04)
                 .allowsHitTesting(false))
             .overlay(alignment: .topTrailing) {
-                if isExcited || isWorking || mood == .done {
+                if sparkles {
                     Image(systemName: "sparkle")
-                        .font(.system(size: size * 0.22, weight: .bold))
+                        .font(.system(size: size * 0.24, weight: .bold))
                         .foregroundStyle(Neo.yellow)
-                        .offset(x: size * 0.22, y: -size * 0.18)
-                        .opacity(0.5 + 0.5 * abs(sin(timestamp)))
+                        .offset(x: size * 0.24, y: -size * 0.18)
+                        .opacity(0.45 + 0.55 * abs(sin(t * 3)))
+                        .scaleEffect(lively ? 1.2 : 1)
                         .allowsHitTesting(false)
                 }
                 if mood == .sad {
@@ -834,31 +907,40 @@ struct MochiView: View {
                         .allowsHitTesting(false)
                 }
             }
+            .overlay(alignment: .bottomLeading) {
+                if isExcited || mood == .done || lively {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: size * 0.17, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .offset(x: -size * 0.20, y: size * 0.20)
+                        .opacity(0.35 + 0.65 * abs(cos(t * 2.6)))
+                        .allowsHitTesting(false)
+                }
+            }
     }
 
-    private var timestamp: Double {
-        Date().timeIntervalSinceReferenceDate
-    }
+    // MARK: Face
 
     private func face(t: TimeInterval) -> some View {
         VStack(spacing: size * 0.13) {
             HStack(spacing: size * 0.16) {
-                eye(blinking: mood == .idle
-                    && t.truncatingRemainder(dividingBy: 3.4) > 3.25)
-                eye(blinking: mood == .idle
-                    && t.truncatingRemainder(dividingBy: 3.4) > 3.25)
+                eye(t: t)
+                eye(t: t)
             }
             mouth(t: t)
         }
         .offset(y: -size * 0.06)
     }
 
-    private func eye(blinking: Bool) -> some View {
+    private func eye(t: TimeInterval) -> some View {
         Capsule()
             .fill(Color(hex: 0x2B2320))
             .frame(
-                width: size * 0.075,
-                height: size * (blinking ? 0.02 : (isExcited || isWorking ? 0.16 : 0.11)))
+                width: size * 0.085,
+                height: size * (blinking(t: t)
+                    ? 0.02
+                    : (isExcited || isWorking ? 0.17 : 0.12)))
+            .offset(x: isIdle && !lively ? lookAround(t: t) : 0)
     }
 
     @ViewBuilder
