@@ -136,7 +136,7 @@ final class NotchController {
                 width: (offer == nil ? 170 : 200) + (dragHover ? 12 : 0),
                 height: dragHover ? 34 : 30)
         case .menu:
-            NSSize(width: 300, height: 122)
+            NSSize(width: 300, height: 134)
         case .active:
             NSSize(width: 340, height: 48)
         case .done, .failed:
@@ -514,9 +514,9 @@ struct NotchPillView: View {
         switch state {
         case .idle(let offer):
             HStack(spacing: 7) {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(offer == nil ? Neo.yellow : Neo.blue)
+                MochiView(
+                    mood: offer == nil ? .idle : .excited,
+                    size: 16)
                 Text("Grabbit")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
@@ -536,6 +536,12 @@ struct NotchPillView: View {
 
         case .menu(let offer):
             VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    MochiView(mood: offer == nil ? .idle : .excited, size: 20)
+                    Spacer()
+                }
+                .padding(.top, 4)
                 if let offer {
                     row(icon: offer.icon, color: Neo.blue, label: offer.label) {
                         controller.addFromClipboard()
@@ -571,7 +577,8 @@ struct NotchPillView: View {
             .padding(.horizontal, 12)
 
         case .active(let progress, let speed):
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                MochiView(mood: .working(progress), size: 24)
                 ZStack {
                     Circle()
                         .stroke(.white.opacity(0.14), lineWidth: 3.5)
@@ -601,8 +608,7 @@ struct NotchPillView: View {
 
         case .done:
             HStack(spacing: 7) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Neo.green)
+                MochiView(mood: .done, size: 18)
                 Text(NSLocalizedString("notch.done", comment: ""))
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
@@ -610,8 +616,7 @@ struct NotchPillView: View {
 
         case .failed(let name):
             HStack(spacing: 7) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Neo.red)
+                MochiView(mood: .sad, size: 18)
                 Text(name)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
@@ -666,6 +671,171 @@ struct NotchPillView: View {
         let ns = NotchController.pillSize(
             for: state, dragHover: controller.isDragHover)
         return CGSize(width: ns.width, height: ns.height)
+    }
+}
+
+// MARK: - Mochi mascot
+
+/// Mochi reactions, driven by the pill state.
+enum MochiMood: Equatable {
+    case idle
+    case excited
+    case working(Double)
+    case done
+    case sad
+}
+
+/// A soft cream mochi drawn with plain SwiftUI shapes — no image assets.
+/// Idle it breathes and blinks, it bounces with sparkles when a link is
+/// ready, chomps while downloads run, celebrates on completion and droops
+/// with a teardrop on failure.
+struct MochiView: View {
+    var mood: MochiMood = .idle
+    var size: CGFloat = 18
+
+    @State private var breathe = false
+    @State private var hop = false
+
+    private var isWorking: Bool {
+        if case .working = mood { return true }
+        return false
+    }
+
+    private var isExcited: Bool {
+        mood == .excited || (isWorking && controllerHops)
+    }
+
+    private var controllerHops: Bool { false }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                bodyShape
+                face(t: t)
+            }
+            .frame(width: size, height: size)
+        }
+        .scaleEffect(
+            y: mood == .sad
+                ? 0.82
+                : (mood == .idle || mood == .done ? (breathe ? 1.06 : 0.95) : 1),
+            anchor: .bottom)
+        .offset(y: hop ? -1.6 : 1.6)
+        .rotationEffect(.degrees(isWorking ? (hop ? 4 : -4) : 0))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+            if isExcited || isWorking {
+                withAnimation(.easeInOut(duration: 0.30).repeatForever(autoreverses: true)) {
+                    hop = true
+                }
+            }
+        }
+    }
+
+    private var bodyShape: some View {
+        Ellipse()
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: 0xFFF8EF), Color(hex: 0xF5E2D2)],
+                    startPoint: .top, endPoint: .bottom))
+            .overlay(
+                Ellipse()
+                    .stroke(.white.opacity(0.8), lineWidth: 1)
+                    .allowsHitTesting(false))
+            .frame(width: size * 0.92, height: size * 0.80)
+            .overlay(
+                HStack(spacing: size * 0.50) {
+                    Circle().fill(Color(hex: 0xFFB3A7).opacity(0.9))
+                    Circle().fill(Color(hex: 0xFFB3A7).opacity(0.9))
+                }
+                .frame(width: size * 0.10, height: size * 0.055)
+                .offset(y: size * 0.04)
+                .allowsHitTesting(false))
+            .overlay(alignment: .topTrailing) {
+                if isExcited || isWorking || mood == .done {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.22, weight: .bold))
+                        .foregroundStyle(Neo.yellow)
+                        .offset(x: size * 0.22, y: -size * 0.18)
+                        .opacity(0.5 + 0.5 * abs(sin(timestamp)))
+                        .allowsHitTesting(false)
+                }
+                if mood == .sad {
+                    Ellipse()
+                        .fill(Neo.blue.opacity(0.9))
+                        .frame(width: size * 0.11, height: size * 0.15)
+                        .offset(x: size * 0.28, y: -size * 0.16)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+
+    private var timestamp: Double {
+        Date().timeIntervalSinceReferenceDate
+    }
+
+    private func face(t: TimeInterval) -> some View {
+        VStack(spacing: size * 0.13) {
+            HStack(spacing: size * 0.16) {
+                eye(blinking: mood == .idle
+                    && t.truncatingRemainder(dividingBy: 3.4) > 3.25)
+                eye(blinking: mood == .idle
+                    && t.truncatingRemainder(dividingBy: 3.4) > 3.25)
+            }
+            mouth(t: t)
+        }
+        .offset(y: -size * 0.06)
+    }
+
+    private func eye(blinking: Bool) -> some View {
+        Capsule()
+            .fill(Color(hex: 0x2B2320))
+            .frame(
+                width: size * 0.075,
+                height: size * (blinking ? 0.02 : (isExcited || isWorking ? 0.16 : 0.11)))
+    }
+
+    @ViewBuilder
+    private func mouth(t: TimeInterval) -> some View {
+        switch mood {
+        case .working:
+            let chomp = t.truncatingRemainder(dividingBy: 0.5) < 0.25
+            Ellipse()
+                .fill(Color(hex: 0x2B2320))
+                .frame(width: size * (chomp ? 0.17 : 0.08), height: size * 0.10)
+        case .sad:
+            arcMouth(frowning: true)
+        case .done:
+            arcMouth(frowning: false)
+        case .idle, .excited:
+            Capsule()
+                .fill(Color(hex: 0x2B2320))
+                .frame(width: size * 0.09, height: size * 0.035)
+        }
+    }
+
+    private func arcMouth(frowning: Bool) -> some View {
+        Path { path in
+            let width = size * 0.17
+            if frowning {
+                path.move(to: CGPoint(x: 0, y: size * 0.09))
+                path.addQuadCurve(
+                    to: CGPoint(x: width, y: size * 0.09),
+                    control: CGPoint(x: width / 2, y: 0))
+            } else {
+                path.move(to: CGPoint(x: 0, y: 0))
+                path.addQuadCurve(
+                    to: CGPoint(x: width, y: 0),
+                    control: CGPoint(x: width / 2, y: size * 0.13))
+            }
+        }
+        .stroke(
+            Color(hex: 0x2B2320),
+            style: StrokeStyle(lineWidth: max(1, size * 0.07), lineCap: .round))
+        .frame(width: size * 0.17, height: size * 0.15)
     }
 }
 
