@@ -35,6 +35,9 @@ final class NotchController {
 
     private var panel: NSPanel?
     private var timer: Timer?
+    /// Height of the physical notch (0 on non-notch Macs). The island hangs
+    /// from the very top edge of the screen; content stays below this inset.
+    private(set) var topInset: CGFloat = 0
     private var wasActive = false
     private var transientExpiry: Date?
 
@@ -109,7 +112,7 @@ final class NotchController {
             defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
@@ -123,30 +126,38 @@ final class NotchController {
 
     private func positionPanel(animated: Bool) {
         guard let panel, let screen = NSScreen.screens.first else { return }
-        let size = Self.pillSize(for: state, dragHover: isDragHover, hover: isHover)
-        let menuBarHeight = NSStatusBar.system.thickness
+        let inset = screen.safeAreaInsets.top
+        if topInset != inset { topInset = inset }
+        let size = Self.pillSize(
+            for: state, dragHover: isDragHover, hover: isHover,
+            topInset: inset)
+        // Flush with the screen's top edge — a black tab hanging down from
+        // the menu bar, exactly like the notch in boring.notch.
         let origin = NSPoint(
             x: screen.frame.midX - size.width / 2,
-            y: screen.frame.maxY - menuBarHeight - size.height - 4)
+            y: screen.frame.maxY - size.height)
         panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
     }
 
     static func pillSize(
-        for state: State, dragHover: Bool, hover: Bool
+        for state: State, dragHover: Bool, hover: Bool, topInset: CGFloat
     ) -> NSSize {
+        let hasNotch = topInset > 0
         switch state {
         case .idle(let offer):
-            if offer != nil {
-                return NSSize(width: 192, height: 30)
+            let tabHeight: CGFloat = hasNotch ? topInset + 30 : 32
+            if offer != nil || hover || dragHover {
+                return NSSize(width: 208, height: tabHeight)
             }
-            return NSSize(
-                width: hover ? 150 : 116, height: 30)
+            // Rest: on notch Macs this is exactly the notch itself
+            // (invisible); everywhere else a slim fake-notch tab.
+            return NSSize(width: 200, height: tabHeight)
         case .menu:
-            return NSSize(width: 300, height: 134)
+            return NSSize(width: 320, height: topInset + 172)
         case .active:
-            return NSSize(width: 300, height: 46)
+            return NSSize(width: 320, height: topInset + 52)
         case .done, .failed:
-            return NSSize(width: 206, height: 32)
+            return NSSize(width: 240, height: topInset + 34)
         }
     }
 
@@ -480,7 +491,9 @@ struct NotchPillView: View {
                 .buttonStyle(.plain)
             }
         }
-        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
+        .shadow(
+            color: .black.opacity(isExpanded(state) ? 0.35 : 0),
+            radius: 12, y: 6)
         .background(
             NotchDropZone(
                 onHover: { controller.setHover($0) },
@@ -508,47 +521,113 @@ struct NotchPillView: View {
         .frame(width: size(for: state).width, height: size(for: state).height)
     }
 
+    /// The island hangs from the very top of the screen: square top
+    /// corners (flush with the edge), generously rounded bottom corners —
+    /// a fake notch when idle, an expanding card when in use.
     private func capsule(for state: NotchController.State) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(Color(hex: 0x101318).opacity(0.95))
+            tabShape(for: state)
+                .fill(Color.black.opacity(0.97))
                 .allowsHitTesting(false)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(border(for: state), lineWidth: 1.5)
-                        .allowsHitTesting(false))
+            if controller.isDragHover {
+                tabShape(for: state)
+                    .stroke(.white.opacity(0.35), lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
             content(for: state)
+                .padding(.top, controller.topInset)
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
+        .clipShape(tabShape(for: state))
+    }
+
+    private func tabShape(for state: NotchController.State) -> UnevenRoundedRectangle {
+        let radius: CGFloat
+        switch state {
+        case .idle: radius = 12
+        case .done, .failed: radius = 14
+        case .active: radius = 18
+        case .menu: radius = 22
+        }
+        return UnevenRoundedRectangle(
+            topLeadingRadius: 0,
+            bottomLeadingRadius: radius,
+            bottomTrailingRadius: radius,
+            topTrailingRadius: 0,
+            style: .continuous)
+    }
+
+    private func isExpanded(_ state: NotchController.State) -> Bool {
+        if case .idle = state { return false }
+        return true
     }
 
     @ViewBuilder
     private func content(for state: NotchController.State) -> some View {
         switch state {
         case .idle(let offer):
+            // On notch Macs the rest state is the bare notch — reveal the
+            // content on hover, drag or a pending offer.
+            if offer == nil && !controller.isHover && !controller.isDragHover
+                && controller.topInset > 0 {
+                EmptyView()
+            } else {
+                idleRow(offer)
+            }
+
+        case .menu(let offer):
+            menuContent(offer)
+
+        case .active(let progress, let speed):
+            activeRow(progress: progress, speed: speed)
+
+        case .done:
             HStack(spacing: 7) {
-                MochiView(
-                    mood: offer == nil ? .idle : .excited,
-                    size: 16)
-                if let offer {
+                MochiView(mood: .done, size: 18)
+                Text(NSLocalizedString("notch.done", comment: ""))
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+        case .failed(let name):
+            HStack(spacing: 7) {
+                MochiView(mood: .sad, size: 18)
+                Text(name)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func idleRow(_ offer: NotchController.Offer?) -> some View {
+        HStack(spacing: 7) {
+            MochiView(
+                mood: offer == nil ? .idle : .excited,
+                size: 16)
+            if let offer {
                     Image(systemName: offer.icon)
                         .font(.system(size: 10))
                         .foregroundStyle(Neo.blue)
                     Text(NSLocalizedString("notch.pill.add", comment: ""))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                } else if controller.isHover {
-                    Text("Grabbit")
-                        .font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text(NSLocalizedString("notch.pill.click", comment: ""))
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.55))
-                }
+            } else if controller.isHover {
+                Text("Grabbit")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(NSLocalizedString("notch.pill.click", comment: ""))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.55))
             }
+        }
+    }
 
-        case .menu(let offer):
-            VStack(spacing: 0) {
+    @ViewBuilder
+    private func menuContent(_ offer: NotchController.Offer?) -> some View {
+        VStack(spacing: 0) {
                 HStack {
                     Spacer()
                     MochiView(mood: offer == nil ? .idle : .excited, size: 20)
@@ -586,11 +665,14 @@ struct NotchPillView: View {
                     controller.openApp()
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 12)
+        .padding(.top, controller.topInset > 0 ? 10 : 14)
+        .padding(.bottom, 6)
+        .padding(.horizontal, 12)
+    }
 
-        case .active(let progress, let speed):
-            HStack(spacing: 10) {
+    @ViewBuilder
+    private func activeRow(progress: Double, speed: Double) -> some View {
+        HStack(spacing: 10) {
                 MochiView(mood: .working(progress), size: 24)
                 ZStack {
                     Circle()
@@ -612,33 +694,14 @@ struct NotchPillView: View {
                         .font(.system(size: 9.5, weight: .semibold))
                         .foregroundStyle(Neo.blue)
                 }
-                Spacer()
-                if controller.isHover {
-                    Image(systemName: "chevron.up.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.45))
-                }
-            }
-            .padding(.horizontal, 14)
-
-        case .done:
-            HStack(spacing: 7) {
-                MochiView(mood: .done, size: 18)
-                Text(NSLocalizedString("notch.done", comment: ""))
-                    .font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-
-        case .failed(let name):
-            HStack(spacing: 7) {
-                MochiView(mood: .sad, size: 18)
-                Text(name)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            Spacer()
+            if controller.isHover {
+                Image(systemName: "chevron.up.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.45))
             }
         }
+        .padding(.horizontal, 14)
     }
 
     private func row(
@@ -666,18 +729,10 @@ struct NotchPillView: View {
         .buttonStyle(.plain)
     }
 
-    private func border(for state: NotchController.State) -> Color {
-        // The island merges into the menu bar: hairline white only. Hover
-        // and drags brighten it instead of flashing theme accents.
-        if controller.isDragHover { return .white.opacity(0.35) }
-        if controller.isHover { return .white.opacity(0.18) }
-        return .white.opacity(0.09)
-    }
-
     private func size(for state: NotchController.State) -> CGSize {
         let ns = NotchController.pillSize(
             for: state, dragHover: controller.isDragHover,
-            hover: controller.isHover)
+            hover: controller.isHover, topInset: controller.topInset)
         return CGSize(width: ns.width, height: ns.height)
     }
 }
