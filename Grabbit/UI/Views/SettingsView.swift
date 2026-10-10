@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Environment(QueueStore.self) private var queueStore: QueueStore
     @Environment(WatchFolderStore.self) private var watchFolderStore: WatchFolderStore
     @Environment(DownloadEngine.self) private var downloadEngine: DownloadEngine
+    @Environment(NotchController.self) private var notchController: NotchController
     @Environment(\.colorScheme) private var scheme
     /// Display name of the app macOS currently routes magnet: links to
     /// (e.g. "Motrix"); empty when none is set.
@@ -24,6 +25,8 @@ struct SettingsView: View {
     /// Browser-extension (Grabber) setup — moved in from its old tab.
     @State private var extensionConnected = false
     @State private var updateState: ExtensionUpdateState = .idle
+    /// Regular apps offered in the notch "hidden apps" picker.
+    @State private var runningAppsForNotch: [(id: String, name: String)] = []
 
     var body: some View {
         @Bindable var store = store
@@ -57,6 +60,7 @@ struct SettingsView: View {
             refreshMagnetHandler()
             syncOpenAtLogin()
             refreshConnectionStatus()
+            refreshRunningAppsForNotch()
         }
         .onReceive(
             NotificationCenter.default.publisher(
@@ -98,6 +102,23 @@ struct SettingsView: View {
                 .onChange(of: store.settings.notchShowFinished) { _, _ in changed() }
                 .onChange(of: store.settings.notchTransientSeconds) { _, _ in changed() }
                 .onChange(of: store.settings.notchHideFromCapture) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowClock) { _, _ in changed() }
+                .onChange(of: store.settings.notchVisibility) { _, _ in changed() }
+                .onChange(of: store.settings.notchMochiLevel) { _, _ in changed() }
+                .onChange(of: store.settings.notchHotkeyEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchDoubleClickOpensApp) { _, _ in changed() }
+                .onChange(of: store.settings.notchEdgeHighlight) { _, _ in changed() }
+                .onChange(of: store.settings.notchAuraIntensity) { _, _ in changed() }
+                .onChange(of: store.settings.notchClosedWidth) { _, _ in changed() }
+                .onChange(of: store.settings.notchCornerScale) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowFailed) { _, _ in changed() }
+                .onChange(of: store.settings.notchSoundPack) { _, _ in changed() }
+                .onChange(of: store.settings.notchHideInFullscreen) { _, _ in changed() }
+                .onChange(of: store.settings.notchHiddenApps) { _, _ in changed() }
+                .onChange(of: store.settings.notchHiddenForSharing) { _, _ in changed() }
+                .onChange(of: store.settings.notchDisplayScope) { _, _ in changed() }
+                .onChange(of: store.settings.notchSoundsEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchHideWhenOtherApp) { _, _ in changed() }
         }
 
         private func changed() {
@@ -352,6 +373,18 @@ struct SettingsView: View {
             NeoDivider()
             subHeader(NSLocalizedString("settings.notch.visibility", comment: ""))
             notchVisibilitySection(settings: settings)
+            NeoDivider()
+            HStack(spacing: 10) {
+                Button(NSLocalizedString("settings.notch.preview", comment: "")) {
+                    notchController.runPreview()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.blue, compact: true))
+                Button(NSLocalizedString("settings.notch.reset", comment: "")) {
+                    settings.wrappedValue.resetNotchSettings()
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.orange, compact: true))
+                Spacer()
+            }
         }
         .neoCard()
     }
@@ -397,6 +430,14 @@ struct SettingsView: View {
                 "\($0)pt"
             }
         }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.closedWidth", comment: ""),
+            value: settings.notchClosedWidth,
+            in: 0.7...1.4, step: 0.05) { "\(Int(($0 * 100).rounded()))%" }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.roundness", comment: ""),
+            value: settings.notchCornerScale,
+            in: 0.3...1.0, step: 0.05) { "\(Int(($0 * 100).rounded()))%" }
     }
 
     @ViewBuilder
@@ -413,9 +454,14 @@ struct SettingsView: View {
         notchToggleRow(
             NSLocalizedString("settings.notch.aura", comment: ""),
             isOn: settings.notchAuraEnabled)
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.auraIntensity", comment: ""),
+            value: settings.notchAuraIntensity,
+            in: 0...1, step: 0.05) { "\(Int(($0 * 100).rounded()))%" }
         notchToggleRow(
             NSLocalizedString("settings.notch.customFill", comment: ""),
             isOn: settings.notchCustomFill)
+        notchColorPresets(settings: settings)
         if settings.wrappedValue.notchCustomFill {
             HStack {
                 Text(NSLocalizedString("settings.notch.fillColor", comment: ""))
@@ -486,6 +532,9 @@ struct SettingsView: View {
         notchToggleRow(
             NSLocalizedString("settings.notch.showFinished", comment: ""),
             isOn: settings.notchShowFinished)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.showFailed", comment: ""),
+            isOn: settings.notchShowFailed)
         notchStepperRow(
             label: NSLocalizedString("settings.notch.transientSeconds", comment: ""),
             value: settings.notchTransientSeconds,
@@ -493,16 +542,188 @@ struct SettingsView: View {
         notchToggleRow(
             NSLocalizedString("settings.notchSounds", comment: ""),
             isOn: settings.notchSoundsEnabled)
+        HStack {
+            Text(NSLocalizedString("settings.notch.soundPack", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchSoundPack, titles: [
+                (.cute, NSLocalizedString("settings.notch.soundPack.cute", comment: "")),
+                (.subtle, NSLocalizedString("settings.notch.soundPack.subtle", comment: "")),
+                (.off, NSLocalizedString("settings.notch.soundPack.off", comment: "")),
+            ])
+            .frame(maxWidth: 260)
+        }
     }
 
     @ViewBuilder
     private func notchVisibilitySection(settings: Binding<AppSettings>) -> some View {
+        HStack {
+            Text(NSLocalizedString("settings.notch.onScreen", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchVisibility, titles: [
+                (.always, NSLocalizedString("settings.notch.onScreen.always", comment: "")),
+                (.activeOnly, NSLocalizedString("settings.notch.onScreen.active", comment: "")),
+                (.hoverOnly, NSLocalizedString("settings.notch.onScreen.hover", comment: "")),
+            ])
+            .frame(maxWidth: 340)
+        }
+        notchToggleRow(
+            NSLocalizedString("settings.notch.clock", comment: ""),
+            isOn: settings.notchShowClock)
+        HStack {
+            Text(NSLocalizedString("settings.notch.mochi", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchMochiLevel, titles: [
+                (.full, NSLocalizedString("settings.notch.mochi.full", comment: "")),
+                (.subtle, NSLocalizedString("settings.notch.mochi.subtle", comment: "")),
+                (.off, NSLocalizedString("settings.notch.mochi.off", comment: "")),
+            ])
+            .frame(maxWidth: 300)
+        }
+        HStack {
+            Text(NSLocalizedString("settings.notch.showOn", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchDisplayScope, titles: [
+                (.main, NSLocalizedString("settings.notch.showOn.main", comment: "")),
+                (.active, NSLocalizedString("settings.notch.showOn.active", comment: "")),
+            ])
+            .frame(maxWidth: 300)
+        }
+        notchToggleRow(
+            NSLocalizedString("settings.notch.hotkey", comment: ""),
+            isOn: settings.notchHotkeyEnabled)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.doubleClick", comment: ""),
+            isOn: settings.notchDoubleClickOpensApp)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.hideFullscreen", comment: ""),
+            isOn: settings.notchHideInFullscreen)
         notchToggleRow(
             NSLocalizedString("settings.notchHideWhenOtherApp", comment: ""),
             isOn: settings.notchHideWhenOtherApp)
         notchToggleRow(
             NSLocalizedString("settings.notch.hideCapture", comment: ""),
             isOn: settings.notchHideFromCapture)
+        notchHiddenAppsEditor(settings: settings)
+        HStack {
+            if settings.wrappedValue.notchHiddenForSharing {
+                Button(NSLocalizedString("settings.notch.showAgain", comment: "")) {
+                    settings.wrappedValue.notchHiddenForSharing = false
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
+            } else {
+                Button(NSLocalizedString("settings.notch.hideForSharing", comment: "")) {
+                    settings.wrappedValue.notchHiddenForSharing = true
+                }
+                .buttonStyle(NeoButtonStyle(bg: Neo.orange, compact: true))
+            }
+            Spacer()
+        }
+    }
+
+    /// Quick color chips above the custom picker.
+    private func notchColorPresets(settings: Binding<AppSettings>) -> some View {
+        let presets: [(hex: String, name: String)] = [
+            ("#0D0F14", "Black"), ("#1C1C1E", "Graphite"),
+            ("#0B1220", "Midnight"), ("#E9EEF5", "Frost"),
+            ("#2A0E1C", "Wine"), ("#1E1033", "Plum"),
+        ]
+        let current = settings.wrappedValue.notchFillColor.lowercased()
+        return HStack(spacing: 8) {
+            Text(NSLocalizedString("settings.notch.presets", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            Button {
+                settings.wrappedValue.notchCustomFill = false
+            } label: {
+                Circle()
+                    .fill(Color(hex: 0x101318))
+                    .frame(width: 18, height: 18)
+                    .overlay(
+                        Circle().stroke(
+                            .white.opacity(!settings.wrappedValue.notchCustomFill
+                                ? 0.9 : 0.2),
+                            lineWidth: 2))
+            }
+            .buttonStyle(.plain)
+            .help("Default")
+            ForEach(presets, id: \.hex) { preset in
+                Button {
+                    settings.wrappedValue.notchFillColor = preset.hex
+                    settings.wrappedValue.notchCustomFill = true
+                } label: {
+                    Circle()
+                        .fill(Color(hexString: preset.hex) ?? .black)
+                        .frame(width: 18, height: 18)
+                        .overlay(
+                            Circle().stroke(
+                                .white.opacity(
+                                    settings.wrappedValue.notchCustomFill
+                                        && current == preset.hex.lowercased()
+                                        ? 0.9 : 0.2),
+                                lineWidth: 2))
+                }
+                .buttonStyle(.plain)
+                .help(preset.name)
+            }
+        }
+    }
+
+    /// Apps whose activation hides the island.
+    @ViewBuilder
+    private func notchHiddenAppsEditor(settings: Binding<AppSettings>) -> some View {
+        let hidden = settings.wrappedValue.notchHiddenApps
+        HStack {
+            Text(NSLocalizedString("settings.notch.hiddenApps", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            Menu {
+                ForEach(
+                    runningAppsForNotch.filter { !hidden.contains($0.id) },
+                    id: \.id
+                ) { app in
+                    Button(app.name) {
+                        settings.wrappedValue.notchHiddenApps.append(app.id)
+                    }
+                }
+            } label: {
+                Text(NSLocalizedString("settings.notch.addApp", comment: ""))
+            }
+            .menuStyle(.borderlessButton)
+            .frame(maxWidth: 160)
+        }
+        ForEach(hidden, id: \.self) { bundle in
+            HStack(spacing: 8) {
+                Text(appNameForNotch(bundle))
+                    .font(NeoFont.f(.caption))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    settings.wrappedValue.notchHiddenApps.removeAll { $0 == bundle }
+                } label: {
+                    AppIcon("trash", size: 11)
+                        .foregroundStyle(Neo.red)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func refreshRunningAppsForNotch() {
+        runningAppsForNotch = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != nil }
+            .compactMap { app in
+                guard let id = app.bundleIdentifier else { return nil }
+                return (id, app.localizedName ?? id)
+            }
+            .sorted { $0.name < $1.name }
+    }
+
+    private func appNameForNotch(_ bundle: String) -> String {
+        runningAppsForNotch.first { $0.id == bundle }?.name ?? bundle
     }
 
     private func notchToggleRow(

@@ -9028,6 +9028,516 @@
           }
         }
       }
+    },
+    "settings.notch.closedWidth": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed Pill Width"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်ထားချိန် အကျယ်"
+          }
+        }
+      }
+    },
+    "settings.notch.roundness": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corner Roundness"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထောင့်ဝိုင်းမှု"
+          }
+        }
+      }
+    },
+    "settings.notch.auraIntensity": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aura Intensity"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရောင်ဝန်း ပြင်းအား"
+          }
+        }
+      }
+    },
+    "settings.notch.presets": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colors"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရောင်များ"
+          }
+        }
+      }
+    },
+    "settings.notch.showFailed": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Failed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မအောင်မြင်ရင် ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.soundPack": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound Pack"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံအစုံ"
+          }
+        }
+      }
+    },
+    "settings.notch.soundPack.cute": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cute"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချစ်စရာ"
+          }
+        }
+      }
+    },
+    "settings.notch.soundPack.subtle": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtle"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နူးညံ့"
+          }
+        }
+      }
+    },
+    "settings.notch.soundPack.off": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်"
+          }
+        }
+      }
+    },
+    "settings.notch.onScreen": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On Screen"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြသမှု"
+          }
+        }
+      }
+    },
+    "settings.notch.onScreen.always": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြဲ"
+          }
+        }
+      }
+    },
+    "settings.notch.onScreen.active": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When Active"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလုပ်ရှိမှ"
+          }
+        }
+      }
+    },
+    "settings.notch.onScreen.hover": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On Hover"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover မှ"
+          }
+        }
+      }
+    },
+    "settings.notch.clock": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clock on the Closed Pill"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်ထားချိန် နာရီပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.mochi": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi Animations"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi လှုပ်ရှားမှု"
+          }
+        }
+      }
+    },
+    "settings.notch.mochi.full": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အပြည့်"
+          }
+        }
+      }
+    },
+    "settings.notch.mochi.subtle": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtle"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ငြိမ့်"
+          }
+        }
+      }
+    },
+    "settings.notch.mochi.off": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်"
+          }
+        }
+      }
+    },
+    "settings.notch.showOn": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show On"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြမည့် စခရင်"
+          }
+        }
+      }
+    },
+    "settings.notch.showOn.main": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main Display"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပင်မ"
+          }
+        }
+      }
+    },
+    "settings.notch.showOn.active": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active Display"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လက်ရှိ"
+          }
+        }
+      }
+    },
+    "settings.notch.hotkey": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global Hotkey (⌃⌘N)"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Global Hotkey (⌃⌘N)"
+          }
+        }
+      }
+    },
+    "settings.notch.doubleClick": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double-Click Opens Grabbit"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နှစ်ချက်နှိပ်ရင် Grabbit ဖွင့်"
+          }
+        }
+      }
+    },
+    "settings.notch.hideFullscreen": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide in Fullscreen"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fullscreen မှာ ဖျောက်"
+          }
+        }
+      }
+    },
+    "settings.notch.hiddenApps": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden Apps"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖျောက်ထားမည့် App များ"
+          }
+        }
+      }
+    },
+    "settings.notch.addApp": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add App…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App ထည့်…"
+          }
+        }
+      }
+    },
+    "settings.notch.hideForSharing": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Until Re-enabled"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခဏဖျောက်ထား"
+          }
+        }
+      }
+    },
+    "settings.notch.showAgain": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Island Again"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.preview": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အစမ်းကြည့်"
+          }
+        }
+      }
+    },
+    "settings.notch.reset": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to Defaults"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default ပြန်ထား"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -1,4 +1,5 @@
 import AppKit
+import Carbon
 import Observation
 import SwiftUI
 
@@ -54,6 +55,8 @@ final class NotchController {
     /// When the menu opened — auto-collapse has a grace period so a
     /// spurious mouseExited during the window morph can't fold it instantly.
     private var menuOpenedAt: Date?
+    /// Pending deferred menu-open (double-click mode).
+    private var pendingMenuWork: DispatchWorkItem?
 
     private var clipboardOffer: Offer?
     private var lastClipboardChangeCount = 0
@@ -83,10 +86,42 @@ final class NotchController {
     private var soundCache: [String: NSSound] = [:]
     private var lastSoundAt: [String: Date] = [:]
 
-    /// Tiny macOS system blips for Mochi's moments. Gated by settings and
-    /// rate-limited so bursts (many completions at once) stay polite.
-    private func playSound(_ name: String) {
+    enum SoundEvent {
+        case offer
+        case menu
+        case added
+        case done
+        case failed
+    }
+
+    /// Tiny macOS system blips for Mochi's moments, per the chosen sound
+    /// pack. Gated by settings and rate-limited so bursts stay polite.
+    private func playSound(_ event: SoundEvent) {
         guard settings?.settings.notchSoundsEnabled != false else { return }
+        let pack = settings?.settings.notchSoundPack ?? .cute
+        let name: String?
+        switch pack {
+        case .off:
+            name = nil
+        case .cute:
+            switch event {
+            case .offer: name = "Pop"
+            case .menu: name = "Tink"
+            case .added: name = "Purr"
+            case .done: name = "Glass"
+            case .failed: name = "Basso"
+            }
+        case .subtle:
+            switch event {
+            case .offer: name = "Tink"
+            case .menu: name = "Morse"
+            case .added: name = "Pop"
+            case .done: name = "Tink"
+            case .failed: name = "Basso"
+            }
+        }
+        guard let name else { return }
+        guard settings?.settings.notchSoundPack != .off else { return }
         let now = Date()
         if let last = lastSoundAt[name],
            now.timeIntervalSince(last) < 0.4 {
@@ -118,6 +153,8 @@ final class NotchController {
         buildPanel()
         startTimer()
         startConflictMonitor()
+        registerGlobalHotkey()
+        installRightClickMonitor()
         // Dev hooks: touch (or rm) these files to inspect island states.
         // `grabbit-force-menu` opens the menu; `grabbit-force-hover` fakes
         // the hover state so the layout can be screenshotted without a mouse.
@@ -183,16 +220,61 @@ final class NotchController {
 
     private func updateConflictState() {
         guard let panel else { return }
-        let conflicted = Self.otherNotchAppRunning()
-        guard conflicted != conflictHidden else { return }
-        conflictHidden = conflicted
-        debugLog("conflict: otherNotchApp=\(conflicted)")
-        if conflicted {
+        let hide = Self.otherNotchAppRunning()
+            || frontmostAppHidden()
+            || fullscreenAppActive()
+            || (settings?.settings.notchHiddenForSharing ?? false)
+        guard hide != conflictHidden else { return }
+        conflictHidden = hide
+        debugLog("conflict: hide=\(hide)")
+        if hide {
             panel.orderOut(nil)
         } else if settings?.settings.notchModeEnabled != false {
             positionPanel(animated: false)
             panel.orderFrontRegardless()
         }
+    }
+
+    /// The frontmost app is in the user's "hidden apps" list.
+    private func frontmostAppHidden() -> Bool {
+        guard let bundle = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        else { return false }
+        return settings?.settings.notchHiddenApps.contains(bundle) ?? false
+    }
+
+    /// A fullscreen window of the frontmost app covers its whole display.
+    private func fullscreenAppActive() -> Bool {
+        guard settings?.settings.notchHideInFullscreen == true else { return false }
+        guard let front = NSWorkspace.shared.frontmostApplication,
+              front.processIdentifier != ProcessInfo.processInfo.processIdentifier
+        else { return false }
+        guard let list = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            as? [[String: Any]]
+        else { return false }
+        let totalTop = NSScreen.screens.map { $0.frame.maxY }.max() ?? 0
+        let cgFrames = NSScreen.screens.map {
+            CGRect(
+                x: $0.frame.minX, y: totalTop - $0.frame.maxY,
+                width: $0.frame.width, height: $0.frame.height)
+        }
+        for info in list {
+            guard let pid = info[kCGWindowOwnerPID as String] as? pid_t,
+                  pid == front.processIdentifier,
+                  let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+                  let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+                  let bounds = CGRect(
+                    dictionaryRepresentation: boundsDict as CFDictionary)
+            else { continue }
+            for frame in cgFrames
+            where abs(bounds.minX - frame.minX) < 2
+                && abs(bounds.minY - frame.minY) < 2
+                && abs(bounds.width - frame.width) < 2
+                && abs(bounds.height - frame.height) < 2 {
+                return true
+            }
+        }
+        return false
     }
 
     private static func otherNotchAppRunning() -> Bool {
@@ -240,7 +322,19 @@ final class NotchController {
     }
 
     private func positionPanel(animated: Bool) {
-        guard let panel, let screen = NSScreen.screens.first else { return }
+        guard let panel else { return }
+        let scope = settings?.settings.notchDisplayScope ?? .main
+        let screen: NSScreen?
+        switch scope {
+        case .main:
+            screen = NSScreen.screens.first
+        case .active:
+            let mouse = NSEvent.mouseLocation
+            screen = NSScreen.screens.first {
+                NSMouseInRect(mouse, $0.frame, false)
+            } ?? NSScreen.screens.first
+        }
+        guard let screen else { return }
         let inset = screen.safeAreaInsets.top
         if topInset != inset { topInset = inset }
         let size = pillSize(for: state)
@@ -266,9 +360,10 @@ final class NotchController {
                 return NSSize(width: 224, height: 40)
             }
             let scale = min(1.5, max(0.7, settings?.settings.notchClosedScale ?? 1))
+            let widthMul = min(1.4, max(0.7, settings?.settings.notchClosedWidth ?? 1))
             let adjust = Double(min(20, max(-20, settings?.settings.notchHeightAdjust ?? 0)))
             return NSSize(
-                width: 204 * scale,
+                width: 204 * scale * widthMul,
                 height: max(24, 36 * scale + adjust))
         case .menu:
             return NSSize(width: 320, height: 176)
@@ -296,6 +391,49 @@ final class NotchController {
         return base.speed(speed)
     }
 
+    /// Mochi animation level (full / subtle / off).
+    var mochiLevel: NotchMochiLevel { settings?.settings.notchMochiLevel ?? .full }
+    /// Top-edge highlight intensity (0–1).
+    var edgeHighlight: Double {
+        min(1, max(0, settings?.settings.notchEdgeHighlight ?? 1))
+    }
+    /// State-aura strength (0–1).
+    var auraIntensity: Double {
+        min(1, max(0, settings?.settings.notchAuraIntensity ?? 1))
+    }
+    /// Corner-roundness of the closed pill (0.3–1).
+    var cornerScale: Double {
+        min(1, max(0.3, settings?.settings.notchCornerScale ?? 1))
+    }
+    var showClock: Bool { settings?.settings.notchShowClock ?? false }
+    /// Bumped every tick so the view re-renders the clock (minute text).
+    private(set) var clockTick = 0
+
+    private static let clockFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
+    var clockText: String { Self.clockFormatter.string(from: Date()) }
+
+    /// Whether the closed pill shows anything at rest (Notchy's
+    /// Always / Only-when-active / Only-on-hover visibility modes).
+    func showsRestContent(offer: Offer?) -> Bool {
+        if isHover || isDragHover || offer != nil { return true }
+        switch settings?.settings.notchVisibility ?? .always {
+        case .always: return true
+        case .activeOnly: return hasTasks
+        case .hoverOnly: return false
+        }
+    }
+
+    /// Any download/torrent task exists.
+    var hasTasks: Bool {
+        !(downloadEngine?.items ?? []).isEmpty
+            || !(torrentEngine?.torrents ?? []).isEmpty
+    }
+
     var glassEnabled: Bool { settings?.settings.notchGlassEnabled ?? true }
     var auraEnabled: Bool { settings?.settings.notchAuraEnabled ?? true }
     var translucency: Double { min(1.0, max(0.5, settings?.settings.notchTranslucency ?? 0.97)) }
@@ -313,7 +451,113 @@ final class NotchController {
         guard let panel else { return }
         panel.sharingType =
             settings?.settings.notchHideFromCapture == true ? .none : .readOnly
+        registerGlobalHotkey()
+        updateConflictState()
         setEnabled(settings?.settings.notchModeEnabled ?? true)
+    }
+
+    /// Right-clicking the island jumps straight to its settings page.
+    func openSettings() {
+        navigation?.selection = .settings
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.windows.first { $0.canBecomeKey }?.makeKeyAndOrderFront(nil)
+        collapse()
+    }
+
+    private var rightClickMonitor: Any?
+
+    /// A local monitor so a right-click anywhere on the island (including
+    /// over the SwiftUI button) opens Settings.
+    private func installRightClickMonitor() {
+        guard rightClickMonitor == nil else { return }
+        rightClickMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: .rightMouseDown
+        ) { [weak self] event in
+            guard let self, let panel = self.panel,
+                  event.window == panel else { return event }
+            Task { @MainActor in self.openSettings() }
+            return nil
+        }
+    }
+
+    // MARK: - Global hotkey (⌃⌘N)
+
+    private var hotKeyRef: EventHotKeyRef?
+    private var hotKeyHandlerRef: EventHandlerRef?
+
+    /// Registers or clears the global hotkey per settings. Carbon hotkeys
+    /// need no accessibility permission.
+    func registerGlobalHotkey() {
+        let wanted = settings?.settings.notchHotkeyEnabled == true
+        if wanted, hotKeyRef != nil { return }
+        if !wanted, hotKeyRef == nil, hotKeyHandlerRef == nil { return }
+        unregisterGlobalHotkey()
+        guard wanted else { return }
+        var hotKeyID = EventHotKeyID(signature: OSType(0x47524248), id: 1)
+        let modifiers = UInt32(controlKey | cmdKey)
+        let status = RegisterEventHotKey(
+            UInt32(kVK_ANSI_N), modifiers, hotKeyID,
+            GetApplicationEventTarget(), 0, &hotKeyRef)
+        guard status == noErr else {
+            debugLog("hotkey: register failed \(status)")
+            return
+        }
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed))
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        InstallEventHandler(
+            GetApplicationEventTarget(),
+            { _, _, userData -> OSStatus in
+                guard let userData else { return noErr }
+                let controller = Unmanaged<NotchController>
+                    .fromOpaque(userData).takeUnretainedValue()
+                Task { @MainActor in controller.hotkeyToggle() }
+                return noErr
+            },
+            1, &eventType, selfPtr, &hotKeyHandlerRef)
+        debugLog("hotkey: registered ^cmd-N")
+    }
+
+    private func unregisterGlobalHotkey() {
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+            self.hotKeyRef = nil
+        }
+        if let hotKeyHandlerRef {
+            RemoveEventHandler(hotKeyHandlerRef)
+            self.hotKeyHandlerRef = nil
+        }
+    }
+
+    /// ⌃⌘N: open the island's menu, or fold it when already open.
+    func hotkeyToggle() {
+        debugLog("hotkey: toggle")
+        if case .menu = state {
+            collapse()
+        } else {
+            openMenu()
+        }
+    }
+
+    // MARK: - Preview
+
+    /// Cycles idle → hover → menu so settings changes can be previewed.
+    func runPreview() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            setEnabled(settings?.settings.notchModeEnabled ?? true)
+            collapse()
+            applyHover(false)
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            applyHover(true)
+            try? await Task.sleep(nanoseconds: 1_300_000_000)
+            applyHover(false)
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            openMenu()
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            collapse()
+        }
     }
 
     // MARK: - Keyboard (menu navigation)
@@ -506,12 +750,13 @@ final class NotchController {
         } else if wasActive {
             let failedName = downloadEngine.items.first { $0.state == .failed }?.filename
                 ?? torrentEngine.torrents.first { $0.state == .failed }?.name
-            if let failedName {
+            if let failedName, settings?.settings.notchShowFailed ?? true {
                 state = .failed(failedName)
-                playSound("Basso")
-            } else if settings?.settings.notchShowFinished ?? true {
+                playSound(.failed)
+            } else if failedName == nil,
+                      settings?.settings.notchShowFinished ?? true {
                 state = .done("")
-                playSound("Glass")
+                playSound(.done)
                 let finished = downloadEngine.items.filter {
                     $0.state == .completed
                 }.count + torrentEngine.torrents.filter {
@@ -531,7 +776,12 @@ final class NotchController {
             state = .idle(clipboardOffer)
         }
 
-        positionPanel(animated: true)
+        clockTick &+= 1
+        if settings?.settings.notchDisplayScope == .active {
+            positionPanel(animated: false)
+        } else {
+            positionPanel(animated: true)
+        }
     }
 
     // MARK: - Clipboard (copy in browser → click the pill)
@@ -544,9 +794,13 @@ final class NotchController {
             ?? pasteboard.string(forType: .URL)
         let offer = Self.offer(from: text)
         if let offer, offer != clipboardOffer {
-            playSound("Pop")
+            playSound(.offer)
         }
         clipboardOffer = offer
+        // The menu may be open with a row selected that no longer exists.
+        if case .menu = state {
+            menuSelection = min(menuSelection, max(0, menuItems.count - 1))
+        }
         if case .idle = state {
             state = .idle(clipboardOffer)
             positionPanel(animated: true)
@@ -595,9 +849,31 @@ final class NotchController {
             collapse()
             return
         }
+        // Double-click mode: the menu opens on a short delay so a second
+        // tap can be recognised and open the app instead.
+        if settings?.settings.notchDoubleClickOpensApp == true {
+            if let pending = pendingMenuWork {
+                pending.cancel()
+                pendingMenuWork = nil
+                debugLog("handleTap: double-click -> open app")
+                openApp()
+                return
+            }
+            let work = DispatchWorkItem { [weak self] in
+                Task { @MainActor in self?.openMenu() }
+            }
+            pendingMenuWork = work
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + 0.28, execute: work)
+        } else {
+            openMenu()
+        }
+    }
+
+    private func openMenu() {
         debugLog("handleTap: opening menu (offer=\(String(describing: clipboardOffer)))")
         debugTouchLog("menuOpen")
-        playSound("Tink")
+        playSound(.menu)
         state = .menu(clipboardOffer)
         menuOpenedAt = Date()
         menuSelection = 0
@@ -606,6 +882,8 @@ final class NotchController {
     }
 
     func collapse() {
+        pendingMenuWork?.cancel()
+        pendingMenuWork = nil
         state = .idle(clipboardOffer)
         menuOpenedAt = nil
         keyFocus = false
@@ -734,6 +1012,10 @@ final class NotchController {
     private func applyHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
         isHover = hovering
+        if !hovering {
+            pendingMenuWork?.cancel()
+            pendingMenuWork = nil
+        }
         debugTouchLog(hovering ? "hoverIn" : "hoverOut")
         // Leaving the island folds an open menu back into the tab — it
         // never lingers open (boring.notch behavior). Only fold when the
@@ -761,7 +1043,7 @@ final class NotchController {
     private func route(_ kind: NotchLinkKind) {
         debugLog("route: \(kind)")
         guard let settings else { return }
-        if case .invalid = kind {} else { playSound("Purr") }
+        if case .invalid = kind {} else { playSound(.added) }
         switch kind {
         case .magnet(let magnet):
             addTorrentSource(magnet)
@@ -935,14 +1217,32 @@ struct NotchPillView: View {
     /// A Notchy-style capsule hanging from the menu bar's bottom edge:
     /// fully rounded, expands on hover, grows into a card when in use.
     private func capsule(for state: NotchController.State) -> some View {
-        ZStack {
-            glassBase(for: state)
-            if controller.auraEnabled {
-                bottomAura(for: state)
-                    .opacity(rimPulse ? 1.0 : 0.65)
+        let hideRest: Bool = {
+            if case .idle(let offer) = state {
+                return !controller.showsRestContent(offer: offer)
             }
-            shineSweep(for: state, phase: sweepRun ? 1 : 0)
-            content(for: state)
+            return false
+        }()
+        return ZStack {
+            if hideRest {
+                // Visibility modes can park the closed pill: the window
+                // stays for hover/drop detection but shows nothing.
+                Color.clear
+            } else {
+                glassBase(for: state)
+                if controller.edgeHighlight > 0 {
+                    edgeHighlightLayer
+                        .opacity(controller.edgeHighlight)
+                }
+                if controller.auraEnabled {
+                    bottomAura(for: state)
+                        .opacity(
+                            (rimPulse ? 1.0 : 0.65)
+                                * controller.auraIntensity)
+                }
+                shineSweep(for: state, phase: sweepRun ? 1 : 0)
+                content(for: state)
+            }
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
         .clipShape(tabShape(for: state))
@@ -958,6 +1258,18 @@ struct NotchPillView: View {
                 sweepRun = true
             }
         }
+    }
+
+    /// A soft light along the top edge (Notchy's "Edge Highlight").
+    private var edgeHighlightLayer: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [.white.opacity(0.22), .white.opacity(0)],
+                startPoint: .top, endPoint: .bottom)
+                .frame(height: 3)
+            Spacer(minLength: 0)
+        }
+        .allowsHitTesting(false)
     }
 
     /// A diagonal glint that crosses the island every few seconds.
@@ -1026,7 +1338,9 @@ struct NotchPillView: View {
         let closed: Bool
         if case .idle = state { closed = true } else { closed = false }
         let size = self.size(for: state)
-        let radius = closed ? min(18, size.height / 2) : 26
+        let radius = closed
+            ? (size.height / 2) * controller.cornerScale
+            : 26
         if controller.shapeMode == .notch {
             return AnyShape(
                 UnevenRoundedRectangle(
@@ -1049,9 +1363,9 @@ struct NotchPillView: View {
     private func content(for state: NotchController.State) -> some View {
         switch state {
         case .idle(let offer):
-            // On notch Macs the rest state is the bare notch — reveal the
-            // content on hover, drag or a pending offer.
-            idleRow(offer, mood: controller.mochiMood(for: state))
+            if controller.showsRestContent(offer: offer) {
+                idleRow(offer, mood: controller.mochiMood(for: state))
+            }
 
         case .menu(let offer):
             menuContent(offer)
@@ -1061,7 +1375,7 @@ struct NotchPillView: View {
 
         case .done:
             HStack(spacing: 7) {
-                MochiView(mood: controller.mochiMood(for: state), size: 24)
+                mochi(mood: controller.mochiMood(for: state), size: 24)
                 Text(NSLocalizedString("notch.done", comment: ""))
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
@@ -1069,7 +1383,7 @@ struct NotchPillView: View {
 
         case .failed(let name):
             HStack(spacing: 7) {
-                MochiView(mood: .sad, size: 24)
+                mochi(mood: .sad, size: 24)
                 Text(name)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
@@ -1079,7 +1393,7 @@ struct NotchPillView: View {
 
         case .added(let name):
             HStack(spacing: 8) {
-                MochiView(mood: controller.mochiMood(for: state), size: 24, lively: true)
+                mochi(mood: controller.mochiMood(for: state), size: 24, lively: true)
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Neo.blue)
@@ -1097,19 +1411,26 @@ struct NotchPillView: View {
     private func idleRow(
         _ offer: NotchController.Offer?, mood: MochiMood
     ) -> some View {
-        HStack(spacing: 7) {
-            MochiView(
-                mood: mood,
-                size: offer == nil ? (controller.isHover ? 26 : 22) : 24,
-                lively: controller.isHover,
-                gazeX: controller.hoverX)
+        let mochiOn = controller.mochiLevel != .off
+        let clockOn = controller.showClock && offer == nil
+            && !controller.isHover
+        // Reading clockTick when the clock shows makes the view re-render
+        // every tick, so the time stays fresh.
+        _ = clockOn ? controller.clockTick : 0
+        return HStack(spacing: 7) {
+            if mochiOn {
+                mochi(
+                    mood: mood,
+                    size: offer == nil ? (controller.isHover ? 26 : 22) : 24,
+                    lively: controller.isHover)
+            }
             if let offer {
-                    Image(systemName: offer.icon)
-                        .font(.system(size: 10))
-                        .foregroundStyle(Neo.blue)
-                    Text(NSLocalizedString("notch.pill.add", comment: ""))
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
+                Image(systemName: offer.icon)
+                    .font(.system(size: 10))
+                    .foregroundStyle(Neo.blue)
+                Text(NSLocalizedString("notch.pill.add", comment: ""))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
             } else if controller.isHover {
                 Text("Grabbit")
                     .font(.system(size: 11.5, weight: .bold))
@@ -1117,18 +1438,46 @@ struct NotchPillView: View {
                 Text(NSLocalizedString("notch.pill.click", comment: ""))
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.55))
+            } else if clockOn {
+                if mochiOn { Spacer(minLength: 10) }
+                Text(controller.clockText)
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                if mochiOn { Spacer(minLength: 10) }
+            } else if !mochiOn {
+                Text("Grabbit")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.55))
             }
+        }
+        .padding(.horizontal, clockOn && mochiOn ? 16 : 0)
+        .frame(maxWidth: clockOn && mochiOn ? .infinity : nil)
+    }
+
+    /// Mochi with the user's animation level applied (off = hidden).
+    @ViewBuilder
+    private func mochi(
+        mood: MochiMood, size: CGFloat, lively: Bool = false
+    ) -> some View {
+        if controller.mochiLevel != .off {
+            MochiView(
+                mood: mood,
+                size: size,
+                lively: lively,
+                gazeX: controller.hoverX,
+                animated: controller.mochiLevel == .full)
         }
     }
 
     @ViewBuilder
     private func menuContent(_ offer: NotchController.Offer?) -> some View {
         VStack(spacing: 6) {
-            MochiView(
+            mochi(
                 mood: controller.mochiMood(for: .menu(offer)),
                 size: 30, lively: true)
             let items = controller.menuItems
-            let selected = controller.menuSelection
+            let selected = min(controller.menuSelection, max(0, items.count - 1))
             if let offer {
                 NotchLinkCard(
                     offer: offer,
@@ -1192,7 +1541,7 @@ struct NotchPillView: View {
             for: .active(progress: progress, speedBytes: speed))
         ZStack(alignment: .bottom) {
             HStack(spacing: 10) {
-                MochiView(mood: mood, size: 30, lively: true)
+                mochi(mood: mood, size: 30, lively: true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(Int(progress * 100))%")
                         .font(.system(size: 13, weight: .heavy))
@@ -1204,7 +1553,9 @@ struct NotchPillView: View {
                 }
                 Spacer(minLength: 8)
                 SpeedSparkline(values: controller.speedHistory)
-                EqualizerBars(level: min(1, speed / 8_000_000))
+                EqualizerBars(
+                    level: min(1, speed / 8_000_000),
+                    animated: controller.mochiLevel == .full)
                 if controller.isHover {
                     Image(systemName: "chevron.up.circle.fill")
                         .font(.system(size: 13))
@@ -1376,19 +1727,42 @@ private struct SpeedSparkline: View {
 private struct EqualizerBars: View {
     var level: Double
     var color: Color = Neo.blue
+    /// Full mochi level animates; lower levels show a calm static frame.
+    var animated: Bool = true
+
+    private static let pattern: [Double] = [0.5, 0.9, 0.65, 0.8]
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
+        if animated {
+            TimelineView(.animation(minimumInterval: 0.1)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                HStack(alignment: .bottom, spacing: 2) {
+                    bar(i: 0, t: t)
+                    bar(i: 1, t: t)
+                    bar(i: 2, t: t)
+                    bar(i: 3, t: t)
+                }
+                .frame(height: 14, alignment: .bottom)
+                .allowsHitTesting(false)
+            }
+        } else {
             HStack(alignment: .bottom, spacing: 2) {
-                bar(i: 0, t: t)
-                bar(i: 1, t: t)
-                bar(i: 2, t: t)
-                bar(i: 3, t: t)
+                staticBar(i: 0)
+                staticBar(i: 1)
+                staticBar(i: 2)
+                staticBar(i: 3)
             }
             .frame(height: 14, alignment: .bottom)
             .allowsHitTesting(false)
         }
+    }
+
+    private func staticBar(i: Int) -> some View {
+        let energy = max(0.15, min(1, level))
+        let h = 3 + (11 * energy) * Self.pattern[i]
+        return Capsule()
+            .fill(color.opacity(0.9))
+            .frame(width: 2.5, height: h)
     }
 
     private func bar(i: Int, t: TimeInterval) -> some View {
@@ -1463,6 +1837,8 @@ struct MochiView: View {
     var lively: Bool = false
     /// Cursor position across the island (-1…1) — the mochi follows it.
     var gazeX: CGFloat = 0
+    /// Full = animated timeline; false = a calm static pose (battery).
+    var animated: Bool = true
 
     @State private var pop = false
 
@@ -1493,27 +1869,36 @@ struct MochiView: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.08)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            ZStack {
-                halo
-                bodyShape
-                face(t: t)
-                accessories(t: t)
+        if animated {
+            TimelineView(.animation(minimumInterval: 0.08)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                posedContent(t: t)
             }
-            .frame(width: size, height: size)
-            .scaleEffect(
-                x: pop ? 1.10 : 1,
-                y: (pop ? 1.10 : 1) * breathing(t: t),
-                anchor: .bottom)
-            .offset(x: shake(t: t) + gazeX * size * 0.035, y: bounce(t: t))
-            .rotationEffect(.degrees(tilt(t: t)))
-        }
-        .onChange(of: lively) { _, on in
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
-                pop = on
+            .onChange(of: lively) { _, on in
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+                    pop = on
+                }
             }
+        } else {
+            posedContent(t: 0.6)
         }
+    }
+
+    /// One rendered frame of the mochi at time `t`.
+    private func posedContent(t: TimeInterval) -> some View {
+        ZStack {
+            halo
+            bodyShape
+            face(t: t)
+            accessories(t: t)
+        }
+        .frame(width: size, height: size)
+        .scaleEffect(
+            x: pop ? 1.10 : 1,
+            y: (pop ? 1.10 : 1) * breathing(t: t),
+            anchor: .bottom)
+        .offset(x: shake(t: t) + gazeX * size * 0.035, y: bounce(t: t))
+        .rotationEffect(.degrees(tilt(t: t)))
     }
 
     // MARK: Motion

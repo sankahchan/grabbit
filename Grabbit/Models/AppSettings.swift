@@ -123,6 +123,36 @@ public struct AppSettings: Codable {
     public var notchTransientSeconds: Double = 2.5
     /// Exclude the island from screen captures (NSWindow.sharingType).
     public var notchHideFromCapture = false
+    /// Show the time on the closed pill (no-notch displays).
+    public var notchShowClock = false
+    /// When the closed pill is on screen at all.
+    public var notchVisibility: NotchVisibilityMode = .always
+    /// How lively Mochi is (battery-friendly off).
+    public var notchMochiLevel: NotchMochiLevel = .full
+    /// Global hotkey (⌃⌘N) opens/closes the island.
+    public var notchHotkeyEnabled = false
+    /// Double-click (instead of single click) opens the Grabbit window.
+    public var notchDoubleClickOpensApp = false
+    /// Brightness of the glass's top edge highlight (0–1).
+    public var notchEdgeHighlight: Double = 1.0
+    /// Strength of the state-colored aura (0–1).
+    public var notchAuraIntensity: Double = 1.0
+    /// Separate multiplier for the closed pill's width (on top of scale).
+    public var notchClosedWidth: Double = 1.0
+    /// Corner roundness of the closed pill (1 = fully rounded).
+    public var notchCornerScale: Double = 1.0
+    /// Transient popup when a download fails.
+    public var notchShowFailed = true
+    /// Sound flavor for Mochi's moments.
+    public var notchSoundPack: NotchSoundPack = .cute
+    /// Hide the island in fullscreen apps.
+    public var notchHideInFullscreen = false
+    /// Bundle ids whose frontmost activation hides the island.
+    public var notchHiddenApps: [String] = []
+    /// "Hide for sharing": hidden until the user turns it back on.
+    public var notchHiddenForSharing = false
+    /// Which display carries the island.
+    public var notchDisplayScope: NotchDisplayScope = .main
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -192,6 +222,12 @@ extension AppSettings {
         case notchIdleTimeout
         case notchShowProgress, notchShowAdded, notchShowFinished
         case notchTransientSeconds, notchHideFromCapture
+        case notchShowClock, notchVisibility, notchMochiLevel
+        case notchHotkeyEnabled, notchDoubleClickOpensApp
+        case notchEdgeHighlight, notchAuraIntensity
+        case notchClosedWidth, notchCornerScale, notchShowFailed
+        case notchSoundPack, notchHideInFullscreen, notchHiddenApps
+        case notchHiddenForSharing, notchDisplayScope
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -249,6 +285,21 @@ extension AppSettings {
         notchShowFinished = try c.decodeIfPresent(Bool.self, forKey: .notchShowFinished) ?? true
         notchTransientSeconds = try c.decodeIfPresent(Double.self, forKey: .notchTransientSeconds) ?? 2.5
         notchHideFromCapture = try c.decodeIfPresent(Bool.self, forKey: .notchHideFromCapture) ?? false
+        notchShowClock = try c.decodeIfPresent(Bool.self, forKey: .notchShowClock) ?? false
+        notchVisibility = try c.decodeIfPresent(NotchVisibilityMode.self, forKey: .notchVisibility) ?? .always
+        notchMochiLevel = try c.decodeIfPresent(NotchMochiLevel.self, forKey: .notchMochiLevel) ?? .full
+        notchHotkeyEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchHotkeyEnabled) ?? false
+        notchDoubleClickOpensApp = try c.decodeIfPresent(Bool.self, forKey: .notchDoubleClickOpensApp) ?? false
+        notchEdgeHighlight = try c.decodeIfPresent(Double.self, forKey: .notchEdgeHighlight) ?? 1.0
+        notchAuraIntensity = try c.decodeIfPresent(Double.self, forKey: .notchAuraIntensity) ?? 1.0
+        notchClosedWidth = try c.decodeIfPresent(Double.self, forKey: .notchClosedWidth) ?? 1.0
+        notchCornerScale = try c.decodeIfPresent(Double.self, forKey: .notchCornerScale) ?? 1.0
+        notchShowFailed = try c.decodeIfPresent(Bool.self, forKey: .notchShowFailed) ?? true
+        notchSoundPack = try c.decodeIfPresent(NotchSoundPack.self, forKey: .notchSoundPack) ?? .cute
+        notchHideInFullscreen = try c.decodeIfPresent(Bool.self, forKey: .notchHideInFullscreen) ?? false
+        notchHiddenApps = try c.decodeIfPresent([String].self, forKey: .notchHiddenApps) ?? []
+        notchHiddenForSharing = try c.decodeIfPresent(Bool.self, forKey: .notchHiddenForSharing) ?? false
+        notchDisplayScope = try c.decodeIfPresent(NotchDisplayScope.self, forKey: .notchDisplayScope) ?? .main
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
@@ -281,6 +332,79 @@ public enum NotchAnimationStyle: String, Codable, CaseIterable, Sendable {
     case calm
     case snappy
     case bouncy
+}
+
+/// When the closed pill is on screen.
+public enum NotchVisibilityMode: String, Codable, CaseIterable, Sendable {
+    case always
+    case activeOnly
+    case hoverOnly
+}
+
+/// How lively Mochi's idle animation is.
+public enum NotchMochiLevel: String, Codable, CaseIterable, Sendable {
+    case full
+    case subtle
+    case off
+}
+
+/// Sound flavor for Mochi's moments.
+public enum NotchSoundPack: String, Codable, CaseIterable, Sendable {
+    case cute
+    case subtle
+    case off
+}
+
+/// Which display carries the island.
+public enum NotchDisplayScope: String, Codable, CaseIterable, Sendable {
+    case main
+    case active
+}
+
+// MARK: - Reset
+
+extension AppSettings {
+    /// Restores every Notch & Pill setting to its default (the card's
+    /// "Reset to Defaults" button). Nothing outside the card is touched.
+    public mutating func resetNotchSettings() {
+        notchModeEnabled = true
+        notchShape = .pill
+        notchClosedScale = 1.0
+        notchHeightAdjust = 0
+        notchClosedWidth = 1.0
+        notchCornerScale = 1.0
+        notchGlassEnabled = true
+        notchTranslucency = 0.97
+        notchAuraEnabled = true
+        notchAuraIntensity = 1.0
+        notchEdgeHighlight = 1.0
+        notchCustomFill = false
+        notchFillColor = ""
+        notchAnimationStyle = .snappy
+        notchAnimationSpeed = 1.0
+        notchExpandOnHover = true
+        notchHoverDelay = 0.1
+        notchCollapseDelay = 0.9
+        notchIdleTimeout = 0
+        notchShowProgress = true
+        notchShowAdded = true
+        notchShowFinished = true
+        notchShowFailed = true
+        notchTransientSeconds = 2.5
+        notchSoundsEnabled = true
+        notchSoundPack = .cute
+        notchHideWhenOtherApp = true
+        notchHideFromCapture = false
+        notchShowClock = false
+        notchVisibility = .always
+        notchMochiLevel = .full
+        notchHotkeyEnabled = false
+        notchDoubleClickOpensApp = false
+        notchHideInFullscreen = false
+        notchHiddenApps = []
+        notchHiddenForSharing = false
+        notchDisplayScope = .main
+    }
 }
 
 @Observable
