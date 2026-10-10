@@ -216,12 +216,12 @@ final class NotchController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
-        // Above the menu bar. On macOS 26 (Tahoe) the glass menu bar sits
-        // higher than .statusBar, so it would ride over the island's top
-        // edge the moment the cursor approached the top of the screen
-        // (a "blank strip" between the screen top and the card).
-        panel.level = NSWindow.Level(
-            rawValue: NSWindow.Level.mainMenu.rawValue + 6)
+        // Above everything the system draws. On macOS 26+/27 the glass
+        // menu bar rises above ordinary overlay levels the moment the
+        // cursor approaches the top edge, leaving a "blank strip" over
+        // the island. screenSaver is the level notch apps use to stay on
+        // top of it.
+        panel.level = .screenSaver
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .utilityWindow
@@ -239,32 +239,31 @@ final class NotchController {
         let size = Self.pillSize(
             for: state, dragHover: isDragHover, hover: isHover,
             topInset: inset)
-        // Flush with the screen's top edge — a black tab hanging down from
-        // the menu bar, exactly like the notch in boring.notch.
+        // Notchy-style: a capsule hanging from the menu bar's bottom edge.
+        // Never overlaps the menu bar (macOS 26+/27 draws its glass above
+        // every window level when the cursor nears the top, which left a
+        // "blank strip" over the island).
         let origin = NSPoint(
             x: screen.frame.midX - size.width / 2,
-            y: screen.frame.maxY - size.height)
+            y: screen.visibleFrame.maxY - size.height)
         panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
     }
 
     static func pillSize(
         for state: State, dragHover: Bool, hover: Bool, topInset: CGFloat
     ) -> NSSize {
-        let hasNotch = topInset > 0
         switch state {
         case .idle(let offer):
             if offer != nil || hover || dragHover {
-                return NSSize(width: 224, height: topInset + 40)
+                return NSSize(width: 224, height: 40)
             }
-            // Rest: on notch Macs this is exactly the notch itself
-            // (invisible); everywhere else a slim fake-notch tab.
-            return NSSize(width: 204, height: hasNotch ? topInset : 36)
+            return NSSize(width: 204, height: 36)
         case .menu:
-            return NSSize(width: 320, height: topInset + 176)
+            return NSSize(width: 320, height: 176)
         case .active:
-            return NSSize(width: 320, height: topInset + 56)
+            return NSSize(width: 320, height: 56)
         case .done, .failed:
-            return NSSize(width: 240, height: topInset + 40)
+            return NSSize(width: 240, height: 40)
         }
     }
 
@@ -478,6 +477,7 @@ final class NotchController {
             return
         }
         debugLog("handleTap: opening menu (offer=\(String(describing: clipboardOffer)))")
+        debugTouchLog("menuOpen")
         playSound("Tink")
         state = .menu(clipboardOffer)
         menuOpenedAt = Date()
@@ -572,9 +572,20 @@ final class NotchController {
         if abs(x - hoverX) > 0.02 { hoverX = x }
     }
 
+    /// Dev hook: `touch ~/Library/Logs/grabbit-touch-log` logs the panel
+    /// geometry on every real hover/click so issues can be diagnosed.
+    private func debugTouchLog(_ context: String) {
+        guard FileManager.default.fileExists(
+            atPath: NSHomeDirectory() + "/Library/Logs/grabbit-touch-log") else { return }
+        guard let screen = NSScreen.screens.first else { return }
+        let f = panel?.frame ?? .zero
+        debugLog("touchLog[\(context)]: panel=\(f) screen=\(screen.frame) vis=\(screen.visibleFrame) inset=\(screen.safeAreaInsets.top) mouse=\(NSEvent.mouseLocation) level=\(panel?.level.rawValue ?? -1)")
+    }
+
     func setHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
         isHover = hovering
+        debugTouchLog(hovering ? "hoverIn" : "hoverOut")
         // Leaving the island folds an open menu back into the tab — it
         // never lingers open (boring.notch behavior). Only fold when the
         // cursor is *really* outside and the menu has settled, so a
@@ -743,7 +754,7 @@ struct NotchPillView: View {
             value: controller.state)
         .animation(.easeInOut(duration: 0.12), value: controller.isDragHover)
         .animation(
-            .spring(response: 0.30, dampingFraction: 0.72),
+            .spring(response: 0.38, dampingFraction: 0.62),
             value: controller.isHover)
     }
 
@@ -763,9 +774,8 @@ struct NotchPillView: View {
         .frame(width: size(for: state).width, height: size(for: state).height)
     }
 
-    /// The island hangs from the very top of the screen: square top
-    /// corners (flush with the edge), generously rounded bottom corners —
-    /// a fake notch when idle, an expanding card when in use.
+    /// A Notchy-style capsule hanging from the menu bar's bottom edge:
+    /// fully rounded, expands on hover, grows into a card when in use.
     private func capsule(for state: NotchController.State) -> some View {
         ZStack {
             glassBase(for: state)
@@ -773,7 +783,6 @@ struct NotchPillView: View {
                 .opacity(rimPulse ? 1.0 : 0.65)
             shineSweep(for: state, phase: sweepRun ? 1 : 0)
             content(for: state)
-                .padding(.top, controller.topInset)
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
         .clipShape(tabShape(for: state))
@@ -841,20 +850,15 @@ struct NotchPillView: View {
             .allowsHitTesting(false)
     }
 
-    private func tabShape(for state: NotchController.State) -> UnevenRoundedRectangle {
+    /// A fully-rounded capsule — the Notchy look.
+    private func tabShape(for state: NotchController.State) -> RoundedRectangle {
         let radius: CGFloat
         switch state {
-        case .idle: radius = 12
-        case .done, .failed: radius = 14
-        case .active: radius = 18
-        case .menu: radius = 22
+        case .idle: radius = 18
+        case .done, .failed: radius = 20
+        case .active, .menu: radius = 26
         }
-        return UnevenRoundedRectangle(
-            topLeadingRadius: 0,
-            bottomLeadingRadius: radius,
-            bottomTrailingRadius: radius,
-            topTrailingRadius: 0,
-            style: .continuous)
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
     }
 
     private func isExpanded(_ state: NotchController.State) -> Bool {
@@ -868,12 +872,7 @@ struct NotchPillView: View {
         case .idle(let offer):
             // On notch Macs the rest state is the bare notch — reveal the
             // content on hover, drag or a pending offer.
-            if offer == nil && !controller.isHover && !controller.isDragHover
-                && controller.topInset > 0 {
-                EmptyView()
-            } else {
-                idleRow(offer, mood: controller.mochiMood(for: state))
-            }
+            idleRow(offer, mood: controller.mochiMood(for: state))
 
         case .menu(let offer):
             menuContent(offer)
