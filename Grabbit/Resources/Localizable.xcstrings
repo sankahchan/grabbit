@@ -8501,6 +8501,533 @@
           }
         }
       }
+    },
+    "settings.notch.header": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch & Pill"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch နှင့် Pill"
+          }
+        }
+      }
+    },
+    "settings.notch.shape": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shape"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပုံစံ"
+          }
+        }
+      }
+    },
+    "settings.notch.shape.pill": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pill"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pill"
+          }
+        }
+      }
+    },
+    "settings.notch.shape.notch": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch"
+          }
+        }
+      }
+    },
+    "settings.notch.shape.note": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pill floats below the menu bar. Notch sits flush with the screen top and blacks out the menu-bar strip centre, like a hardware notch."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pill — menu bar အောက်မှာ လွတ်လပ်စွာ လွင့်။ Notch — မျက်နှာပြင် ထိပ်နဲ့ ကပ်ပြီး menu bar အလယ်ကို hardware notch လိုမျိုး အနက်ပိတ်။"
+          }
+        }
+      }
+    },
+    "settings.notch.closedSize": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed Pill Size"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပိတ်ထားချိန် အရွယ်"
+          }
+        }
+      }
+    },
+    "settings.notch.heightAdjust": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pill Height Adjustment"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြင့် ညှိခြင်း"
+          }
+        }
+      }
+    },
+    "settings.notch.material": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပစ္စည်းအသွင်အပြင်"
+          }
+        }
+      }
+    },
+    "settings.notch.glass": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass Surfaces"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass မျက်နှာပြင်"
+          }
+        }
+      }
+    },
+    "settings.notch.translucency": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel Translucency"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အလင်းဖောက်မှု"
+          }
+        }
+      }
+    },
+    "settings.notch.aura": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color Aura"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရောင်ဝန်း"
+          }
+        }
+      }
+    },
+    "settings.notch.customFill": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Fill"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရောင်စိတ်ကြိုက်"
+          }
+        }
+      }
+    },
+    "settings.notch.fillColor": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill Color"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အရောင်"
+          }
+        }
+      }
+    },
+    "settings.notch.motion": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motion"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လှုပ်ရှားမှု"
+          }
+        }
+      }
+    },
+    "settings.notch.animStyle": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation Style"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation စတိုင်"
+          }
+        }
+      }
+    },
+    "settings.notch.animStyle.calm": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calm"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ငြိမ့်ညောင်း"
+          }
+        }
+      }
+    },
+    "settings.notch.animStyle.snappy": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snappy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သွက်လက်"
+          }
+        }
+      }
+    },
+    "settings.notch.animStyle.bouncy": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bouncy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ခုန်ပေါက်"
+          }
+        }
+      }
+    },
+    "settings.notch.animSpeed": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation Speed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အမြန်နှုန်း"
+          }
+        }
+      }
+    },
+    "settings.notch.expandHover": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand on Hover"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover ရင် ချဲ့ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.hoverDelay": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover Delay"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover နှောင့်နှေးချိန်"
+          }
+        }
+      }
+    },
+    "settings.notch.collapseDelay": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse Delay"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်ကျုံ့ နှောင့်နှေးချိန်"
+          }
+        }
+      }
+    },
+    "settings.notch.idleTimeout": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle Timeout"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ငြိမ်နေရင် ပိတ်ချိန်"
+          }
+        }
+      }
+    },
+    "settings.notch.idleTimeout.never": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မပိတ်"
+          }
+        }
+      }
+    },
+    "settings.notch.popups": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popups"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပေါ်ပြချက်များ"
+          }
+        }
+      }
+    },
+    "settings.notch.showProgress": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Download Progress"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တိုက်ရိုက် တိုးတက်မှု ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.showAdded": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added Peek"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်ပြီးချင်း ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.showFinished": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Finished"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြီးဆုံးရင် ပြ"
+          }
+        }
+      }
+    },
+    "settings.notch.transientSeconds": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification Duration"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြကြာချိန်"
+          }
+        }
+      }
+    },
+    "settings.notch.visibility": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visibility"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မြင်နိုင်မှု"
+          }
+        }
+      }
+    },
+    "settings.notch.hideCapture": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide from Screen Capture"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot ဖမ်းရင် ဖျောက်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

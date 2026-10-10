@@ -218,6 +218,8 @@ final class NotchController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
+        panel.sharingType =
+            settings?.settings.notchHideFromCapture == true ? .none : .readOnly
         // Above everything the system draws. On macOS 26+/27 the glass
         // menu bar rises above ordinary overlay levels the moment the
         // cursor approaches the top edge, leaving a "blank strip" over
@@ -241,28 +243,33 @@ final class NotchController {
         guard let panel, let screen = NSScreen.screens.first else { return }
         let inset = screen.safeAreaInsets.top
         if topInset != inset { topInset = inset }
-        let size = Self.pillSize(
-            for: state, dragHover: isDragHover, hover: isHover,
-            topInset: inset)
-        // Notchy-style: a capsule hanging from the menu bar's bottom edge.
-        // Never overlaps the menu bar (macOS 26+/27 draws its glass above
-        // every window level when the cursor nears the top, which left a
-        // "blank strip" over the island).
+        let size = pillSize(for: state)
+        // Pill mode: a capsule hanging below the menu bar. Notch mode:
+        // flush with the screen top, blacking out the menu-bar strip center
+        // like a hardware notch (Notchy's two shapes).
+        let anchorY = shapeMode == .notch
+            ? screen.frame.maxY
+            : screen.visibleFrame.maxY
         let origin = NSPoint(
             x: screen.frame.midX - size.width / 2,
-            y: screen.visibleFrame.maxY - size.height)
+            y: anchorY - size.height)
         panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
     }
 
-    static func pillSize(
-        for state: State, dragHover: Bool, hover: Bool, topInset: CGFloat
-    ) -> NSSize {
+    /// The island's current size. Only the *closed* pill scales/height-
+    /// adjusts (Notchy's "Closed Pill Size" / "Pill Height Adjustment");
+    /// hover and expanded sizes stay constant.
+    func pillSize(for state: State) -> NSSize {
         switch state {
         case .idle(let offer):
-            if offer != nil || hover || dragHover {
+            if offer != nil || isDragHover || isHover {
                 return NSSize(width: 224, height: 40)
             }
-            return NSSize(width: 204, height: 36)
+            let scale = min(1.5, max(0.7, settings?.settings.notchClosedScale ?? 1))
+            let adjust = Double(min(20, max(-20, settings?.settings.notchHeightAdjust ?? 0)))
+            return NSSize(
+                width: 204 * scale,
+                height: max(24, 36 * scale + adjust))
         case .menu:
             return NSSize(width: 320, height: 176)
         case .active:
@@ -270,6 +277,43 @@ final class NotchController {
         case .done, .failed, .added:
             return NSSize(width: 240, height: 40)
         }
+    }
+
+    // MARK: - User settings accessors (live)
+
+    var shapeMode: NotchShape { settings?.settings.notchShape ?? .pill }
+
+    /// Morph spring per the user's motion settings.
+    var morphAnimation: Animation {
+        let style = settings?.settings.notchAnimationStyle ?? .snappy
+        let base: Animation
+        switch style {
+        case .calm: base = .spring(response: 0.50, dampingFraction: 1.0)
+        case .snappy: base = .spring(response: 0.34, dampingFraction: 0.8)
+        case .bouncy: base = .spring(response: 0.38, dampingFraction: 0.6)
+        }
+        let speed = min(3.0, max(0.25, settings?.settings.notchAnimationSpeed ?? 1))
+        return base.speed(speed)
+    }
+
+    var glassEnabled: Bool { settings?.settings.notchGlassEnabled ?? true }
+    var auraEnabled: Bool { settings?.settings.notchAuraEnabled ?? true }
+    var translucency: Double { min(1.0, max(0.5, settings?.settings.notchTranslucency ?? 0.97)) }
+
+    /// The user's custom closed-island fill, when enabled.
+    var customFill: Color? {
+        guard settings?.settings.notchCustomFill == true,
+              let hex = settings?.settings.notchFillColor
+        else { return nil }
+        return Color(hexString: hex)
+    }
+
+    /// Re-applies user settings that live on the panel window itself.
+    func applySettings() {
+        guard let panel else { return }
+        panel.sharingType =
+            settings?.settings.notchHideFromCapture == true ? .none : .readOnly
+        setEnabled(settings?.settings.notchModeEnabled ?? true)
     }
 
     // MARK: - Keyboard (menu navigation)
@@ -403,6 +447,13 @@ final class NotchController {
         // but fold it back when the mouse has wandered off. Catches
         // tracking-area exits missed while the window was morphing.
         if case .menu = state {
+            let timeout = settings?.settings.notchIdleTimeout ?? 0
+            if timeout > 0, let opened = menuOpenedAt,
+               Date().timeIntervalSince(opened) > timeout {
+                debugLog("collapse: idle timeout")
+                collapse()
+                return
+            }
             if menuGraceElapsed,
                let panel, !panel.frame.contains(NSEvent.mouseLocation) {
                 debugLog("collapse: outside frame")
@@ -423,7 +474,9 @@ final class NotchController {
 
         // Self-heal hover state: tracking areas can miss an enter after a
         // resize — trust the actual cursor position once a tick.
-        if !isHover, let panel, panel.frame.contains(NSEvent.mouseLocation) {
+        if !isHover, settings?.settings.notchExpandOnHover ?? true,
+           let panel, panel.frame.contains(NSEvent.mouseLocation) {
+            wantsHover = true
             isHover = true
             positionPanel(animated: true)
         }
@@ -441,7 +494,8 @@ final class NotchController {
         let progress = totalBytes > 0 ? Double(doneBytes) / Double(totalBytes) : 0
         let active = !downloads.isEmpty || !torrents.isEmpty
 
-        if active {
+        let showProgress = settings?.settings.notchShowProgress ?? true
+        if active, showProgress {
             state = .active(progress: min(1, max(0, progress)), speedBytes: speed)
             speedHistory.append(speed)
             if speedHistory.count > 24 {
@@ -455,7 +509,7 @@ final class NotchController {
             if let failedName {
                 state = .failed(failedName)
                 playSound("Basso")
-            } else {
+            } else if settings?.settings.notchShowFinished ?? true {
                 state = .done("")
                 playSound("Glass")
                 let finished = downloadEngine.items.filter {
@@ -465,7 +519,7 @@ final class NotchController {
                 }.count
                 celebration = finished >= 2
             }
-            transientExpiry = Date().addingTimeInterval(2.5)
+            transientExpiry = Date().addingTimeInterval(transientSeconds)
             wasActive = false
             speedHistory.removeAll()
         } else if let expiry = transientExpiry, Date() > expiry {
@@ -562,7 +616,8 @@ final class NotchController {
     /// mouse-leave is safe (a resize can emit a phantom mouseExited).
     private var menuGraceElapsed: Bool {
         guard let menuOpenedAt else { return true }
-        return Date().timeIntervalSince(menuOpenedAt) > 1.2
+        let delay = max(0, settings?.settings.notchCollapseDelay ?? 0.9)
+        return Date().timeIntervalSince(menuOpenedAt) > delay
     }
 
     func addFromClipboard() {
@@ -650,7 +705,33 @@ final class NotchController {
         debugLog("touchLog[\(context)]: panel=\(f) screen=\(screen.frame) vis=\(screen.visibleFrame) inset=\(screen.safeAreaInsets.top) mouse=\(NSEvent.mouseLocation) level=\(panel?.level.rawValue ?? -1)")
     }
 
+    private var wantsHover = false
+    private var hoverWorkItem: DispatchWorkItem?
+
     func setHover(_ hovering: Bool) {
+        guard wantsHover != hovering else { return }
+        wantsHover = hovering
+        hoverWorkItem?.cancel()
+        hoverWorkItem = nil
+        guard hovering else {
+            applyHover(false)
+            return
+        }
+        guard settings?.settings.notchExpandOnHover ?? true else { return }
+        let delay = max(0, settings?.settings.notchHoverDelay ?? 0)
+        if delay == 0 {
+            applyHover(true)
+        } else {
+            let item = DispatchWorkItem { [weak self] in
+                Task { @MainActor in self?.applyHover(true) }
+            }
+            hoverWorkItem = item
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + delay, execute: item)
+        }
+    }
+
+    private func applyHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
         isHover = hovering
         debugTouchLog(hovering ? "hoverIn" : "hoverOut")
@@ -773,14 +854,20 @@ final class NotchController {
             message: message))
         // Live-activity peek: the island pops open with the new item's
         // name for a couple of seconds, then folds back.
+        guard settings?.settings.notchShowAdded ?? true else { return }
         state = .added(message)
-        transientExpiry = Date().addingTimeInterval(2.5)
+        transientExpiry = Date().addingTimeInterval(transientSeconds)
         positionPanel(animated: true)
+    }
+
+    /// Seconds transient popups stay visible.
+    private var transientSeconds: Double {
+        min(10, max(1, settings?.settings.notchTransientSeconds ?? 2.5))
     }
 
     private func showTransientFailure(_ message: String) {
         state = .failed(message)
-        transientExpiry = Date().addingTimeInterval(3)
+        transientExpiry = Date().addingTimeInterval(transientSeconds)
         positionPanel(animated: true)
     }
 }
@@ -824,13 +911,9 @@ struct NotchPillView: View {
                 onKey: { controller.handleKey($0) },
                 wantKeyFocus: controller.keyFocus)
         )
-        .animation(
-            .spring(response: 0.34, dampingFraction: 0.80),
-            value: controller.state)
+        .animation(controller.morphAnimation, value: controller.state)
         .animation(.easeInOut(duration: 0.12), value: controller.isDragHover)
-        .animation(
-            .spring(response: 0.38, dampingFraction: 0.62),
-            value: controller.isHover)
+        .animation(controller.morphAnimation, value: controller.isHover)
     }
 
     /// Menu: rows stay clickable (they sit on top); tapping anywhere else
@@ -854,8 +937,10 @@ struct NotchPillView: View {
     private func capsule(for state: NotchController.State) -> some View {
         ZStack {
             glassBase(for: state)
-            bottomAura(for: state)
-                .opacity(rimPulse ? 1.0 : 0.65)
+            if controller.auraEnabled {
+                bottomAura(for: state)
+                    .opacity(rimPulse ? 1.0 : 0.65)
+            }
             shineSweep(for: state, phase: sweepRun ? 1 : 0)
             content(for: state)
         }
@@ -889,16 +974,25 @@ struct NotchPillView: View {
             .allowsHitTesting(false)
     }
 
-    /// Dark glass: a soft vertical gradient instead of flat black.
+    /// The island's fill: dark glass, a flat fill, or the user's color.
     private func glassBase(for state: NotchController.State) -> some View {
-        let base = LinearGradient(
-            colors: [
-                Color(hex: 0x1B2029).opacity(0.98),
-                Color(hex: 0x0A0C11).opacity(0.99),
-            ],
-            startPoint: .top, endPoint: .bottom)
+        let opacity = controller.translucency
+        let fill: AnyShapeStyle
+        if let custom = controller.customFill {
+            fill = AnyShapeStyle(custom.opacity(opacity))
+        } else if controller.glassEnabled {
+            fill = AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color(hex: 0x1B2029).opacity(opacity),
+                        Color(hex: 0x0A0C11).opacity(min(1, opacity + 0.02)),
+                    ],
+                    startPoint: .top, endPoint: .bottom))
+        } else {
+            fill = AnyShapeStyle(Color(hex: 0x0B0D12).opacity(opacity))
+        }
         return tabShape(for: state)
-            .fill(base)
+            .fill(fill)
             .allowsHitTesting(false)
     }
 
@@ -926,15 +1020,24 @@ struct NotchPillView: View {
             .allowsHitTesting(false)
     }
 
-    /// A fully-rounded capsule — the Notchy look.
-    private func tabShape(for state: NotchController.State) -> RoundedRectangle {
-        let radius: CGFloat
-        switch state {
-        case .idle: radius = 18
-        case .done, .failed, .added: radius = 20
-        case .active, .menu: radius = 26
+    /// Pill mode: a fully-rounded capsule / card. Notch mode: square top
+    /// flush with the screen edge, rounded bottom — Notchy's two shapes.
+    private func tabShape(for state: NotchController.State) -> AnyShape {
+        let closed: Bool
+        if case .idle = state { closed = true } else { closed = false }
+        let size = self.size(for: state)
+        let radius = closed ? min(18, size.height / 2) : 26
+        if controller.shapeMode == .notch {
+            return AnyShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: radius,
+                    bottomTrailingRadius: radius,
+                    topTrailingRadius: 0,
+                    style: .continuous))
         }
-        return RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return AnyShape(
+            RoundedRectangle(cornerRadius: radius, style: .continuous))
     }
 
     private func isExpanded(_ state: NotchController.State) -> Bool {
@@ -1115,9 +1218,7 @@ struct NotchPillView: View {
     }
 
     private func size(for state: NotchController.State) -> CGSize {
-        let ns = NotchController.pillSize(
-            for: state, dragHover: controller.isDragHover,
-            hover: controller.isHover, topInset: controller.topInset)
+        let ns = controller.pillSize(for: state)
         return CGSize(width: ns.width, height: ns.height)
     }
 }

@@ -84,6 +84,45 @@ public struct AppSettings: Codable {
     /// Hide the island while another notch app (boring.notch, NotchNook,
     /// notchy, …) is running — two islands stacked at top-center collide.
     public var notchHideWhenOtherApp = true
+    /// Pill (floating capsule below the menu bar) or Notch (flush with the
+    /// screen top, blacking out the menu-bar strip center) — Notchy-style.
+    public var notchShape: NotchShape = .pill
+    /// Scales the closed island (1.0 = design size).
+    public var notchClosedScale: Double = 1.0
+    /// Extra points added to the closed island's height (top-anchored).
+    public var notchHeightAdjust: Int = 0
+    /// Glass gradient + edge highlight; off = flat dark fill.
+    public var notchGlassEnabled = true
+    /// Panel opacity (0.8–1.0) — lower lets the desktop show through.
+    public var notchTranslucency: Double = 0.97
+    /// The state-colored glow along the bottom edge.
+    public var notchAuraEnabled = true
+    /// Replace the glass fill with a user-picked color.
+    public var notchCustomFill = false
+    /// Hex ("#RRGGBB") of the custom fill.
+    public var notchFillColor = ""
+    /// Spring flavor for open/close/hover morphs.
+    public var notchAnimationStyle: NotchAnimationStyle = .snappy
+    /// Animation speed multiplier (1 = normal).
+    public var notchAnimationSpeed: Double = 1.0
+    /// Expand the island when the pointer rests on it.
+    public var notchExpandOnHover = true
+    /// Seconds before the hover expansion starts.
+    public var notchHoverDelay: Double = 0.1
+    /// Seconds before an open menu folds after the pointer leaves.
+    public var notchCollapseDelay: Double = 0.9
+    /// Seconds before a parked-open menu closes (0 = never).
+    public var notchIdleTimeout: Double = 0
+    /// Live download progress on the island.
+    public var notchShowProgress = true
+    /// Live-activity peek when a download is added.
+    public var notchShowAdded = true
+    /// Transient popup when a download finishes.
+    public var notchShowFinished = true
+    /// Seconds transient popups (added / done / failed) stay up.
+    public var notchTransientSeconds: Double = 2.5
+    /// Exclude the island from screen captures (NSWindow.sharingType).
+    public var notchHideFromCapture = false
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -145,6 +184,14 @@ extension AppSettings {
         case torznabIndexers, autoStartIndexers, notchModeEnabled
         case notchSoundsEnabled
         case notchHideWhenOtherApp
+        case notchShape, notchClosedScale, notchHeightAdjust
+        case notchGlassEnabled, notchTranslucency, notchAuraEnabled
+        case notchCustomFill, notchFillColor
+        case notchAnimationStyle, notchAnimationSpeed
+        case notchExpandOnHover, notchHoverDelay, notchCollapseDelay
+        case notchIdleTimeout
+        case notchShowProgress, notchShowAdded, notchShowFinished
+        case notchTransientSeconds, notchHideFromCapture
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -183,6 +230,25 @@ extension AppSettings {
         notchModeEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchModeEnabled) ?? true
         notchSoundsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchSoundsEnabled) ?? true
         notchHideWhenOtherApp = try c.decodeIfPresent(Bool.self, forKey: .notchHideWhenOtherApp) ?? true
+        notchShape = try c.decodeIfPresent(NotchShape.self, forKey: .notchShape) ?? .pill
+        notchClosedScale = try c.decodeIfPresent(Double.self, forKey: .notchClosedScale) ?? 1.0
+        notchHeightAdjust = try c.decodeIfPresent(Int.self, forKey: .notchHeightAdjust) ?? 0
+        notchGlassEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchGlassEnabled) ?? true
+        notchTranslucency = try c.decodeIfPresent(Double.self, forKey: .notchTranslucency) ?? 0.97
+        notchAuraEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchAuraEnabled) ?? true
+        notchCustomFill = try c.decodeIfPresent(Bool.self, forKey: .notchCustomFill) ?? false
+        notchFillColor = try c.decodeIfPresent(String.self, forKey: .notchFillColor) ?? ""
+        notchAnimationStyle = try c.decodeIfPresent(NotchAnimationStyle.self, forKey: .notchAnimationStyle) ?? .snappy
+        notchAnimationSpeed = try c.decodeIfPresent(Double.self, forKey: .notchAnimationSpeed) ?? 1.0
+        notchExpandOnHover = try c.decodeIfPresent(Bool.self, forKey: .notchExpandOnHover) ?? true
+        notchHoverDelay = try c.decodeIfPresent(Double.self, forKey: .notchHoverDelay) ?? 0.1
+        notchCollapseDelay = try c.decodeIfPresent(Double.self, forKey: .notchCollapseDelay) ?? 0.9
+        notchIdleTimeout = try c.decodeIfPresent(Double.self, forKey: .notchIdleTimeout) ?? 0
+        notchShowProgress = try c.decodeIfPresent(Bool.self, forKey: .notchShowProgress) ?? true
+        notchShowAdded = try c.decodeIfPresent(Bool.self, forKey: .notchShowAdded) ?? true
+        notchShowFinished = try c.decodeIfPresent(Bool.self, forKey: .notchShowFinished) ?? true
+        notchTransientSeconds = try c.decodeIfPresent(Double.self, forKey: .notchTransientSeconds) ?? 2.5
+        notchHideFromCapture = try c.decodeIfPresent(Bool.self, forKey: .notchHideFromCapture) ?? false
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
@@ -202,6 +268,19 @@ extension AppSettings {
         mediaSubtitleLanguages = try c.decodeIfPresent(String.self, forKey: .mediaSubtitleLanguages) ?? "en.*,my.*"
         cookiesFilePath = try c.decodeIfPresent(String.self, forKey: .cookiesFilePath) ?? ""
     }
+}
+
+/// The island's closed shape: a floating pill or a flush fake-notch.
+public enum NotchShape: String, Codable, CaseIterable, Sendable {
+    case pill
+    case notch
+}
+
+/// Spring flavors for the island's morphs.
+public enum NotchAnimationStyle: String, Codable, CaseIterable, Sendable {
+    case calm
+    case snappy
+    case bouncy
 }
 
 @Observable

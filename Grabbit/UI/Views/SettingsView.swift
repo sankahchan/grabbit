@@ -41,6 +41,7 @@ struct SettingsView: View {
                 // the window (capped at 900 so rows don't stretch across
                 // ultra-wide displays). Update controls live in the About tab.
                 basicCard(settings: settings)
+                notchCard(settings: settings)
                 downloadsCard(settings: settings)
                 mediaCard(settings: settings)
                 grabberSection(settings: settings)
@@ -66,6 +67,43 @@ struct SettingsView: View {
             onOpenAtLogin: applyOpenAtLogin))
         .modifier(ProxyChangeHandlers())
         .modifier(MediaChangeHandlers())
+        .modifier(NotchChangeHandlers())
+    }
+
+    // MARK: - Notch & Pill change handlers
+
+    /// Saves and re-applies every notch/pill setting immediately.
+    private struct NotchChangeHandlers: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(NotchController.self) private var notchController: NotchController
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: store.settings.notchShape) { _, _ in changed() }
+                .onChange(of: store.settings.notchClosedScale) { _, _ in changed() }
+                .onChange(of: store.settings.notchHeightAdjust) { _, _ in changed() }
+                .onChange(of: store.settings.notchGlassEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchTranslucency) { _, _ in changed() }
+                .onChange(of: store.settings.notchAuraEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchCustomFill) { _, _ in changed() }
+                .onChange(of: store.settings.notchFillColor) { _, _ in changed() }
+                .onChange(of: store.settings.notchAnimationStyle) { _, _ in changed() }
+                .onChange(of: store.settings.notchAnimationSpeed) { _, _ in changed() }
+                .onChange(of: store.settings.notchExpandOnHover) { _, _ in changed() }
+                .onChange(of: store.settings.notchHoverDelay) { _, _ in changed() }
+                .onChange(of: store.settings.notchCollapseDelay) { _, _ in changed() }
+                .onChange(of: store.settings.notchIdleTimeout) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowProgress) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowAdded) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowFinished) { _, _ in changed() }
+                .onChange(of: store.settings.notchTransientSeconds) { _, _ in changed() }
+                .onChange(of: store.settings.notchHideFromCapture) { _, _ in changed() }
+        }
+
+        private func changed() {
+            store.save()
+            notchController.applySettings()
+        }
     }
 
     // MARK: - Change handlers
@@ -275,35 +313,6 @@ struct SettingsView: View {
             Toggle(NSLocalizedString("settings.toast.sound", comment: ""), isOn: settings.completionSoundEnabled)
             .toggleStyle(NeoToggleStyle())
             runAsRow(settings: settings)
-            NeoDivider()
-            NeoDivider()
-            HStack {
-                Text(NSLocalizedString("settings.notchMode", comment: ""))
-                    .font(NeoFont.f(.subheadline, .semibold))
-                Spacer()
-                Toggle("", isOn: settings.notchModeEnabled)
-                    .toggleStyle(NeoToggleStyle())
-                    .labelsHidden()
-            }
-            Text(NSLocalizedString("settings.notchMode.note", comment: ""))
-                .font(NeoFont.f(.caption))
-                .foregroundStyle(.secondary)
-            HStack {
-                Text(NSLocalizedString("settings.notchSounds", comment: ""))
-                    .font(NeoFont.f(.subheadline, .semibold))
-                Spacer()
-                Toggle("", isOn: settings.notchSoundsEnabled)
-                    .toggleStyle(NeoToggleStyle())
-                    .labelsHidden()
-            }
-            HStack {
-                Text(NSLocalizedString("settings.notchHideWhenOtherApp", comment: ""))
-                    .font(NeoFont.f(.subheadline, .semibold))
-                Spacer()
-                Toggle("", isOn: settings.notchHideWhenOtherApp)
-                    .toggleStyle(NeoToggleStyle())
-                    .labelsHidden()
-            }
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
             .toggleStyle(NeoToggleStyle())
@@ -322,6 +331,206 @@ struct SettingsView: View {
             completionSection(settings: settings)
         }
         .neoCard()
+    }
+
+    // MARK: - Notch & Pill card
+
+    @ViewBuilder
+    private func notchCard(settings: Binding<AppSettings>) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            subHeader(NSLocalizedString("settings.notch.header", comment: ""))
+            notchShapeSection(settings: settings)
+            NeoDivider()
+            subHeader(NSLocalizedString("settings.notch.material", comment: ""))
+            notchMaterialSection(settings: settings)
+            NeoDivider()
+            subHeader(NSLocalizedString("settings.notch.motion", comment: ""))
+            notchMotionSection(settings: settings)
+            NeoDivider()
+            subHeader(NSLocalizedString("settings.notch.popups", comment: ""))
+            notchPopupsSection(settings: settings)
+            NeoDivider()
+            subHeader(NSLocalizedString("settings.notch.visibility", comment: ""))
+            notchVisibilitySection(settings: settings)
+        }
+        .neoCard()
+    }
+
+    @ViewBuilder
+    private func notchShapeSection(settings: Binding<AppSettings>) -> some View {
+        HStack {
+            Text(NSLocalizedString("settings.notchMode", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            Toggle("", isOn: settings.notchModeEnabled)
+                .toggleStyle(NeoToggleStyle())
+                .labelsHidden()
+        }
+        Text(NSLocalizedString("settings.notchMode.note", comment: ""))
+            .font(NeoFont.f(.caption))
+            .foregroundStyle(.secondary)
+        HStack {
+            Text(NSLocalizedString("settings.notch.shape", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchShape, titles: [
+                (.pill, NSLocalizedString("settings.notch.shape.pill", comment: "")),
+                (.notch, NSLocalizedString("settings.notch.shape.notch", comment: "")),
+            ])
+            .frame(maxWidth: 220)
+        }
+        Text(NSLocalizedString("settings.notch.shape.note", comment: ""))
+            .font(NeoFont.f(.caption))
+            .foregroundStyle(.secondary)
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.closedSize", comment: ""),
+            value: Binding(
+                get: { settings.wrappedValue.notchClosedScale },
+                set: { settings.wrappedValue.notchClosedScale = $0 }),
+            in: 0.7...1.5, step: 0.05) { "\(Int(($0 * 100).rounded()))%" }
+        HStack {
+            Text(NSLocalizedString("settings.notch.heightAdjust", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoStepper(
+                value: settings.notchHeightAdjust, in: -20...20, step: 2) {
+                "\($0)pt"
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func notchMaterialSection(settings: Binding<AppSettings>) -> some View {
+        notchToggleRow(
+            NSLocalizedString("settings.notch.glass", comment: ""),
+            isOn: settings.notchGlassEnabled)
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.translucency", comment: ""),
+            value: Binding(
+                get: { settings.wrappedValue.notchTranslucency * 100 },
+                set: { settings.wrappedValue.notchTranslucency = $0 / 100 }),
+            in: 80...100, step: 5) { "\(Int($0))%" }
+        notchToggleRow(
+            NSLocalizedString("settings.notch.aura", comment: ""),
+            isOn: settings.notchAuraEnabled)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.customFill", comment: ""),
+            isOn: settings.notchCustomFill)
+        if settings.wrappedValue.notchCustomFill {
+            HStack {
+                Text(NSLocalizedString("settings.notch.fillColor", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Spacer()
+                ColorPicker(
+                    "",
+                    selection: Binding(
+                        get: {
+                            Color(hexString: settings.wrappedValue.notchFillColor)
+                                ?? Color(hex: 0x101318)
+                        },
+                        set: { settings.wrappedValue.notchFillColor = $0.hexString }
+                    ),
+                    supportsOpacity: false
+                )
+                .labelsHidden()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func notchMotionSection(settings: Binding<AppSettings>) -> some View {
+        HStack {
+            Text(NSLocalizedString("settings.notch.animStyle", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchAnimationStyle, titles: [
+                (.calm, NSLocalizedString("settings.notch.animStyle.calm", comment: "")),
+                (.snappy, NSLocalizedString("settings.notch.animStyle.snappy", comment: "")),
+                (.bouncy, NSLocalizedString("settings.notch.animStyle.bouncy", comment: "")),
+            ])
+            .frame(maxWidth: 300)
+        }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.animSpeed", comment: ""),
+            value: settings.notchAnimationSpeed,
+            in: 0.5...2.0, step: 0.1) { String(format: "%.1f×", $0) }
+        notchToggleRow(
+            NSLocalizedString("settings.notch.expandHover", comment: ""),
+            isOn: settings.notchExpandOnHover)
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.hoverDelay", comment: ""),
+            value: settings.notchHoverDelay,
+            in: 0...1, step: 0.05) { String(format: "%.2fs", $0) }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.collapseDelay", comment: ""),
+            value: settings.notchCollapseDelay,
+            in: 0...2, step: 0.1) { String(format: "%.1fs", $0) }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.idleTimeout", comment: ""),
+            value: settings.notchIdleTimeout,
+            in: 0...120, step: 10) {
+                $0 == 0
+                    ? NSLocalizedString("settings.notch.idleTimeout.never", comment: "")
+                    : "\(Int($0))s"
+            }
+    }
+
+    @ViewBuilder
+    private func notchPopupsSection(settings: Binding<AppSettings>) -> some View {
+        notchToggleRow(
+            NSLocalizedString("settings.notch.showProgress", comment: ""),
+            isOn: settings.notchShowProgress)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.showAdded", comment: ""),
+            isOn: settings.notchShowAdded)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.showFinished", comment: ""),
+            isOn: settings.notchShowFinished)
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.transientSeconds", comment: ""),
+            value: settings.notchTransientSeconds,
+            in: 1...10, step: 0.5) { String(format: "%.1fs", $0) }
+        notchToggleRow(
+            NSLocalizedString("settings.notchSounds", comment: ""),
+            isOn: settings.notchSoundsEnabled)
+    }
+
+    @ViewBuilder
+    private func notchVisibilitySection(settings: Binding<AppSettings>) -> some View {
+        notchToggleRow(
+            NSLocalizedString("settings.notchHideWhenOtherApp", comment: ""),
+            isOn: settings.notchHideWhenOtherApp)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.hideCapture", comment: ""),
+            isOn: settings.notchHideFromCapture)
+    }
+
+    private func notchToggleRow(
+        _ label: String, isOn: Binding<Bool>
+    ) -> some View {
+        HStack {
+            Text(label)
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            Toggle("", isOn: isOn)
+                .toggleStyle(NeoToggleStyle())
+                .labelsHidden()
+        }
+    }
+
+    private func notchStepperRow(
+        label: String,
+        value: Binding<Double>,
+        in range: ClosedRange<Double>,
+        step: Double,
+        format: @escaping (Double) -> String
+    ) -> some View {
+        HStack {
+            Text(label)
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoStepper(value: value, in: range, step: step, label: format)
+        }
     }
 
     private func maxActiveTasksRow(settings: Binding<AppSettings>) -> some View {

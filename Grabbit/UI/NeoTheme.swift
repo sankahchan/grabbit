@@ -11,6 +11,25 @@ extension Color {
         let b = Double(hex & 0xFF) / 255
         self.init(red: r, green: g, blue: b)
     }
+
+    /// Creates a Color from "#RRGGBB" / "RRGGBB" text (custom fill hex).
+    init?(hexString: String) {
+        var text = hexString.trimmingCharacters(in: .whitespaces)
+        if text.hasPrefix("#") { text.removeFirst() }
+        guard text.count == 6, let value = UInt32(text, radix: 16) else {
+            return nil
+        }
+        self.init(hex: value)
+    }
+
+    /// The color as "#RRGGBB" (for persistence).
+    var hexString: String {
+        let ns = NSColor(self).usingColorSpace(.sRGB) ?? .black
+        let r = Int((ns.redComponent * 255).rounded())
+        let g = Int((ns.greenComponent * 255).rounded())
+        let b = Int((ns.blueComponent * 255).rounded())
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
 }
 
 // MARK: - Neo-brutalist palette
