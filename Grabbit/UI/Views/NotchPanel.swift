@@ -755,15 +755,10 @@ struct NotchPillView: View {
     private func capsule(for state: NotchController.State) -> some View {
         ZStack {
             glassBase(for: state)
-            staticRim(for: state)
-                .opacity(rimPulse ? 1.0 : 0.72)
-            topHighlight(for: state)
+            bottomAura(for: state)
+                .opacity(rimPulse ? 1.0 : 0.65)
+            topGlow
             shineSweep(for: state, phase: sweepRun ? 1 : 0)
-            if controller.isDragHover {
-                tabShape(for: state)
-                    .stroke(.white.opacity(0.45), lineWidth: 1.5)
-                    .allowsHitTesting(false)
-            }
             content(for: state)
                 .padding(.top, controller.topInset)
         }
@@ -801,7 +796,7 @@ struct NotchPillView: View {
     private func glassBase(for state: NotchController.State) -> some View {
         let base = LinearGradient(
             colors: [
-                Color(hex: 0x171B24).opacity(0.97),
+                Color(hex: 0x1B2029).opacity(0.98),
                 Color(hex: 0x0A0C11).opacity(0.99),
             ],
             startPoint: .top, endPoint: .bottom)
@@ -810,39 +805,38 @@ struct NotchPillView: View {
             .allowsHitTesting(false)
     }
 
-    /// A soft rainbow rim around the island.
-    private func staticRim(for state: NotchController.State) -> some View {
-        let colors: [Color] = [
-            Neo.purple, Color(hex: 0xFF9EB5), Neo.yellow, Neo.green,
-            Neo.blue, Neo.purple,
-        ]
-        return tabShape(for: state)
-            .stroke(
-                AngularGradient(colors: colors, center: .center),
-                lineWidth: 1.5)
-            .opacity(rimOpacity(for: state))
-            .allowsHitTesting(false)
-    }
-
-    private func rimOpacity(for state: NotchController.State) -> Double {
-        if controller.isDragHover { return 0.9 }
-        if controller.isHover { return 0.65 }
-        switch state {
-        case .idle: return 0.35
-        case .active: return 0.55
-        case .done, .failed: return 0.6
-        case .menu: return 0.5
+    /// A soft glow along the top edge, like iOS's Dynamic Island.
+    private var topGlow: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [.white.opacity(0.20), .white.opacity(0.0)],
+                startPoint: .top, endPoint: .bottom)
+                .frame(height: 7)
+            Spacer(minLength: 0)
         }
+        .allowsHitTesting(false)
     }
 
-    /// A hairline of light along the top edge, like iOS's Dynamic Island.
-    private func topHighlight(for state: NotchController.State) -> some View {
-        tabShape(for: state)
-            .stroke(
-                LinearGradient(
-                    colors: [.white.opacity(0.18), .white.opacity(0.02)],
-                    startPoint: .top, endPoint: .bottom),
-                lineWidth: 1)
+    /// A soft breath of color rising from the bottom edge — the island's
+    /// mood lighting. Hard gradient rings and stroked shapes don't render
+    /// reliably in this panel; a soft internal LinearGradient does.
+    private func bottomAura(for state: NotchController.State) -> some View {
+        let color: Color = {
+            if controller.isDragHover { return .white }
+            switch state {
+            case .idle, .menu: return Color(hex: 0xB06CF9)
+            case .active: return Neo.blue
+            case .done: return Neo.green
+            case .failed: return Color(hex: 0xFF5A5A)
+            }
+        }()
+        let strength: Double = controller.isDragHover ? 0.55 : 0.38
+        return LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0.5),
+                .init(color: color.opacity(strength), location: 1.0),
+            ],
+            startPoint: .top, endPoint: .bottom)
             .allowsHitTesting(false)
     }
 
