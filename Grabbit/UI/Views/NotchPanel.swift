@@ -49,6 +49,9 @@ final class NotchController {
     private var transientExpiry: Date?
     /// The last finish was a batch (>= 2 at once) — Mochi throws confetti.
     private var celebration = false
+    /// When the menu opened — auto-collapse has a grace period so a
+    /// spurious mouseExited during the window morph can't fold it instantly.
+    private var menuOpenedAt: Date?
 
     private var clipboardOffer: Offer?
     private var lastClipboardChangeCount = 0
@@ -113,6 +116,17 @@ final class NotchController {
         buildPanel()
         startTimer()
         startConflictMonitor()
+        // Dev hook: `touch ~/Library/Logs/grabbit-force-menu` opens the
+        // menu briefly after launch so the island can be inspected.
+        if FileManager.default.fileExists(
+            atPath: NSHomeDirectory() + "/Library/Logs/grabbit-force-menu") {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                self?.handleTap()
+                // Hold it open for inspection (grace never elapses).
+                self?.menuOpenedAt = Date().addingTimeInterval(3600)
+            }
+        }
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
@@ -322,10 +336,18 @@ final class NotchController {
         // but fold it back when the mouse has wandered off. Catches
         // tracking-area exits missed while the window was morphing.
         if case .menu = state {
-            if let panel, !panel.frame.contains(NSEvent.mouseLocation) {
+            if menuGraceElapsed,
+               let panel, !panel.frame.contains(NSEvent.mouseLocation) {
+                debugLog("collapse: outside frame")
                 collapse()
             }
             return
+        }
+        // Self-heal hover state: tracking areas can miss an enter after a
+        // resize — trust the actual cursor position once a tick.
+        if !isHover, let panel, panel.frame.contains(NSEvent.mouseLocation) {
+            isHover = true
+            positionPanel(animated: true)
         }
 
         guard let downloadEngine, let torrentEngine else { return }
@@ -444,12 +466,21 @@ final class NotchController {
         debugLog("handleTap: opening menu (offer=\(String(describing: clipboardOffer)))")
         playSound("Tink")
         state = .menu(clipboardOffer)
+        menuOpenedAt = Date()
         positionPanel(animated: true)
     }
 
     func collapse() {
         state = .idle(clipboardOffer)
+        menuOpenedAt = nil
         positionPanel(animated: true)
+    }
+
+    /// True once the menu has been open long enough that folding it on
+    /// mouse-leave is safe (a resize can emit a phantom mouseExited).
+    private var menuGraceElapsed: Bool {
+        guard let menuOpenedAt else { return true }
+        return Date().timeIntervalSince(menuOpenedAt) > 1.2
     }
 
     func addFromClipboard() {
@@ -531,8 +562,12 @@ final class NotchController {
         guard isHover != hovering else { return }
         isHover = hovering
         // Leaving the island folds an open menu back into the tab — it
-        // never lingers open (boring.notch behavior).
-        if !hovering, case .menu = state {
+        // never lingers open (boring.notch behavior). Only fold when the
+        // cursor is *really* outside and the menu has settled, so a
+        // phantom mouseExited during the window morph can't kill it.
+        if !hovering, case .menu = state, menuGraceElapsed,
+           let panel, !panel.frame.contains(NSEvent.mouseLocation) {
+            debugLog("collapse: real mouse exit")
             collapse()
             return
         }
@@ -657,6 +692,11 @@ final class NotchController {
 struct NotchPillView: View {
     @Bindable var controller: NotchController
 
+    /// Safe in a non-activating panel (unlike TimelineView, which broke
+    /// button rendering here): rim pulse + shine sweep via repeatForever.
+    @State private var rimPulse = false
+    @State private var sweepRun = false
+
     var body: some View {
         let state = controller.state
         Group {
@@ -713,24 +753,48 @@ struct NotchPillView: View {
     /// corners (flush with the edge), generously rounded bottom corners —
     /// a fake notch when idle, an expanding card when in use.
     private func capsule(for state: NotchController.State) -> some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            ZStack {
-                glassBase(for: state)
-                auroraRim(for: state, t: t)
-                topHighlight(for: state)
-                shineSweep(for: state, t: t)
-                if controller.isDragHover {
-                    tabShape(for: state)
-                        .stroke(.white.opacity(0.45), lineWidth: 1.5)
-                        .allowsHitTesting(false)
-                }
-                content(for: state)
-                    .padding(.top, controller.topInset)
+        ZStack {
+            glassBase(for: state)
+            staticRim(for: state)
+                .opacity(rimPulse ? 1.0 : 0.72)
+            topHighlight(for: state)
+            shineSweep(for: state, phase: sweepRun ? 1 : 0)
+            if controller.isDragHover {
+                tabShape(for: state)
+                    .stroke(.white.opacity(0.45), lineWidth: 1.5)
+                    .allowsHitTesting(false)
             }
-            .frame(width: size(for: state).width, height: size(for: state).height)
-            .clipShape(tabShape(for: state))
+            content(for: state)
+                .padding(.top, controller.topInset)
         }
+        .frame(width: size(for: state).width, height: size(for: state).height)
+        .clipShape(tabShape(for: state))
+        .onAppear {
+            withAnimation(
+                .easeInOut(duration: 2.6).repeatForever(autoreverses: true)
+            ) {
+                rimPulse = true
+            }
+            withAnimation(
+                .linear(duration: 7).repeatForever(autoreverses: false)
+            ) {
+                sweepRun = true
+            }
+        }
+    }
+
+    /// A diagonal glint that crosses the island every few seconds.
+    private func shineSweep(
+        for state: NotchController.State, phase: Double
+    ) -> some View {
+        let w = size(for: state).width
+        return LinearGradient(
+            colors: [.clear, .white.opacity(0.07), .clear],
+            startPoint: .leading, endPoint: .trailing)
+            .frame(width: w * 0.6, height: size(for: state).height * 2)
+            .rotationEffect(.degrees(16))
+            .offset(x: -w + CGFloat(phase) * (w * 2.0))
+            .allowsHitTesting(false)
     }
 
     /// Dark glass: a soft vertical gradient instead of flat black.
@@ -746,20 +810,16 @@ struct NotchPillView: View {
             .allowsHitTesting(false)
     }
 
-    /// A slowly drifting rainbow rim — the island's "aurora".
-    private func auroraRim(
-        for state: NotchController.State, t: TimeInterval
-    ) -> some View {
+    /// A soft rainbow rim around the island.
+    private func staticRim(for state: NotchController.State) -> some View {
         let colors: [Color] = [
             Neo.purple, Color(hex: 0xFF9EB5), Neo.yellow, Neo.green,
             Neo.blue, Neo.purple,
         ]
-        let w = size(for: state).width
-        return Rectangle()
-            .fill(AngularGradient(colors: colors, center: .center))
-            .frame(width: w * 3, height: w * 3)
-            .rotationEffect(.degrees(t * 16))
-            .mask(tabShape(for: state).stroke(lineWidth: 1.5))
+        return tabShape(for: state)
+            .stroke(
+                AngularGradient(colors: colors, center: .center),
+                lineWidth: 1.5)
             .opacity(rimOpacity(for: state))
             .allowsHitTesting(false)
     }
@@ -783,21 +843,6 @@ struct NotchPillView: View {
                     colors: [.white.opacity(0.18), .white.opacity(0.02)],
                     startPoint: .top, endPoint: .bottom),
                 lineWidth: 1)
-            .allowsHitTesting(false)
-    }
-
-    /// A diagonal glint that crosses the island every few seconds.
-    private func shineSweep(
-        for state: NotchController.State, t: TimeInterval
-    ) -> some View {
-        let w = size(for: state).width
-        let phase = (t / 6).truncatingRemainder(dividingBy: 1)
-        return LinearGradient(
-            colors: [.clear, .white.opacity(0.07), .clear],
-            startPoint: .leading, endPoint: .trailing)
-            .frame(width: w * 0.6, height: size(for: state).height * 2)
-            .rotationEffect(.degrees(16))
-            .offset(x: -w + phase * (w * 2.0))
             .allowsHitTesting(false)
     }
 
