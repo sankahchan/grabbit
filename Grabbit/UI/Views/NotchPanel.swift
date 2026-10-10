@@ -116,8 +116,9 @@ final class NotchController {
         buildPanel()
         startTimer()
         startConflictMonitor()
-        // Dev hook: `touch ~/Library/Logs/grabbit-force-menu` opens the
-        // menu briefly after launch so the island can be inspected.
+        // Dev hooks: touch (or rm) these files to inspect island states.
+        // `grabbit-force-menu` opens the menu; `grabbit-force-hover` fakes
+        // the hover state so the layout can be screenshotted without a mouse.
         if FileManager.default.fileExists(
             atPath: NSHomeDirectory() + "/Library/Logs/grabbit-force-menu") {
             Task { @MainActor [weak self] in
@@ -125,6 +126,14 @@ final class NotchController {
                 self?.handleTap()
                 // Hold it open for inspection (grace never elapses).
                 self?.menuOpenedAt = Date().addingTimeInterval(3600)
+            }
+        }
+        if FileManager.default.fileExists(
+            atPath: NSHomeDirectory() + "/Library/Logs/grabbit-force-hover") {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                self?.isHover = true
+                self?.positionPanel(animated: false)
             }
         }
         NotificationCenter.default.addObserver(
@@ -714,8 +723,8 @@ struct NotchPillView: View {
             }
         }
         .shadow(
-            color: .black.opacity(isExpanded(state) ? 0.42 : 0.22),
-            radius: 14, y: 8)
+            color: .black.opacity(isExpanded(state) ? 0.38 : 0.12),
+            radius: 12, y: 6)
         .background(
             NotchDropZone(
                 onGaze: { controller.setGaze($0) },
@@ -757,7 +766,6 @@ struct NotchPillView: View {
             glassBase(for: state)
             bottomAura(for: state)
                 .opacity(rimPulse ? 1.0 : 0.65)
-            topGlow
             shineSweep(for: state, phase: sweepRun ? 1 : 0)
             content(for: state)
                 .padding(.top, controller.topInset)
@@ -803,18 +811,6 @@ struct NotchPillView: View {
         return tabShape(for: state)
             .fill(base)
             .allowsHitTesting(false)
-    }
-
-    /// A soft glow along the top edge, like iOS's Dynamic Island.
-    private var topGlow: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [.white.opacity(0.20), .white.opacity(0.0)],
-                startPoint: .top, endPoint: .bottom)
-                .frame(height: 7)
-            Spacer(minLength: 0)
-        }
-        .allowsHitTesting(false)
     }
 
     /// A soft breath of color rising from the bottom edge — the island's
