@@ -8484,6 +8484,23 @@
           }
         }
       }
+    },
+    "notch.menu.add": {
+      "comment": "Notch menu: add the detected link",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ADD"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထည့်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

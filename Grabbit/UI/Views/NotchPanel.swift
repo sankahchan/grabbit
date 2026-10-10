@@ -38,6 +38,10 @@ final class NotchController {
     private var conflictTimer: Timer?
     /// True while the island is hidden because another notch app is running.
     private(set) var conflictHidden = false
+    /// Recent download-speed samples (one per tick) for the sparkline.
+    private(set) var speedHistory: [Double] = []
+    /// Cursor position across the island (-1…1) for the mochi's parallax.
+    private(set) var hoverX: CGFloat = 0
     /// Height of the physical notch (0 on non-notch Macs). The island hangs
     /// from the very top edge of the screen; content stays below this inset.
     private(set) var topInset: CGFloat = 0
@@ -228,7 +232,7 @@ final class NotchController {
             // (invisible); everywhere else a slim fake-notch tab.
             return NSSize(width: 204, height: hasNotch ? topInset : 36)
         case .menu:
-            return NSSize(width: 320, height: topInset + 182)
+            return NSSize(width: 320, height: topInset + 176)
         case .active:
             return NSSize(width: 320, height: topInset + 56)
         case .done, .failed:
@@ -339,6 +343,10 @@ final class NotchController {
 
         if active {
             state = .active(progress: min(1, max(0, progress)), speedBytes: speed)
+            speedHistory.append(speed)
+            if speedHistory.count > 24 {
+                speedHistory.removeFirst(speedHistory.count - 24)
+            }
             wasActive = true
             transientExpiry = nil
         } else if wasActive {
@@ -359,6 +367,7 @@ final class NotchController {
             }
             transientExpiry = Date().addingTimeInterval(2.5)
             wasActive = false
+            speedHistory.removeAll()
         } else if let expiry = transientExpiry, Date() > expiry {
             state = .idle(clipboardOffer)
             transientExpiry = nil
@@ -512,6 +521,12 @@ final class NotchController {
         positionPanel(animated: true)
     }
 
+    /// Mouse-move parallax from the drop zone (event-driven, so it is
+    /// smooth — not tied to the 0.5s state tick).
+    func setGaze(_ x: CGFloat) {
+        if abs(x - hoverX) > 0.02 { hoverX = x }
+    }
+
     func setHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
         isHover = hovering
@@ -659,16 +674,19 @@ struct NotchPillView: View {
             }
         }
         .shadow(
-            color: .black.opacity(isExpanded(state) ? 0.35 : 0),
-            radius: 12, y: 6)
+            color: .black.opacity(isExpanded(state) ? 0.42 : 0.22),
+            radius: 14, y: 8)
         .background(
             NotchDropZone(
+                onGaze: { controller.setGaze($0) },
                 onHover: { controller.setHover($0) },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
                 onDragChange: { controller.setDragHover($0) })
         )
-        .animation(.easeInOut(duration: 0.18), value: controller.state)
+        .animation(
+            .spring(response: 0.34, dampingFraction: 0.80),
+            value: controller.state)
         .animation(.easeInOut(duration: 0.12), value: controller.isDragHover)
         .animation(
             .spring(response: 0.30, dampingFraction: 0.72),
@@ -695,20 +713,92 @@ struct NotchPillView: View {
     /// corners (flush with the edge), generously rounded bottom corners —
     /// a fake notch when idle, an expanding card when in use.
     private func capsule(for state: NotchController.State) -> some View {
-        ZStack {
-            tabShape(for: state)
-                .fill(Color.black.opacity(0.97))
-                .allowsHitTesting(false)
-            if controller.isDragHover {
-                tabShape(for: state)
-                    .stroke(.white.opacity(0.35), lineWidth: 1.5)
-                    .allowsHitTesting(false)
+        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                glassBase(for: state)
+                auroraRim(for: state, t: t)
+                topHighlight(for: state)
+                shineSweep(for: state, t: t)
+                if controller.isDragHover {
+                    tabShape(for: state)
+                        .stroke(.white.opacity(0.45), lineWidth: 1.5)
+                        .allowsHitTesting(false)
+                }
+                content(for: state)
+                    .padding(.top, controller.topInset)
             }
-            content(for: state)
-                .padding(.top, controller.topInset)
+            .frame(width: size(for: state).width, height: size(for: state).height)
+            .clipShape(tabShape(for: state))
         }
-        .frame(width: size(for: state).width, height: size(for: state).height)
-        .clipShape(tabShape(for: state))
+    }
+
+    /// Dark glass: a soft vertical gradient instead of flat black.
+    private func glassBase(for state: NotchController.State) -> some View {
+        let base = LinearGradient(
+            colors: [
+                Color(hex: 0x171B24).opacity(0.97),
+                Color(hex: 0x0A0C11).opacity(0.99),
+            ],
+            startPoint: .top, endPoint: .bottom)
+        return tabShape(for: state)
+            .fill(base)
+            .allowsHitTesting(false)
+    }
+
+    /// A slowly drifting rainbow rim — the island's "aurora".
+    private func auroraRim(
+        for state: NotchController.State, t: TimeInterval
+    ) -> some View {
+        let colors: [Color] = [
+            Neo.purple, Color(hex: 0xFF9EB5), Neo.yellow, Neo.green,
+            Neo.blue, Neo.purple,
+        ]
+        let w = size(for: state).width
+        return Rectangle()
+            .fill(AngularGradient(colors: colors, center: .center))
+            .frame(width: w * 3, height: w * 3)
+            .rotationEffect(.degrees(t * 16))
+            .mask(tabShape(for: state).stroke(lineWidth: 1.5))
+            .opacity(rimOpacity(for: state))
+            .allowsHitTesting(false)
+    }
+
+    private func rimOpacity(for state: NotchController.State) -> Double {
+        if controller.isDragHover { return 0.9 }
+        if controller.isHover { return 0.65 }
+        switch state {
+        case .idle: return 0.35
+        case .active: return 0.55
+        case .done, .failed: return 0.6
+        case .menu: return 0.5
+        }
+    }
+
+    /// A hairline of light along the top edge, like iOS's Dynamic Island.
+    private func topHighlight(for state: NotchController.State) -> some View {
+        tabShape(for: state)
+            .stroke(
+                LinearGradient(
+                    colors: [.white.opacity(0.18), .white.opacity(0.02)],
+                    startPoint: .top, endPoint: .bottom),
+                lineWidth: 1)
+            .allowsHitTesting(false)
+    }
+
+    /// A diagonal glint that crosses the island every few seconds.
+    private func shineSweep(
+        for state: NotchController.State, t: TimeInterval
+    ) -> some View {
+        let w = size(for: state).width
+        let phase = (t / 6).truncatingRemainder(dividingBy: 1)
+        return LinearGradient(
+            colors: [.clear, .white.opacity(0.07), .clear],
+            startPoint: .leading, endPoint: .trailing)
+            .frame(width: w * 0.6, height: size(for: state).height * 2)
+            .rotationEffect(.degrees(16))
+            .offset(x: -w + phase * (w * 2.0))
+            .allowsHitTesting(false)
     }
 
     private func tabShape(for state: NotchController.State) -> UnevenRoundedRectangle {
@@ -779,7 +869,8 @@ struct NotchPillView: View {
             MochiView(
                 mood: mood,
                 size: offer == nil ? (controller.isHover ? 26 : 22) : 24,
-                lively: controller.isHover)
+                lively: controller.isHover,
+                gazeX: controller.hoverX)
             if let offer {
                     Image(systemName: offer.icon)
                         .font(.system(size: 10))
@@ -800,28 +891,19 @@ struct NotchPillView: View {
 
     @ViewBuilder
     private func menuContent(_ offer: NotchController.Offer?) -> some View {
-        VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    MochiView(
-                        mood: controller.mochiMood(for: .menu(offer)),
-                        size: 32, lively: true)
-                    Spacer()
+        VStack(spacing: 6) {
+            MochiView(
+                mood: controller.mochiMood(for: .menu(offer)),
+                size: 30, lively: true)
+            if let offer {
+                NotchLinkCard(offer: offer) {
+                    controller.addFromClipboard()
                 }
-                .padding(.top, 4)
-                if let offer {
-                    row(icon: offer.icon, color: Neo.blue, label: offer.label) {
-                        controller.addFromClipboard()
-                    }
-                    Divider().overlay(Color.white.opacity(0.10))
-                } else {
-                    Text(NSLocalizedString("notch.menu.noLink", comment: ""))
-                        .font(.system(size: 10.5, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .padding(.vertical, 10)
-                    Divider().overlay(Color.white.opacity(0.10))
-                }
-                row(
+            } else {
+                emptyLinkHint
+            }
+            VStack(spacing: 2) {
+                NotchMenuRow(
                     icon: controller.isBusy ? "pause.fill" : "play.fill",
                     color: controller.isBusy ? Neo.yellow : Neo.green,
                     label: NSLocalizedString(
@@ -834,35 +916,44 @@ struct NotchPillView: View {
                         controller.resumeAll()
                     }
                 }
-                Divider().overlay(Color.white.opacity(0.10))
-                row(icon: "macwindow", color: .white.opacity(0.8),
+                NotchMenuRow(
+                    icon: "macwindow", color: .white.opacity(0.85),
                     label: NSLocalizedString("notch.menu.open", comment: "")) {
                     controller.openApp()
                 }
             }
-        .padding(.top, controller.topInset > 0 ? 10 : 14)
-        .padding(.bottom, 6)
-        .padding(.horizontal, 12)
+            .padding(.top, 2)
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .padding(.horizontal, 10)
+    }
+
+    private var emptyLinkHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "link")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Neo.blue)
+                .frame(width: 22, height: 22)
+                .background(
+                    Neo.blue.opacity(0.14),
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Text(NSLocalizedString("notch.menu.noLink", comment: ""))
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.65))
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 3)
     }
 
     @ViewBuilder
     private func activeRow(progress: Double, speed: Double) -> some View {
-        HStack(spacing: 10) {
-                MochiView(
-                    mood: controller.mochiMood(
-                        for: .active(progress: progress, speedBytes: speed)),
-                    size: 30, lively: true)
-                ZStack {
-                    Circle()
-                        .stroke(.white.opacity(0.14), lineWidth: 3.5)
-                    Circle()
-                        .trim(from: 0, to: max(0.02, progress))
-                        .stroke(
-                            Neo.blue,
-                            style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                }
-                .frame(width: 26, height: 26)
+        let mood = controller.mochiMood(
+            for: .active(progress: progress, speedBytes: speed))
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 10) {
+                MochiView(mood: mood, size: 30, lively: true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(Int(progress * 100))%")
                         .font(.system(size: 13, weight: .heavy))
@@ -872,39 +963,19 @@ struct NotchPillView: View {
                         .font(.system(size: 9.5, weight: .semibold))
                         .foregroundStyle(Neo.blue)
                 }
-            Spacer()
-            if controller.isHover {
-                Image(systemName: "chevron.up.circle.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.45))
+                Spacer(minLength: 8)
+                SpeedSparkline(values: controller.speedHistory)
+                EqualizerBars(level: min(1, speed / 8_000_000))
+                if controller.isHover {
+                    Image(systemName: "chevron.up.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 9)
+            LiquidProgress(progress: progress)
         }
-        .padding(.horizontal, 14)
-    }
-
-    private func row(
-        icon: String,
-        color: Color,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 16)
-                Text(label)
-                    .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer()
-            }
-            .padding(.vertical, 7)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func size(for state: NotchController.State) -> CGSize {
@@ -912,6 +983,174 @@ struct NotchPillView: View {
             for: state, dragHover: controller.isDragHover,
             hover: controller.isHover, topInset: controller.topInset)
         return CGSize(width: ns.width, height: ns.height)
+    }
+}
+
+// MARK: - Island components
+
+/// A menu action row: colored icon chip + label, with a hover glow.
+private struct NotchMenuRow: View {
+    var icon: String
+    var color: Color
+    var label: String
+    var action: () -> Void
+
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(color)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        color.opacity(0.15),
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text(label)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(.white.opacity(hovered ? 0.08 : 0)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+    }
+}
+
+/// The detected-link card at the top of the menu, with an ADD pill.
+private struct NotchLinkCard: View {
+    var offer: NotchController.Offer
+    var action: () -> Void
+
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: offer.icon)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Neo.blue)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Neo.blue.opacity(0.16),
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text(offer.label)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: 6)
+                Text(NSLocalizedString("notch.menu.add", comment: ""))
+                    .font(.system(size: 9.5, weight: .heavy))
+                    .foregroundStyle(Neo.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Neo.blue.opacity(0.16), in: Capsule())
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(Neo.blue.opacity(hovered ? 0.13 : 0.07)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+    }
+}
+
+/// Full-width liquid progress line along the bottom of the active card.
+private struct LiquidProgress: View {
+    var progress: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(.white.opacity(0.10))
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Neo.blue, Color(hex: 0x5AC8FA)],
+                            startPoint: .leading, endPoint: .trailing))
+                    .frame(
+                        width: max(3, geo.size.width * min(1, max(0, progress))))
+            }
+        }
+        .frame(height: 3.5)
+        .allowsHitTesting(false)
+    }
+}
+
+/// Live download-speed sparkline (last ~12 seconds).
+private struct SpeedSparkline: View {
+    var values: [Double]
+    var color: Color = Neo.blue
+
+    var body: some View {
+        let samples = Array(values.suffix(24))
+        GeometryReader { geo in
+            sparkPath(samples: samples, geo: geo)
+        }
+        .frame(width: 54, height: 16)
+        .allowsHitTesting(false)
+    }
+
+    private func sparkPath(samples: [Double], geo: GeometryProxy) -> some View {
+        let maxV = max(samples.max() ?? 1, 1)
+        let stepX = geo.size.width / CGFloat(max(samples.count - 1, 1))
+        var path = Path()
+        var first = true
+        for (i, v) in samples.enumerated() {
+            let x = CGFloat(i) * stepX
+            let y = geo.size.height * (1 - CGFloat(v / maxV) * 0.88)
+            if first {
+                path.move(to: CGPoint(x: x, y: y))
+                first = false
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        return path.stroke(
+            color,
+            style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+    }
+}
+
+/// Four dancing bars — the island's download equalizer.
+private struct EqualizerBars: View {
+    var level: Double
+    var color: Color = Neo.blue
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.1)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            HStack(alignment: .bottom, spacing: 2) {
+                bar(i: 0, t: t)
+                bar(i: 1, t: t)
+                bar(i: 2, t: t)
+                bar(i: 3, t: t)
+            }
+            .frame(height: 14, alignment: .bottom)
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func bar(i: Int, t: TimeInterval) -> some View {
+        let energy = max(0.15, min(1, level))
+        let rate = 3.5 + energy * 7
+        let h = 3 + (11 * energy) * abs(sin(t * rate + Double(i) * 1.1))
+        return Capsule()
+            .fill(color.opacity(0.9))
+            .frame(width: 2.5, height: h)
     }
 }
 
@@ -975,6 +1214,8 @@ struct MochiView: View {
     var size: CGFloat = 18
     /// Extra liveliness for hover moments (pops up + sparkles).
     var lively: Bool = false
+    /// Cursor position across the island (-1…1) — the mochi follows it.
+    var gazeX: CGFloat = 0
 
     @State private var pop = false
 
@@ -1018,7 +1259,7 @@ struct MochiView: View {
                 x: pop ? 1.10 : 1,
                 y: (pop ? 1.10 : 1) * breathing(t: t),
                 anchor: .bottom)
-            .offset(x: shake(t: t), y: bounce(t: t))
+            .offset(x: shake(t: t) + gazeX * size * 0.035, y: bounce(t: t))
             .rotationEffect(.degrees(tilt(t: t)))
         }
         .onChange(of: lively) { _, on in
@@ -1209,7 +1450,9 @@ struct MochiView: View {
                         .offset(x: size * 0.018, y: -size * 0.028)
                 }
             }
-            .offset(x: isIdle && !lively ? lookAround(t: t) : 0)
+            .offset(
+                x: (isIdle && !lively ? lookAround(t: t) : 0)
+                    + gazeX * size * 0.06)
         }
     }
 
@@ -1396,6 +1639,7 @@ struct MochiView: View {
 /// a URL out of a browser delivers `.URL`/`.string`; Finder files deliver
 /// `.fileURL`.
 struct NotchDropZone: NSViewRepresentable {
+    var onGaze: (CGFloat) -> Void
     var onHover: (Bool) -> Void
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
@@ -1412,6 +1656,7 @@ struct NotchDropZone: NSViewRepresentable {
     }
 
     private func sync(_ view: DropCatcherView) {
+        view.onGaze = onGaze
         view.onHover = onHover
         view.onDropText = onDropText
         view.onDropFile = onDropFile
@@ -1420,6 +1665,7 @@ struct NotchDropZone: NSViewRepresentable {
 }
 
 final class DropCatcherView: NSView {
+    var onGaze: ((CGFloat) -> Void)?
     var onHover: ((Bool) -> Void)?
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
@@ -1446,10 +1692,16 @@ final class DropCatcherView: NSView {
         }
         let area = NSTrackingArea(
             rect: .zero,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
             owner: self,
             userInfo: nil)
         addTrackingArea(area)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        guard bounds.width > 0 else { return }
+        let x = (event.locationInWindow.x / bounds.width) * 2 - 1
+        onGaze?(max(-1, min(1, x)))
     }
 
     override func mouseEntered(with event: NSEvent) {
