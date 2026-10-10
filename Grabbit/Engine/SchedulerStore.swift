@@ -92,10 +92,12 @@ public final class SchedulerStore {
                     torrentEngine.pauseAll()
                 case .speedLimit:
                     // Backlog #8: off-peak profiles — push the cap into
-                    // Settings (persisted) and the live download bucket.
+                    // Settings (persisted), the live download bucket, and
+                    // the torrent daemon (same as the Settings UI does).
                     settings.settings.speedLimitBytesPerSec = max(0, speedLimit)
                     settings.save()
                     downloadEngine.syncSpeedLimit()
+                    await torrentEngine.applySpeedLimit()
                 }
             }
         }

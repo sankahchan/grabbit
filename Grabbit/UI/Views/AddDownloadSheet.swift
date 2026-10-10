@@ -4,10 +4,13 @@ import AppKit
 /// Sheet for adding a new download: URL entry with site detection, quality /
 /// format / category pickers, destination chooser, and connection count.
 ///
-/// NOTE: quality & format pickers are UI-only for now; they will be passed to
-/// the MediaExtractor (yt-dlp wrapper) once that engine lands.
+/// Media sites (YouTube / X / TikTok / Instagram / Telegram) and HLS/DASH
+/// playlists route through the MediaEngine (yt-dlp) so the quality / format
+/// choice is honoured; everything else uses the segmented direct engine.
 struct AddDownloadSheet: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
+    @Environment(MediaEngine.self) private var mediaEngine: MediaEngine
+    @Environment(AppNavigation.self) private var navigation: AppNavigation
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(QueueStore.self) private var queueStore: QueueStore
     @Environment(\.colorScheme) private var scheme
@@ -71,27 +74,34 @@ struct AddDownloadSheet: View {
             }
 
             // MARK: Quality chips
-            VStack(alignment: .leading, spacing: 6) {
-                Text(NSLocalizedString("add.quality", comment: ""))
-                    .font(NeoFont.f(.headline))
-                HStack(spacing: 8) {
-                    ForEach(qualities, id: \.self) { q in
-                        Button(qualityLabel(for: q)) {
-                            quality = q
+            // Only meaningful for media sites, where the MediaEngine can
+            // select a preset; hidden for plain file downloads so the sheet
+            // never shows a control that does nothing.
+            if isMediaSite && format == .video {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(NSLocalizedString("add.quality", comment: ""))
+                        .font(NeoFont.f(.headline))
+                    HStack(spacing: 8) {
+                        ForEach(qualities, id: \.self) { q in
+                            Button(qualityLabel(for: q)) {
+                                quality = q
+                            }
+                            .buttonStyle(NeoButtonStyle(
+                                bg: quality == q ? Neo.yellow : Neo.paper(scheme),
+                                compact: true
+                            ))
                         }
-                        .buttonStyle(NeoButtonStyle(
-                            bg: quality == q ? Neo.yellow : Neo.paper(scheme),
-                            compact: true
-                        ))
                     }
                 }
             }
 
             // MARK: Format
-            NeoSegmented(selection: $format, titles: [
-                (MediaFormat.video, NSLocalizedString("add.format.video", comment: "")),
-                (MediaFormat.audio, NSLocalizedString("add.format.audio", comment: "")),
-            ])
+            if isMediaSite {
+                NeoSegmented(selection: $format, titles: [
+                    (MediaFormat.video, NSLocalizedString("add.format.video", comment: "")),
+                    (MediaFormat.audio, NSLocalizedString("add.format.audio", comment: "")),
+                ])
+            }
 
             // MARK: Category
             NeoSegmented(selection: $category, titles: DownloadCategory.allCases.map {
@@ -118,11 +128,16 @@ struct AddDownloadSheet: View {
             }
 
             // MARK: Connections
-            // NOTE: no localization key was provided for this label, so the
-            // stepper shows the bare value.
-            HStack {
-                NeoStepper(value: $connections, in: 1...16, step: 1) { v in "\(v)" }
-                Spacer()
+            // The segmented direct engine splits the file across N
+            // connections; the media engine (yt-dlp) manages its own, so the
+            // stepper is hidden for media sites.
+            if !isMediaSite {
+                HStack {
+                    Text(NSLocalizedString("add.connections", comment: ""))
+                        .font(NeoFont.f(.headline))
+                    Spacer()
+                    NeoStepper(value: $connections, in: 1...16, step: 1) { v in "\(v)" }
+                }
             }
 
             // MARK: Speed limit (optional, per-download)
@@ -230,6 +245,26 @@ struct AddDownloadSheet: View {
         q == "best" ? NSLocalizedString("add.quality.best", comment: "") : q
     }
 
+    /// True when the URL is a media page/stream that yt-dlp handles — the
+    /// named media sites, or a raw HLS/DASH playlist. Everything else is a
+    /// plain file download and uses the segmented direct engine.
+    private var isMediaSite: Bool {
+        switch detectedSite {
+        case .youtube, .x, .tiktok, .instagram, .telegram:
+            return true
+        case .direct, .other:
+            let lower = urlString.lowercased()
+            return lower.contains(".m3u8") || lower.contains(".mpd")
+        }
+    }
+
+    /// Maps the sheet's format + quality pickers onto a MediaPreset id.
+    /// The quality strings ("best", "1080p", "720p", "480p") are exactly
+    /// the preset ids MediaProbe builds; audio maps to the MP3 preset.
+    private var mediaPresetID: String {
+        format == .audio ? "audio" : quality
+    }
+
     private func headerField(label: String, text: Binding<String>) -> some View {
         HStack {
             Text(label)
@@ -261,12 +296,8 @@ struct AddDownloadSheet: View {
               urlScheme == "http" || urlScheme == "https"
         else { return }
         isAdding = true
-        let lastComponent = url.lastPathComponent
-        let serverName = (lastComponent.isEmpty || lastComponent == "/")
-            ? NSLocalizedString("common.unknown", comment: "")
-            : lastComponent
-        let custom = customFilename.trimmingCharacters(in: .whitespacesAndNewlines)
-        let filename = custom.isEmpty ? serverName : custom
+
+        // Shared header build (both engines accept the same map).
         var headers: [String: String] = [:]
         let referer = referer.trimmingCharacters(in: .whitespacesAndNewlines)
         let cookie = cookie.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -276,8 +307,45 @@ struct AddDownloadSheet: View {
         if !cookie.isEmpty { headers["Cookie"] = cookie }
         if !authorization.isEmpty { headers["Authorization"] = authorization }
         if !userAgent.isEmpty { headers["User-Agent"] = userAgent }
-        let site: SourceSite = detectedSite == .other ? .direct : detectedSite
+
+        let custom = customFilename.trimmingCharacters(in: .whitespacesAndNewlines)
         let destination = destinationURL
+        let perTaskCap: Int64 = speedLimitMB > 0
+            ? Int64(speedLimitMB) * 1_048_576
+            : settings.settings.speedLimitBytesPerSec
+
+        // --- Media path -----------------------------------------------------
+        // yt-dlp understands page URLs and can select the requested quality /
+        // format preset. The direct engine would otherwise save the HTML page
+        // or the raw playlist text.
+        if isMediaSite {
+            let mediaEngine = mediaEngine
+            let navigation = navigation
+            let preset = mediaPresetID
+            let name = custom.isEmpty ? nil : custom
+            // Show the Media tab so the in-progress download is visible.
+            navigation.selection = .media
+            Task {
+                mediaEngine.speedLimitBytesPerSec = perTaskCap
+                await mediaEngine.downloadStream(
+                    url: url,
+                    to: destination,
+                    headers: headers,
+                    preferredName: name,
+                    presetID: preset
+                )
+            }
+            dismiss()
+            return
+        }
+
+        // --- Direct path ----------------------------------------------------
+        let lastComponent = url.lastPathComponent
+        let serverName = (lastComponent.isEmpty || lastComponent == "/")
+            ? NSLocalizedString("common.unknown", comment: "")
+            : lastComponent
+        let filename = custom.isEmpty ? serverName : custom
+        let site: SourceSite = detectedSite == .other ? .direct : detectedSite
         let engine = engine
         // Fire-and-forget: `add` inserts the task optimistically before any
         // network probe, so the sheet can dismiss immediately and the row

@@ -35,6 +35,23 @@
         }
       }
     },
+    "add.connections": {
+      "comment": "Add download sheet: number of parallel connections",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connections"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချိတ်ဆက်မှုများ"
+          }
+        }
+      }
+    },
     "add.destination": {
       "comment": "Field label",
       "localizations": {

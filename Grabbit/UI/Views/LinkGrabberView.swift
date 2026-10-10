@@ -1,17 +1,5 @@
 import SwiftUI
 
-/// A piece of media the browser extension has spotted on a page.
-struct DetectedMedia: Identifiable {
-    let id = UUID()
-    var title: String
-    var site: SourceSite
-    /// Direct media URL reported by the extension (may be a blob: URL for
-    /// Telegram Web videos — the extension streams those bytes to the host).
-    var mediaURL: URL
-    /// Page where the media was found.
-    var pageURL: URL
-}
-
 /// LinkGrabber-style staging tab (backlog #1, JDownloader-inspired): links
 /// wait here while they are probed (online/offline + size) so the user can
 /// inspect, rename and select them before committing as real downloads.
@@ -19,16 +7,11 @@ struct DetectedMedia: Identifiable {
 /// Ideas only — no JDownloader (GPL-3.0) source is used or copied.
 struct LinkGrabberView: View {
     @Environment(LinkGrabberStore.self) private var store: LinkGrabberStore
-    @Environment(DownloadEngine.self) private var engine: DownloadEngine
-    @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
 
     @State private var newPackageName = ""
     @State private var showingNewPackage = false
     @State private var isCommitting = false
-    /// Populated by the native-messaging host once the extension reports
-    /// media; empty otherwise (section hidden until then).
-    @State private var detected: [DetectedMedia] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -37,9 +20,6 @@ struct LinkGrabberView: View {
                 title: NSLocalizedString("nav.linkgrabber", comment: ""),
                 accent: Neo.green)
             header
-            if !detected.isEmpty {
-                browserMediaSection
-            }
             if store.packages.isEmpty {
                 emptyState
             } else {
@@ -58,60 +38,6 @@ struct LinkGrabberView: View {
         .frame(maxWidth: .infinity)
         .padding(16)
         .navigationTitle(NSLocalizedString("nav.linkgrabber", comment: ""))
-    }
-
-    // MARK: - Browser media (extension)
-
-    /// Media the browser extension reported. Shown only when there is
-    /// something to grab — the extension setup itself lives in Settings →
-    /// Browser extension.
-    private var browserMediaSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                AppIcon("globe", size: 13)
-                    .foregroundStyle(Neo.purple)
-                Text(NSLocalizedString("linkgrabber.browserMedia", comment: ""))
-                    .font(NeoFont.f(.headline, .heavy))
-                    .textCase(.uppercase)
-                    .foregroundStyle(Neo.purple)
-                Spacer()
-            }
-            ForEach(detected) { media in
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(media.title)
-                            .font(NeoFont.f(.subheadline, .semibold))
-                            .lineLimit(1)
-                        SourceBadge(site: media.site)
-                    }
-                    Spacer()
-                    Button(NSLocalizedString("grabber.grab", comment: "")) {
-                        grab(media)
-                    }
-                    .buttonStyle(NeoButtonStyle(bg: Neo.green, compact: true))
-                }
-                .padding(10)
-                .background(
-                    Neo.paper(scheme),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .neoCard(accent: Neo.purple, inset: 10)
-    }
-
-    private func grab(_ media: DetectedMedia) {
-        let engine = engine
-        let destination = settings.folderURL(for: .video)
-        Task {
-            await engine.add(
-                url: media.mediaURL,
-                filename: media.title,
-                category: .video,
-                sourceSite: media.site,
-                destination: destination
-            )
-        }
     }
 
     // MARK: - Header

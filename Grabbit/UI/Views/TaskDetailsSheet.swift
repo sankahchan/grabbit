@@ -300,10 +300,15 @@ struct TaskDetailsSheet: View {
             switch subject {
             case .download(let item):
                 // Preserves the old "Cancel" capability: stop, drop the
-                // partial data, and reset so it can start fresh.
+                // partial data, and reset so it can start fresh. `cancel`
+                // only resets to `.queued` (it deliberately excludes the
+                // item from the queue kick), so `resume` is required to
+                // actually restart — otherwise the button silently did
+                // nothing visible.
                 if item.state != .completed {
                     Button(NSLocalizedString("task.details.restart", comment: "")) {
                         downloads.cancel(item.id)
+                        downloads.resume(item.id)
                         dismiss()
                     }
                     .buttonStyle(NeoButtonStyle(bg: Neo.orange, compact: true))

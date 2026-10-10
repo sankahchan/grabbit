@@ -434,8 +434,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
             }
             Task { try? await rpc.remove(gid: gid) }
         } else if deleteData {
-            // No daemon entry — best effort on the save dir's top-level file.
-            try? FileManager.default.removeItem(at: item.savePath)
+            // No daemon entry — best effort on this torrent's own file/folder
+            // inside the save directory. Never delete `savePath` itself: it is
+            // the shared destination folder that holds every other task.
+            deleteOwnedData(name: item.name, savePath: item.savePath)
         }
         lineage.forgetItem(id)
         torrents.removeAll { $0.id == id }
@@ -868,14 +870,31 @@ public final class TorrentEngine: TorrentEngineProtocol {
         var seen = Set<String>()
         while !queue.isEmpty {
             let parent = queue.removeFirst()
+            // `dir.path + "/"` (not a bare prefix) so a sibling directory
+            // whose name merely starts with the save dir's name — e.g.
+            // ".../Downloads2" for ".../Downloads" — is never removed.
             guard !seen.contains(parent),
-                  parent.hasPrefix(dir.path),
+                  parent.hasPrefix(dir.path + "/"),
                   parent != dir.path
             else { continue }
             seen.insert(parent)
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: parent))
             queue.append(URL(fileURLWithPath: parent).deletingLastPathComponent().path)
         }
+    }
+
+    /// Deletes `<savePath>/<name>` — a torrent's single file, or the folder a
+    /// multi-file torrent created — while refusing to escape `savePath`.
+    /// Used when the daemon no longer has a gid (so `deleteData(gid:)` can't
+    /// enumerate the real files). Deleting `savePath` itself would wipe the
+    /// shared destination folder, so it is explicitly guarded against.
+    private func deleteOwnedData(name: String, savePath: URL) {
+        let dir = savePath.standardizedFileURL
+        let target = dir.appendingPathComponent(name).standardizedFileURL
+        guard target.path != dir.path,
+              target.path.hasPrefix(dir.path + "/")
+        else { return }
+        try? FileManager.default.removeItem(at: target)
     }
 
     // MARK: - Persistence

@@ -315,7 +315,7 @@ public final class MediaEngine {
         if settingsStore?.settings.notificationsEnabled ?? false {
             Notifier.downloadFailed(filename: name, message: message)
         }
-        if settingsStore?.settings.showCompletionToast ?? false {
+        if settingsStore?.settings.showFailureToast ?? false {
             toastCenter?.push(AppToast(
                 kind: .failed,
                 source: .download,
@@ -363,11 +363,17 @@ public final class MediaEngine {
     /// captured by the browser extension. `headers` are the browser-captured
     /// request headers (Referer, Cookie, …) the CDN expects; `preferredName`
     /// is the page title, so files aren't named after the playlist ("master").
+    ///
+    /// `presetID` selects a specific preset from the probe result (e.g. the
+    /// Add-download sheet's quality/format choice); when it is nil or not
+    /// found, the "Best" preset wins, then the first available preset.
+    @MainActor
     public func downloadStream(
         url: URL,
         to directory: URL,
         headers: [String: String] = [:],
-        preferredName: String? = nil
+        preferredName: String? = nil,
+        presetID: String? = nil
     ) async {
         NSLog("[Grabbit] downloadStream start: %@", url.absoluteString)
         await probe(url: url, headers: headers)
@@ -376,7 +382,7 @@ public final class MediaEngine {
         guard let media = probed, !media.presets.isEmpty else {
             // Extension-triggered downloads have no visible Media tab, so a
             // silent no-op looked like "nothing happened". Say it out loud.
-            await notifyMediaFailure(
+            notifyMediaFailure(
                 name: (trimmedName?.isEmpty == false ? trimmedName! : url.lastPathComponent),
                 message: errorMessage ?? NSLocalizedString("media.error.noFormats", comment: ""))
             return
@@ -384,8 +390,10 @@ public final class MediaEngine {
         // Name the file after the page when we have it.
         preferredTitle = (trimmedName?.isEmpty == false) ? trimmedName : nil
         displayTitle = preferredTitle
-        // Prefer "Best" preset, fall back to first available.
-        let preset = media.presets.first(where: { $0.label == "Best" })
+        // Honour an explicit choice, else prefer "Best", else the first
+        // preset. Match on the stable `id` (localized labels never match).
+        let preset = presetID.flatMap { id in media.presets.first { $0.id == id } }
+            ?? media.presets.first(where: { $0.id == "best" })
             ?? media.presets[0]
         await download(preset: preset, to: directory)
     }

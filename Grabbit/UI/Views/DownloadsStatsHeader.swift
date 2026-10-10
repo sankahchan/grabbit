@@ -208,7 +208,7 @@ enum NeoStats {
     ) -> Int {
         let calendar = Calendar.current
         return completed(entries: entries, kind: kind)
-            .filter { calendar.isDateInToday($0.finishedAt) }
+            .filter { calendar.isDate($0.finishedAt, inSameDayAs: now) }
             .count
     }
 
@@ -220,7 +220,7 @@ enum NeoStats {
         let dayStart = calendar.startOfDay(for: now)
         var buckets = [Double](repeating: 0, count: 8)
         for entry in completed(entries: entries, kind: kind)
-        where calendar.isDateInToday(entry.finishedAt) {
+        where calendar.isDate(entry.finishedAt, inSameDayAs: now) {
             let hours = entry.finishedAt.timeIntervalSince(dayStart) / 3600
             buckets[min(7, max(0, Int(hours / 3)))] += 1
         }
@@ -235,7 +235,7 @@ enum NeoStats {
         let dayStart = calendar.startOfDay(for: now)
         var buckets = [Double](repeating: 0, count: 8)
         for entry in completed(entries: entries, kind: kind)
-        where calendar.isDateInToday(entry.finishedAt) {
+        where calendar.isDate(entry.finishedAt, inSameDayAs: now) {
             let hours = entry.finishedAt.timeIntervalSince(dayStart) / 3600
             buckets[min(7, max(0, Int(hours / 3)))] += Double(entry.totalBytes ?? 0)
         }
@@ -247,7 +247,7 @@ enum NeoStats {
     ) -> Int64 {
         let calendar = Calendar.current
         return completed(entries: entries, kind: kind)
-            .filter { calendar.isDateInToday($0.finishedAt) }
+            .filter { calendar.isDate($0.finishedAt, inSameDayAs: now) }
             .reduce(0) { $0 + ($1.totalBytes ?? 0) }
     }
 
