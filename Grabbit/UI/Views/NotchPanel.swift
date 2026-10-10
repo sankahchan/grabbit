@@ -25,6 +25,8 @@ final class NotchController {
         case active(progress: Double, speedBytes: Double)
         case done(String)
         case failed(String)
+        /// Live-activity peek: a download was just added.
+        case added(String)
     }
 
     private(set) var state: State = .idle(nil)
@@ -222,6 +224,9 @@ final class NotchController {
         // the island. screenSaver is the level notch apps use to stay on
         // top of it.
         panel.level = .screenSaver
+        // Keyboard nav (Esc / arrows / Enter) works without stealing the
+        // user's active app: the panel becomes key only when needed.
+        panel.becomesKeyOnlyIfNeeded = true
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .utilityWindow
@@ -262,8 +267,55 @@ final class NotchController {
             return NSSize(width: 320, height: 176)
         case .active:
             return NSSize(width: 320, height: 56)
-        case .done, .failed:
+        case .done, .failed, .added:
             return NSSize(width: 240, height: 40)
+        }
+    }
+
+    // MARK: - Keyboard (menu navigation)
+
+    /// The row the arrow keys point at while the menu is open.
+    private(set) var menuSelection = 0
+    /// The island's window holds keyboard focus (without activating the app).
+    private(set) var keyFocus = false
+
+    enum MenuItem: Int, CaseIterable {
+        case link
+        case toggle
+        case openApp
+    }
+
+    /// The rows actually shown, in order.
+    var menuItems: [MenuItem] {
+        clipboardOffer == nil ? [.toggle, .openApp] : [.link, .toggle, .openApp]
+    }
+
+    func handleKey(_ key: String) {
+        guard case .menu = state else { return }
+        switch key {
+        case "esc":
+            collapse()
+        case "up", "down":
+            let items = menuItems
+            guard !items.isEmpty else { return }
+            if key == "up" {
+                menuSelection = (menuSelection - 1 + items.count) % items.count
+            } else {
+                menuSelection = (menuSelection + 1) % items.count
+            }
+        case "enter":
+            let items = menuItems
+            guard menuSelection < items.count else { return }
+            switch items[menuSelection] {
+            case .link:
+                addFromClipboard()
+            case .toggle:
+                if isBusy { pauseAll() } else { resumeAll() }
+            case .openApp:
+                openApp()
+            }
+        default:
+            break
         }
     }
 
@@ -291,6 +343,8 @@ final class NotchController {
             return celebration ? .confetti : .done
         case .failed:
             return .sad
+        case .added:
+            return .excited
         }
     }
 
@@ -356,6 +410,17 @@ final class NotchController {
             }
             return
         }
+        // A just-added peek holds its moment before the normal state logic
+        // takes over again.
+        if case .added = state {
+            if let expiry = transientExpiry, Date() > expiry {
+                state = .idle(clipboardOffer)
+                transientExpiry = nil
+            }
+            positionPanel(animated: true)
+            return
+        }
+
         // Self-heal hover state: tracking areas can miss an enter after a
         // resize — trust the actual cursor position once a tick.
         if !isHover, let panel, panel.frame.contains(NSEvent.mouseLocation) {
@@ -481,12 +546,15 @@ final class NotchController {
         playSound("Tink")
         state = .menu(clipboardOffer)
         menuOpenedAt = Date()
+        menuSelection = 0
+        keyFocus = true
         positionPanel(animated: true)
     }
 
     func collapse() {
         state = .idle(clipboardOffer)
         menuOpenedAt = nil
+        keyFocus = false
         positionPanel(animated: true)
     }
 
@@ -703,6 +771,11 @@ final class NotchController {
             source: source,
             title: NSLocalizedString("notch.added", comment: ""),
             message: message))
+        // Live-activity peek: the island pops open with the new item's
+        // name for a couple of seconds, then folds back.
+        state = .added(message)
+        transientExpiry = Date().addingTimeInterval(2.5)
+        positionPanel(animated: true)
     }
 
     private func showTransientFailure(_ message: String) {
@@ -747,7 +820,9 @@ struct NotchPillView: View {
                 onHover: { controller.setHover($0) },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
-                onDragChange: { controller.setDragHover($0) })
+                onDragChange: { controller.setDragHover($0) },
+                onKey: { controller.handleKey($0) },
+                wantKeyFocus: controller.keyFocus)
         )
         .animation(
             .spring(response: 0.34, dampingFraction: 0.80),
@@ -838,6 +913,7 @@ struct NotchPillView: View {
             case .active: return Neo.blue
             case .done: return Neo.green
             case .failed: return Color(hex: 0xFF5A5A)
+            case .added: return Neo.blue
             }
         }()
         let strength: Double = controller.isDragHover ? 0.55 : 0.38
@@ -855,7 +931,7 @@ struct NotchPillView: View {
         let radius: CGFloat
         switch state {
         case .idle: radius = 18
-        case .done, .failed: radius = 20
+        case .done, .failed, .added: radius = 20
         case .active, .menu: radius = 26
         }
         return RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -897,6 +973,20 @@ struct NotchPillView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
+
+        case .added(let name):
+            HStack(spacing: 8) {
+                MochiView(mood: controller.mochiMood(for: state), size: 24, lively: true)
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Neo.blue)
+                Text(name)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .padding(.horizontal, 14)
         }
     }
 
@@ -934,8 +1024,13 @@ struct NotchPillView: View {
             MochiView(
                 mood: controller.mochiMood(for: .menu(offer)),
                 size: 30, lively: true)
+            let items = controller.menuItems
+            let selected = controller.menuSelection
             if let offer {
-                NotchLinkCard(offer: offer) {
+                NotchLinkCard(
+                    offer: offer,
+                    selected: items[selected] == .link
+                ) {
                     controller.addFromClipboard()
                 }
             } else {
@@ -948,7 +1043,8 @@ struct NotchPillView: View {
                     label: NSLocalizedString(
                         controller.isBusy
                             ? "notch.menu.pauseAll"
-                            : "notch.menu.resumeAll", comment: "")) {
+                            : "notch.menu.resumeAll", comment: ""),
+                    selected: items[selected] == .toggle) {
                     if controller.isBusy {
                         controller.pauseAll()
                     } else {
@@ -957,7 +1053,8 @@ struct NotchPillView: View {
                 }
                 NotchMenuRow(
                     icon: "macwindow", color: .white.opacity(0.85),
-                    label: NSLocalizedString("notch.menu.open", comment: "")) {
+                    label: NSLocalizedString("notch.menu.open", comment: ""),
+                    selected: items[selected] == .openApp) {
                     controller.openApp()
                 }
             }
@@ -1032,6 +1129,7 @@ private struct NotchMenuRow: View {
     var icon: String
     var color: Color
     var label: String
+    var selected: Bool = false
     var action: () -> Void
 
     @State private var hovered = false
@@ -1057,7 +1155,12 @@ private struct NotchMenuRow: View {
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(.white.opacity(hovered ? 0.08 : 0)))
+                    .fill(selected
+                        ? color.opacity(0.18)
+                        : .white.opacity(hovered ? 0.08 : 0)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .stroke(color.opacity(selected ? 0.6 : 0), lineWidth: 1))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1068,6 +1171,7 @@ private struct NotchMenuRow: View {
 /// The detected-link card at the top of the menu, with an ADD pill.
 private struct NotchLinkCard: View {
     var offer: NotchController.Offer
+    var selected: Bool = false
     var action: () -> Void
 
     @State private var hovered = false
@@ -1099,7 +1203,10 @@ private struct NotchLinkCard: View {
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Neo.blue.opacity(hovered ? 0.13 : 0.07)))
+                    .fill(Neo.blue.opacity(selected ? 0.2 : (hovered ? 0.13 : 0.07))))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .stroke(Neo.blue.opacity(selected ? 0.7 : 0), lineWidth: 1))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1683,6 +1790,8 @@ struct NotchDropZone: NSViewRepresentable {
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
     var onDragChange: (Bool) -> Void
+    var onKey: (String) -> Void
+    var wantKeyFocus: Bool
 
     func makeNSView(context: Context) -> DropCatcherView {
         let view = DropCatcherView()
@@ -1700,6 +1809,17 @@ struct NotchDropZone: NSViewRepresentable {
         view.onDropText = onDropText
         view.onDropFile = onDropFile
         view.onDragChange = onDragChange
+        view.onKey = onKey
+        if wantKeyFocus != view.hasFocusRequest {
+            view.hasFocusRequest = wantKeyFocus
+            DispatchQueue.main.async {
+                if wantKeyFocus {
+                    view.window?.makeFirstResponder(view)
+                } else {
+                    view.window?.makeFirstResponder(nil)
+                }
+            }
+        }
     }
 }
 
@@ -1709,6 +1829,20 @@ final class DropCatcherView: NSView {
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
     var onDragChange: ((Bool) -> Void)?
+    var onKey: ((String) -> Void)?
+    var hasFocusRequest = false
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 53: onKey?("esc")
+        case 126: onKey?("up")
+        case 125: onKey?("down")
+        case 36, 76: onKey?("enter")
+        default: super.keyDown(with: event)
+        }
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
