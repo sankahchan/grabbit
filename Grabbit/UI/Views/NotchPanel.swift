@@ -216,7 +216,12 @@ final class NotchController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
-        panel.level = .statusBar
+        // Above the menu bar. On macOS 26 (Tahoe) the glass menu bar sits
+        // higher than .statusBar, so it would ride over the island's top
+        // edge the moment the cursor approached the top of the screen
+        // (a "blank strip" between the screen top and the card).
+        panel.level = NSWindow.Level(
+            rawValue: NSWindow.Level.mainMenu.rawValue + 6)
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .utilityWindow
