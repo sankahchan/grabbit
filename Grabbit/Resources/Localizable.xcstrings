@@ -8467,6 +8467,23 @@
           }
         }
       }
+    },
+    "settings.notchHideWhenOtherApp": {
+      "comment": "Notch pill",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide when another notch app is running"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အခြား notch app ရှိနေရင် ဖျောက်ထားမည်"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

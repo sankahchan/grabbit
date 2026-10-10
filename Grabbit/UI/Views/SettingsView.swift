@@ -296,6 +296,14 @@ struct SettingsView: View {
                     .toggleStyle(NeoToggleStyle())
                     .labelsHidden()
             }
+            HStack {
+                Text(NSLocalizedString("settings.notchHideWhenOtherApp", comment: ""))
+                    .font(NeoFont.f(.subheadline, .semibold))
+                Spacer()
+                Toggle("", isOn: settings.notchHideWhenOtherApp)
+                    .toggleStyle(NeoToggleStyle())
+                    .labelsHidden()
+            }
             subHeader(NSLocalizedString("settings.section.startup", comment: ""))
             Toggle(NSLocalizedString("settings.startup.openAtLogin", comment: ""), isOn: settings.openAtLogin)
             .toggleStyle(NeoToggleStyle())

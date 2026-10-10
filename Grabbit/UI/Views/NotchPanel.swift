@@ -35,6 +35,9 @@ final class NotchController {
 
     private var panel: NSPanel?
     private var timer: Timer?
+    private var conflictTimer: Timer?
+    /// True while the island is hidden because another notch app is running.
+    private(set) var conflictHidden = false
     /// Height of the physical notch (0 on non-notch Macs). The island hangs
     /// from the very top edge of the screen; content stays below this inset.
     private(set) var topInset: CGFloat = 0
@@ -103,6 +106,7 @@ final class NotchController {
         self.navigation = navigation
         buildPanel()
         startTimer()
+        startConflictMonitor()
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
@@ -113,12 +117,63 @@ final class NotchController {
 
     func setEnabled(_ enabled: Bool) {
         guard let panel else { return }
-        if enabled {
+        if enabled && !conflictHidden {
             positionPanel(animated: false)
             panel.orderFrontRegardless()
         } else {
             panel.orderOut(nil)
         }
+    }
+
+    // MARK: - Notch-app conflict detection
+
+    /// Pure name check (unit-testable): does the list of running app names
+    /// include a known notch app? Any process whose name contains "notch"
+    /// (boringNotch, NotchNook, notchy, NotchDrop, …) counts, plus a few
+    /// well-known ones that don't (Alcove, MediaMate).
+    nonisolated static func hasConflictingNotchApp(_ runningNames: [String]) -> Bool {
+        let extra = ["alcove", "mediamate"]
+        let lowered = runningNames.map { $0.lowercased() }
+        for name in extra where lowered.contains(name) {
+            return true
+        }
+        return lowered.contains { $0.contains("notch") }
+    }
+
+    private func startConflictMonitor() {
+        updateConflictState()
+        conflictTimer?.invalidate()
+        let timer = Timer(timeInterval: 3, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updateConflictState() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        conflictTimer = timer
+    }
+
+    private func updateConflictState() {
+        guard let panel else { return }
+        let conflicted = Self.otherNotchAppRunning()
+        guard conflicted != conflictHidden else { return }
+        conflictHidden = conflicted
+        debugLog("conflict: otherNotchApp=\(conflicted)")
+        if conflicted {
+            panel.orderOut(nil)
+        } else if settings?.settings.notchModeEnabled != false {
+            positionPanel(animated: false)
+            panel.orderFrontRegardless()
+        }
+    }
+
+    private static func otherNotchAppRunning() -> Bool {
+        let names: [String] = NSWorkspace.shared.runningApplications.compactMap { app -> String? in
+            guard app.activationPolicy == .regular else { return nil }
+            guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier
+            else { return nil }
+            return app.executableURL?.lastPathComponent
+                ?? app.localizedName
+                ?? ""
+        }
+        return hasConflictingNotchApp(names)
     }
 
     // MARK: - Panel

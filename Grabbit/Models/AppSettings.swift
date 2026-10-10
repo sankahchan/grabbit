@@ -81,6 +81,9 @@ public struct AppSettings: Codable {
     public var notchModeEnabled = true
     /// Cute system blips for Mochi's little animations.
     public var notchSoundsEnabled = true
+    /// Hide the island while another notch app (boring.notch, NotchNook,
+    /// notchy, …) is running — two islands stacked at top-center collide.
+    public var notchHideWhenOtherApp = true
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -141,6 +144,7 @@ extension AppSettings {
         case autoUpdateTrackers, trackerSyncHours, torrentPerformanceProfile
         case torznabIndexers, autoStartIndexers, notchModeEnabled
         case notchSoundsEnabled
+        case notchHideWhenOtherApp
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -178,6 +182,7 @@ extension AppSettings {
         autoStartIndexers = try c.decodeIfPresent(Bool.self, forKey: .autoStartIndexers) ?? true
         notchModeEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchModeEnabled) ?? true
         notchSoundsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notchSoundsEnabled) ?? true
+        notchHideWhenOtherApp = try c.decodeIfPresent(Bool.self, forKey: .notchHideWhenOtherApp) ?? true
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
