@@ -71,13 +71,20 @@ struct SettingsView: View {
             onOpenAtLogin: applyOpenAtLogin))
         .modifier(ProxyChangeHandlers())
         .modifier(MediaChangeHandlers())
-        .modifier(NotchChangeHandlers())
+        .modifier(NotchChangeHandlersA())
+        .modifier(NotchChangeHandlersB())
+        .modifier(NotchChangeHandlersC())
+        .modifier(NotchChangeHandlersD())
     }
 
     // MARK: - Notch & Pill change handlers
 
     /// Saves and re-applies every notch/pill setting immediately.
-    private struct NotchChangeHandlers: ViewModifier {
+    /// Saves and re-applies notch/pill settings immediately. Split into
+    /// four small modifiers — one chain of ~40 `.onChange`s times out the
+    /// CI's older type-checker (Xcode 16).
+
+    private struct NotchChangeHandlersA: ViewModifier {
         @Environment(SettingsStore.self) private var store: SettingsStore
         @Environment(NotchController.self) private var notchController: NotchController
 
@@ -86,9 +93,27 @@ struct SettingsView: View {
                 .onChange(of: store.settings.notchShape) { _, _ in changed() }
                 .onChange(of: store.settings.notchClosedScale) { _, _ in changed() }
                 .onChange(of: store.settings.notchHeightAdjust) { _, _ in changed() }
+                .onChange(of: store.settings.notchClosedWidth) { _, _ in changed() }
+                .onChange(of: store.settings.notchCornerScale) { _, _ in changed() }
                 .onChange(of: store.settings.notchGlassEnabled) { _, _ in changed() }
                 .onChange(of: store.settings.notchTranslucency) { _, _ in changed() }
                 .onChange(of: store.settings.notchAuraEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchAuraIntensity) { _, _ in changed() }
+                .onChange(of: store.settings.notchEdgeHighlight) { _, _ in changed() }
+        }
+
+        private func changed() {
+            store.save()
+            notchController.applySettings()
+        }
+    }
+
+    private struct NotchChangeHandlersB: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(NotchController.self) private var notchController: NotchController
+
+        func body(content: Content) -> some View {
+            content
                 .onChange(of: store.settings.notchCustomFill) { _, _ in changed() }
                 .onChange(of: store.settings.notchFillColor) { _, _ in changed() }
                 .onChange(of: store.settings.notchAnimationStyle) { _, _ in changed() }
@@ -97,30 +122,54 @@ struct SettingsView: View {
                 .onChange(of: store.settings.notchHoverDelay) { _, _ in changed() }
                 .onChange(of: store.settings.notchCollapseDelay) { _, _ in changed() }
                 .onChange(of: store.settings.notchIdleTimeout) { _, _ in changed() }
+        }
+
+        private func changed() {
+            store.save()
+            notchController.applySettings()
+        }
+    }
+
+    private struct NotchChangeHandlersC: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(NotchController.self) private var notchController: NotchController
+
+        func body(content: Content) -> some View {
+            content
                 .onChange(of: store.settings.notchShowProgress) { _, _ in changed() }
                 .onChange(of: store.settings.notchShowAdded) { _, _ in changed() }
                 .onChange(of: store.settings.notchShowFinished) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowFailed) { _, _ in changed() }
                 .onChange(of: store.settings.notchTransientSeconds) { _, _ in changed() }
-                .onChange(of: store.settings.notchHideFromCapture) { _, _ in changed() }
-                .onChange(of: store.settings.notchShowClock) { _, _ in changed() }
+                .onChange(of: store.settings.notchSoundsEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchSoundPack) { _, _ in changed() }
+                .onChange(of: store.settings.notchAutoAddOnCopy) { _, _ in changed() }
+        }
+
+        private func changed() {
+            store.save()
+            notchController.applySettings()
+        }
+    }
+
+    private struct NotchChangeHandlersD: ViewModifier {
+        @Environment(SettingsStore.self) private var store: SettingsStore
+        @Environment(NotchController.self) private var notchController: NotchController
+
+        func body(content: Content) -> some View {
+            content
                 .onChange(of: store.settings.notchVisibility) { _, _ in changed() }
                 .onChange(of: store.settings.notchMochiLevel) { _, _ in changed() }
+                .onChange(of: store.settings.notchShowClock) { _, _ in changed() }
                 .onChange(of: store.settings.notchHotkeyEnabled) { _, _ in changed() }
                 .onChange(of: store.settings.notchDoubleClickOpensApp) { _, _ in changed() }
-                .onChange(of: store.settings.notchEdgeHighlight) { _, _ in changed() }
-                .onChange(of: store.settings.notchAuraIntensity) { _, _ in changed() }
-                .onChange(of: store.settings.notchClosedWidth) { _, _ in changed() }
-                .onChange(of: store.settings.notchCornerScale) { _, _ in changed() }
-                .onChange(of: store.settings.notchShowFailed) { _, _ in changed() }
-                .onChange(of: store.settings.notchSoundPack) { _, _ in changed() }
                 .onChange(of: store.settings.notchHideInFullscreen) { _, _ in changed() }
                 .onChange(of: store.settings.notchHiddenApps) { _, _ in changed() }
                 .onChange(of: store.settings.notchHiddenForSharing) { _, _ in changed() }
                 .onChange(of: store.settings.notchDisplayScope) { _, _ in changed() }
-                .onChange(of: store.settings.notchAutoAddOnCopy) { _, _ in changed() }
-                .onChange(of: store.settings.notchMenuBarAccess) { _, _ in changed() }
-                .onChange(of: store.settings.notchSoundsEnabled) { _, _ in changed() }
+                .onChange(of: store.settings.notchHideFromCapture) { _, _ in changed() }
                 .onChange(of: store.settings.notchHideWhenOtherApp) { _, _ in changed() }
+                .onChange(of: store.settings.notchMenuBarAccess) { _, _ in changed() }
         }
 
         private func changed() {
