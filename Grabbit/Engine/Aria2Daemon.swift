@@ -144,6 +144,11 @@ public final class Aria2Daemon {
                 await Self.killPortHolder(port: stored.rpcPort)
             }
         case .startFresh:
+            // A previous run's daemon may still hold 6800 while its
+            // manifest is gone (deleted/crashed) — evict it so fresh
+            // starts never pile up on 6801, 6802, … (each later daemon
+            // also loses the DHT port, stalling magnet metadata).
+            await Self.killPortHolder(port: 6800)
             break
         }
         return try await spawnFresh(
