@@ -37,6 +37,7 @@ final class NotchController {
     var isHover = false
 
     private var panel: NSPanel?
+    private var extraPanels: [NSPanel] = []
     private var timer: Timer?
     private var conflictTimer: Timer?
     /// True while the island is hidden because another notch app is running.
@@ -45,6 +46,12 @@ final class NotchController {
     private(set) var speedHistory: [Double] = []
     /// Cursor position across the island (-1…1) for the mochi's parallax.
     private(set) var hoverX: CGFloat = 0
+    /// The menu bar strip height — Notch mode's blackout bar.
+    private(set) var stripHeight: CGFloat = 30
+    /// Which panel (display) the pointer is on.
+    private(set) var hoveredPanelID = 0
+    /// What a drag-in-progress is carrying (drop preview).
+    private(set) var dragPreview: String?
     /// Height of the physical notch (0 on non-notch Macs). The island hangs
     /// from the very top edge of the screen; content stays below this inset.
     private(set) var topInset: CGFloat = 0
@@ -184,12 +191,11 @@ final class NotchController {
     }
 
     func setEnabled(_ enabled: Bool) {
-        guard let panel else { return }
         if enabled && !conflictHidden {
             positionPanel(animated: false)
-            panel.orderFrontRegardless()
+            for panel in allPanels { panel.orderFrontRegardless() }
         } else {
-            panel.orderOut(nil)
+            for panel in allPanels { panel.orderOut(nil) }
         }
     }
 
@@ -219,7 +225,7 @@ final class NotchController {
     }
 
     private func updateConflictState() {
-        guard let panel else { return }
+        guard !allPanels.isEmpty else { return }
         let hide = Self.otherNotchAppRunning()
             || frontmostAppHidden()
             || fullscreenAppActive()
@@ -228,10 +234,10 @@ final class NotchController {
         conflictHidden = hide
         debugLog("conflict: hide=\(hide)")
         if hide {
-            panel.orderOut(nil)
+            for panel in allPanels { panel.orderOut(nil) }
         } else if settings?.settings.notchModeEnabled != false {
             positionPanel(animated: false)
-            panel.orderFrontRegardless()
+            for panel in allPanels { panel.orderFrontRegardless() }
         }
     }
 
@@ -289,6 +295,47 @@ final class NotchController {
         return hasConflictingNotchApp(names)
     }
 
+    private var allPanels: [NSPanel] {
+        var out: [NSPanel] = []
+        if let panel { out.append(panel) }
+        out.append(contentsOf: extraPanels)
+        return out
+    }
+
+    /// Keeps one panel per screen when the scope is "All Displays".
+    private func syncPanelsForScope() {
+        let scope = settings?.settings.notchDisplayScope ?? .main
+        if scope == .all {
+            while extraPanels.count < max(0, NSScreen.screens.count - 1) {
+                let p = makeExtraPanel()
+                extraPanels.append(p)
+            }
+        } else if !extraPanels.isEmpty {
+            for p in extraPanels { p.orderOut(nil) }
+            extraPanels.removeAll()
+        }
+    }
+
+    private func makeExtraPanel() -> NSPanel {
+        let p = NSPanel(
+            contentRect: .zero,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false)
+        p.isOpaque = false
+        p.backgroundColor = .clear
+        p.hasShadow = false
+        p.level = .screenSaver
+        p.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+        p.isReleasedWhenClosed = false
+        p.becomesKeyOnlyIfNeeded = true
+        p.sharingType =
+            settings?.settings.notchHideFromCapture == true ? .none : .readOnly
+        p.contentView = NSHostingView(
+            rootView: NotchPillView(controller: self, panelID: extraPanels.count + 1))
+        return p
+    }
+
     // MARK: - Panel
 
     private func buildPanel() {
@@ -321,9 +368,36 @@ final class NotchController {
         panel.orderFrontRegardless()
     }
 
+    private var screenStripHeight: CGFloat {
+        guard let screen = NSScreen.screens.first else { return 30 }
+        return screen.frame.maxY - screen.visibleFrame.maxY
+    }
+
     private func positionPanel(animated: Bool) {
         guard let panel else { return }
+        let strip = max(screenStripHeight, 25)
+        if stripHeight != strip { stripHeight = strip }
         let scope = settings?.settings.notchDisplayScope ?? .main
+        let size = pillSize(for: state)
+
+        if scope == .all {
+            let screens = NSScreen.screens
+            for (index, p) in allPanels.enumerated() {
+                let scr = screens.indices.contains(index)
+                    ? screens[index] : screens[0]
+                let anchorY = shapeMode == .notch
+                    ? scr.frame.maxY
+                    : scr.visibleFrame.maxY
+                let frame = NSRect(
+                    x: scr.frame.midX - size.width / 2,
+                    y: anchorY - size.height,
+                    width: size.width,
+                    height: size.height)
+                p.setFrame(frame, display: true, animate: animated)
+            }
+            return
+        }
+
         let screen: NSScreen?
         switch scope {
         case .main:
@@ -333,11 +407,12 @@ final class NotchController {
             screen = NSScreen.screens.first {
                 NSMouseInRect(mouse, $0.frame, false)
             } ?? NSScreen.screens.first
+        case .all:
+            screen = NSScreen.screens.first
         }
         guard let screen else { return }
         let inset = screen.safeAreaInsets.top
         if topInset != inset { topInset = inset }
-        let size = pillSize(for: state)
         // Pill mode: a capsule hanging below the menu bar. Notch mode:
         // flush with the screen top, blacking out the menu-bar strip center
         // like a hardware notch (Notchy's two shapes).
@@ -354,24 +429,52 @@ final class NotchController {
     /// adjusts (Notchy's "Closed Pill Size" / "Pill Height Adjustment");
     /// hover and expanded sizes stay constant.
     func pillSize(for state: State) -> NSSize {
+        // Notch mode reserves the menu-bar strip as a pure blackout zone;
+        // content hangs below it (Notchy's approach).
+        let strip = shapeMode == .notch ? stripHeight : 0
         switch state {
         case .idle(let offer):
             if offer != nil || isDragHover || isHover {
-                return NSSize(width: 224, height: 40)
+                return NSSize(width: 224, height: strip + 40)
             }
             let scale = min(1.5, max(0.7, settings?.settings.notchClosedScale ?? 1))
             let widthMul = min(1.4, max(0.7, settings?.settings.notchClosedWidth ?? 1))
             let adjust = Double(min(20, max(-20, settings?.settings.notchHeightAdjust ?? 0)))
+            if shapeMode == .notch {
+                return NSSize(width: 204 * scale * widthMul, height: strip)
+            }
             return NSSize(
                 width: 204 * scale * widthMul,
                 height: max(24, 36 * scale + adjust))
         case .menu:
-            return NSSize(width: 320, height: 176)
+            let rows = CGFloat(min(3, activeSummaries.count))
+            return NSSize(width: 320, height: strip + 176 + rows * 26)
         case .active:
-            return NSSize(width: 320, height: 56)
+            return NSSize(width: 320, height: strip + 56)
         case .done, .failed, .added:
-            return NSSize(width: 240, height: 40)
+            return NSSize(width: 240, height: strip + 40)
         }
+    }
+
+    /// Content top inset: the reserved strip zone in Notch mode.
+    var contentTopInset: CGFloat {
+        shapeMode == .notch ? stripHeight : 0
+    }
+
+    /// Live task summaries shown inside the open menu.
+    var activeSummaries: [(name: String, progress: Double)] {
+        var out: [(String, Double)] = []
+        for d in downloadEngine?.items ?? [] where d.state == .downloading {
+            let total = Double(d.totalBytes ?? 0)
+            let p = total > 0 ? Double(d.downloadedBytes) / total : 0
+            out.append((d.filename, p))
+        }
+        for t in torrentEngine?.torrents ?? [] where t.state == .downloading {
+            let total = Double(t.totalBytes)
+            let p = total > 0 ? Double(t.downloadedBytes) / total : 0
+            out.append((t.name, p))
+        }
+        return Array(out.prefix(3))
     }
 
     // MARK: - User settings accessors (live)
@@ -417,15 +520,25 @@ final class NotchController {
 
     var clockText: String { Self.clockFormatter.string(from: Date()) }
 
-    /// Whether the closed pill shows anything at rest (Notchy's
-    /// Always / Only-when-active / Only-on-hover visibility modes).
-    func showsRestContent(offer: Offer?) -> Bool {
+    /// Whether the window shows anything at rest (the panel itself).
+    /// Notch mode always shows the blackout bar; Pill mode obeys the
+    /// Always / Only-when-active / Only-on-hover visibility modes.
+    func showsRestPanel(offer: Offer?) -> Bool {
         if isHover || isDragHover || offer != nil { return true }
+        if shapeMode == .notch { return true }
         switch settings?.settings.notchVisibility ?? .always {
         case .always: return true
         case .activeOnly: return hasTasks
         case .hoverOnly: return false
         }
+    }
+
+    /// Whether the closed pill shows *content* at rest. Notch mode keeps
+    /// the strip as a pure blackout bar (no content) — like Notchy.
+    func showsRestContent(offer: Offer?) -> Bool {
+        if isHover || isDragHover || offer != nil { return true }
+        if shapeMode == .notch { return false }
+        return true
     }
 
     /// Any download/torrent task exists.
@@ -438,6 +551,16 @@ final class NotchController {
     var auraEnabled: Bool { settings?.settings.notchAuraEnabled ?? true }
     var translucency: Double { min(1.0, max(0.5, settings?.settings.notchTranslucency ?? 0.97)) }
 
+    /// Kinds that can be added silently by the copy auto-add.
+    private func autoAddable(_ kind: NotchLinkKind) -> Bool {
+        switch kind {
+        case .magnet, .torrentURL, .torrentFile, .direct:
+            return true
+        case .mediaPage, .invalid:
+            return false
+        }
+    }
+
     /// The user's custom closed-island fill, when enabled.
     var customFill: Color? {
         guard settings?.settings.notchCustomFill == true,
@@ -448,9 +571,9 @@ final class NotchController {
 
     /// Re-applies user settings that live on the panel window itself.
     func applySettings() {
-        guard let panel else { return }
-        panel.sharingType =
+        let sharing: NSWindow.SharingType =
             settings?.settings.notchHideFromCapture == true ? .none : .readOnly
+        for panel in allPanels { panel.sharingType = sharing }
         registerGlobalHotkey()
         updateConflictState()
         setEnabled(settings?.settings.notchModeEnabled ?? true)
@@ -795,6 +918,15 @@ final class NotchController {
         let offer = Self.offer(from: text)
         if let offer, offer != clipboardOffer {
             playSound(.offer)
+            if settings?.settings.notchAutoAddOnCopy == true,
+               autoAddable(offer.kind) {
+                // Zero-click mode: torrents/direct files are added silently.
+                // Media pages switch tabs, so they stay as an offer.
+                lastClipboardChangeCount = NSPasteboard.general.changeCount
+                clipboardOffer = nil
+                route(offer.kind)
+                return
+            }
         }
         clipboardOffer = offer
         // The menu may be open with a row selected that no longer exists.
@@ -964,7 +1096,14 @@ final class NotchController {
     func setDragHover(_ hovering: Bool) {
         guard isDragHover != hovering else { return }
         isDragHover = hovering
+        if !hovering { dragPreview = nil }
         positionPanel(animated: true)
+    }
+
+    /// What the current drag is carrying (shown as a drop preview).
+    func setDragPreview(_ text: String?) {
+        guard dragPreview != text else { return }
+        dragPreview = text
     }
 
     /// Mouse-move parallax from the drop zone (event-driven, so it is
@@ -986,11 +1125,14 @@ final class NotchController {
     private var wantsHover = false
     private var hoverWorkItem: DispatchWorkItem?
 
-    func setHover(_ hovering: Bool) {
+    func setHover(_ hovering: Bool, panel: Int = 0) {
         guard wantsHover != hovering else { return }
         wantsHover = hovering
         hoverWorkItem?.cancel()
         hoverWorkItem = nil
+        if hovering {
+            hoveredPanelID = panel
+        }
         guard hovering else {
             applyHover(false)
             return
@@ -1008,6 +1150,9 @@ final class NotchController {
                 deadline: .now() + delay, execute: item)
         }
     }
+
+    /// The state a non-hovered panel shows (multi-display mode).
+    var restState: State { .idle(clipboardOffer) }
 
     private func applyHover(_ hovering: Bool) {
         guard isHover != hovering else { return }
@@ -1158,6 +1303,8 @@ final class NotchController {
 
 struct NotchPillView: View {
     @Bindable var controller: NotchController
+    /// Which display this panel lives on (multi-display "All" scope).
+    var panelID: Int = 0
 
     /// Safe in a non-activating panel (unlike TimelineView, which broke
     /// button rendering here): rim pulse + shine sweep via repeatForever.
@@ -1165,7 +1312,11 @@ struct NotchPillView: View {
     @State private var sweepRun = false
 
     var body: some View {
-        let state = controller.state
+        let raw = controller.state
+        // Only the hovered panel shows transient/expanded states; the
+        // others stay at their resting pill (multi-display mode).
+        let state = controller.hoveredPanelID == panelID
+            ? raw : controller.restState
         Group {
             if case .menu = state {
                 menuBody(state)
@@ -1186,10 +1337,11 @@ struct NotchPillView: View {
         .background(
             NotchDropZone(
                 onGaze: { controller.setGaze($0) },
-                onHover: { controller.setHover($0) },
+                onHover: { controller.setHover($0, panel: panelID) },
                 onDropText: { controller.handleDrop(text: $0) },
                 onDropFile: { controller.handleDrop(fileURL: $0) },
                 onDragChange: { controller.setDragHover($0) },
+                onPreview: { controller.setDragPreview($0) },
                 onKey: { controller.handleKey($0) },
                 wantKeyFocus: controller.keyFocus)
         )
@@ -1219,7 +1371,7 @@ struct NotchPillView: View {
     private func capsule(for state: NotchController.State) -> some View {
         let hideRest: Bool = {
             if case .idle(let offer) = state {
-                return !controller.showsRestContent(offer: offer)
+                return !controller.showsRestPanel(offer: offer)
             }
             return false
         }()
@@ -1242,6 +1394,7 @@ struct NotchPillView: View {
                 }
                 shineSweep(for: state, phase: sweepRun ? 1 : 0)
                 content(for: state)
+                    .padding(.top, controller.contentTopInset)
             }
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
@@ -1431,6 +1584,16 @@ struct NotchPillView: View {
                 Text(NSLocalizedString("notch.pill.add", comment: ""))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
+            } else if controller.isDragHover,
+                      let preview = controller.dragPreview {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Neo.green)
+                Text(preview)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             } else if controller.isHover {
                 Text("Grabbit")
                     .font(.system(size: 11.5, weight: .bold))
@@ -1487,6 +1650,15 @@ struct NotchPillView: View {
                 }
             } else {
                 emptyLinkHint
+            }
+            let actives = controller.activeSummaries
+            if !actives.isEmpty {
+                VStack(spacing: 2) {
+                    ForEach(Array(actives.enumerated()), id: \.offset) { _, item in
+                        NotchTaskRow(name: item.name, progress: item.progress)
+                    }
+                }
+                .padding(.top, 2)
             }
             VStack(spacing: 2) {
                 NotchMenuRow(
@@ -1575,6 +1747,44 @@ struct NotchPillView: View {
 }
 
 // MARK: - Island components
+
+/// A read-only live task row inside the open menu.
+private struct NotchTaskRow: View {
+    var name: String
+    var progress: Double
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Neo.blue)
+                .frame(width: 24, height: 24)
+                .background(
+                    Neo.blue.opacity(0.15),
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Text(name)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 6)
+            Text("\(Int(progress * 100))%")
+                .font(.system(size: 10, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(Neo.blue)
+            Capsule()
+                .fill(.white.opacity(0.12))
+                .frame(width: 44, height: 4)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(Neo.blue)
+                        .frame(width: 44 * min(1, max(0, progress)))
+                }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+    }
+}
 
 /// A menu action row: colored icon chip + label, with a hover glow.
 private struct NotchMenuRow: View {
@@ -2276,6 +2486,7 @@ struct NotchDropZone: NSViewRepresentable {
     var onDropText: (String) -> Void
     var onDropFile: (URL) -> Void
     var onDragChange: (Bool) -> Void
+    var onPreview: (String?) -> Void
     var onKey: (String) -> Void
     var wantKeyFocus: Bool
 
@@ -2295,6 +2506,7 @@ struct NotchDropZone: NSViewRepresentable {
         view.onDropText = onDropText
         view.onDropFile = onDropFile
         view.onDragChange = onDragChange
+        view.onPreview = onPreview
         view.onKey = onKey
         if wantKeyFocus != view.hasFocusRequest {
             view.hasFocusRequest = wantKeyFocus
@@ -2315,6 +2527,7 @@ final class DropCatcherView: NSView {
     var onDropText: ((String) -> Void)?
     var onDropFile: ((URL) -> Void)?
     var onDragChange: ((Bool) -> Void)?
+    var onPreview: ((String?) -> Void)?
     var onKey: ((String) -> Void)?
     var hasFocusRequest = false
 
@@ -2373,11 +2586,39 @@ final class DropCatcherView: NSView {
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         onDragChange?(true)
+        onPreview?(previewText(sender))
+        return .copy
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        onPreview?(previewText(sender))
         return .copy
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
         onDragChange?(false)
+        onPreview?(nil)
+    }
+
+    /// What the drag is carrying, for the drop preview.
+    private func previewText(_ sender: NSDraggingInfo) -> String? {
+        let pasteboard = sender.draggingPasteboard
+        if let text = pasteboard.string(forType: .URL)
+            ?? pasteboard.string(forType: .string) {
+            if let url = URL(string: text) {
+                let name = url.lastPathComponent
+                if !name.isEmpty { return name }
+                return url.host
+            }
+            return text
+        }
+        if let files = pasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]
+        ) as? [URL], let file = files.first {
+            return file.lastPathComponent
+        }
+        return nil
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {

@@ -117,6 +117,8 @@ struct SettingsView: View {
                 .onChange(of: store.settings.notchHiddenApps) { _, _ in changed() }
                 .onChange(of: store.settings.notchHiddenForSharing) { _, _ in changed() }
                 .onChange(of: store.settings.notchDisplayScope) { _, _ in changed() }
+                .onChange(of: store.settings.notchAutoAddOnCopy) { _, _ in changed() }
+                .onChange(of: store.settings.notchMenuBarAccess) { _, _ in changed() }
                 .onChange(of: store.settings.notchSoundsEnabled) { _, _ in changed() }
                 .onChange(of: store.settings.notchHideWhenOtherApp) { _, _ in changed() }
         }
@@ -535,6 +537,9 @@ struct SettingsView: View {
         notchToggleRow(
             NSLocalizedString("settings.notch.showFailed", comment: ""),
             isOn: settings.notchShowFailed)
+        notchToggleRow(
+            NSLocalizedString("settings.notch.autoAdd", comment: ""),
+            isOn: settings.notchAutoAddOnCopy)
         notchStepperRow(
             label: NSLocalizedString("settings.notch.transientSeconds", comment: ""),
             value: settings.notchTransientSeconds,
@@ -589,9 +594,13 @@ struct SettingsView: View {
             NeoSegmented(selection: settings.notchDisplayScope, titles: [
                 (.main, NSLocalizedString("settings.notch.showOn.main", comment: "")),
                 (.active, NSLocalizedString("settings.notch.showOn.active", comment: "")),
+                (.all, NSLocalizedString("settings.notch.showOn.all", comment: "")),
             ])
-            .frame(maxWidth: 300)
+            .frame(maxWidth: 380)
         }
+        notchToggleRow(
+            NSLocalizedString("settings.notch.menuBarIcon", comment: ""),
+            isOn: settings.notchMenuBarAccess)
         notchToggleRow(
             NSLocalizedString("settings.notch.hotkey", comment: ""),
             isOn: settings.notchHotkeyEnabled)

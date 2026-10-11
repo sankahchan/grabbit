@@ -33,13 +33,24 @@ final class TrayController {
     private var timer: Timer?
     private weak var downloads: DownloadEngine?
     private weak var torrents: TorrentEngine?
+    private weak var settingsStore: SettingsStore?
+    private weak var notchController: NotchController?
     private var speedItem: NSMenuItem?
     private var openItem: NSMenuItem?
+    private var islandItem: NSMenuItem?
+    private var sharingItem: NSMenuItem?
     private var quitItem: NSMenuItem?
 
-    func configure(downloads: DownloadEngine, torrents: TorrentEngine) {
+    func configure(
+        downloads: DownloadEngine,
+        torrents: TorrentEngine,
+        settingsStore: SettingsStore,
+        notchController: NotchController
+    ) {
         self.downloads = downloads
         self.torrents = torrents
+        self.settingsStore = settingsStore
+        self.notchController = notchController
     }
 
     /// Show or hide the menu bar icon. Safe to call repeatedly.
@@ -60,6 +71,17 @@ final class TrayController {
             open.target = self
             menu.addItem(open)
             openItem = open
+            menu.addItem(.separator())
+            let island = NSMenuItem(
+                title: "", action: #selector(toggleIsland), keyEquivalent: "")
+            island.target = self
+            menu.addItem(island)
+            islandItem = island
+            let sharing = NSMenuItem(
+                title: "", action: #selector(toggleSharing), keyEquivalent: "")
+            sharing.target = self
+            menu.addItem(sharing)
+            sharingItem = sharing
             menu.addItem(.separator())
             let quit = NSMenuItem(title: "", action: #selector(quitApp), keyEquivalent: "")
             quit.target = self
@@ -122,7 +144,35 @@ final class TrayController {
         }
         speedItem?.title = total > 0 ? "↓ \(formatSpeed(total))" : "Grabbit"
         openItem?.title = NSLocalizedString("tray.open", comment: "")
+        let enabled = settingsStore?.settings.notchModeEnabled ?? true
+        islandItem?.title = enabled
+            ? NSLocalizedString("tray.hideIsland", comment: "")
+            : NSLocalizedString("tray.showIsland", comment: "")
+        let hidden = settingsStore?.settings.notchHiddenForSharing ?? false
+        sharingItem?.title = hidden
+            ? NSLocalizedString("settings.notch.showAgain", comment: "")
+            : NSLocalizedString("settings.notch.hideForSharing", comment: "")
         quitItem?.title = NSLocalizedString("tray.quit", comment: "")
+    }
+
+    @objc private func toggleIsland() {
+        Task { @MainActor [weak self] in
+            guard let self, let store = self.settingsStore else { return }
+            store.settings.notchModeEnabled.toggle()
+            store.save()
+            self.notchController?.setEnabled(store.settings.notchModeEnabled)
+            self.refresh()
+        }
+    }
+
+    @objc private func toggleSharing() {
+        Task { @MainActor [weak self] in
+            guard let self, let store = self.settingsStore else { return }
+            store.settings.notchHiddenForSharing.toggle()
+            store.save()
+            self.notchController?.applySettings()
+            self.refresh()
+        }
     }
 
     @objc private func openMainWindow() {

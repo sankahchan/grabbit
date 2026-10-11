@@ -9538,6 +9538,91 @@
           }
         }
       }
+    },
+    "settings.notch.showOn.all": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Displays"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး"
+          }
+        }
+      }
+    },
+    "settings.notch.menuBarIcon": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Bar Icon"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu bar အိုင်ကွန်"
+          }
+        }
+      }
+    },
+    "settings.notch.autoAdd": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-Add on Copy"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy လုပ်တာနဲ့ ထည့်"
+          }
+        }
+      }
+    },
+    "tray.hideIsland": {
+      "comment": "Tray menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Island"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Island ဖျောက်"
+          }
+        }
+      }
+    },
+    "tray.showIsland": {
+      "comment": "Tray menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Island"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Island ပြ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

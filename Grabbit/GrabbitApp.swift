@@ -108,7 +108,9 @@ struct GrabbitApp: App {
         _trayController = State(initialValue: TrayController())
         _trayController.wrappedValue.configure(
             downloads: _downloadEngine.wrappedValue,
-            torrents: _torrentEngine.wrappedValue)
+            torrents: _torrentEngine.wrappedValue,
+            settingsStore: sharedSettings,
+            notchController: _notchController.wrappedValue)
         // LinkGrabber staging: dedup + probe + commit through the engine.
         _linkGrabberStore.wrappedValue.configure(
             downloadEngine: _downloadEngine.wrappedValue)
@@ -365,7 +367,8 @@ struct GrabbitApp: App {
     private func applyRunMode(initial: Bool) {
         let mode = settings.settings.runMode
         NSApp.setActivationPolicy(mode == .standard ? .regular : .accessory)
-        trayController.setVisible(mode == .tray)
+        trayController.setVisible(
+            mode == .tray || settings.settings.notchMenuBarAccess)
         if initial, !Self.initialRunModeApplied {
             Self.initialRunModeApplied = true
             if mode == .tray {

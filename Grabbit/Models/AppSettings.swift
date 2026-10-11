@@ -153,6 +153,10 @@ public struct AppSettings: Codable {
     public var notchHiddenForSharing = false
     /// Which display carries the island.
     public var notchDisplayScope: NotchDisplayScope = .main
+    /// Copying a torrent/direct link adds it without a click.
+    public var notchAutoAddOnCopy = false
+    /// A menu-bar icon with island quick actions.
+    public var notchMenuBarAccess = false
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -228,6 +232,7 @@ extension AppSettings {
         case notchClosedWidth, notchCornerScale, notchShowFailed
         case notchSoundPack, notchHideInFullscreen, notchHiddenApps
         case notchHiddenForSharing, notchDisplayScope
+        case notchAutoAddOnCopy, notchMenuBarAccess
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -300,6 +305,8 @@ extension AppSettings {
         notchHiddenApps = try c.decodeIfPresent([String].self, forKey: .notchHiddenApps) ?? []
         notchHiddenForSharing = try c.decodeIfPresent(Bool.self, forKey: .notchHiddenForSharing) ?? false
         notchDisplayScope = try c.decodeIfPresent(NotchDisplayScope.self, forKey: .notchDisplayScope) ?? .main
+        notchAutoAddOnCopy = try c.decodeIfPresent(Bool.self, forKey: .notchAutoAddOnCopy) ?? false
+        notchMenuBarAccess = try c.decodeIfPresent(Bool.self, forKey: .notchMenuBarAccess) ?? false
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
@@ -359,6 +366,7 @@ public enum NotchSoundPack: String, Codable, CaseIterable, Sendable {
 public enum NotchDisplayScope: String, Codable, CaseIterable, Sendable {
     case main
     case active
+    case all
 }
 
 // MARK: - Reset
@@ -404,6 +412,8 @@ extension AppSettings {
         notchHiddenApps = []
         notchHiddenForSharing = false
         notchDisplayScope = .main
+        notchAutoAddOnCopy = false
+        notchMenuBarAccess = false
     }
 }
 
