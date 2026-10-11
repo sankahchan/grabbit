@@ -162,6 +162,7 @@ final class NotchController {
         startConflictMonitor()
         registerGlobalHotkey()
         installRightClickMonitor()
+        installCanvasInteractionMonitor()
         // Dev hooks: touch (or rm) these files to inspect island states.
         // `grabbit-force-menu` opens the menu; `grabbit-force-hover` fakes
         // the hover state so the layout can be screenshotted without a mouse.
@@ -373,28 +374,87 @@ final class NotchController {
         return screen.frame.maxY - screen.visibleFrame.maxY
     }
 
+    /// The panel canvas: a fixed-size transparent window big enough for
+    /// every morph. The window never resizes at runtime, so all animation
+    /// happens inside SwiftUI (perfectly smooth — no window-server resize).
+    private func canvasSize() -> NSSize {
+        let menuMax = 176 + 3 * 26 + 28
+        return NSSize(
+            width: 340,
+            height: CGFloat(menuMax) + (shapeMode == .notch ? stripHeight : 0))
+    }
+
+    /// The pill's actual rect inside its (larger) canvas window.
+    func pillRect(for panel: NSPanel) -> NSRect {
+        let size = pillSize(for: state)
+        return NSRect(
+            x: panel.frame.minX + (panel.frame.width - size.width) / 2,
+            y: panel.frame.maxY - size.height,
+            width: size.width,
+            height: size.height)
+    }
+
+    private func panelForID(_ id: Int) -> NSPanel? {
+        let panels = allPanels
+        if panels.indices.contains(id) { return panels[id] }
+        return panels.first
+    }
+
+    /// Is the mouse over the *pill* (not just its canvas window)?
+    func pillContainsMouse() -> Bool {
+        guard let p = panelForID(hoveredPanelID) else { return false }
+        return pillRect(for: p).contains(NSEvent.mouseLocation)
+    }
+
+    private var mouseCanvasMonitor: Any?
+
+    /// Clicks outside the pill fall through to the apps below: the big
+    /// canvas windows only accept mouse events near the pill itself.
+    private func installCanvasInteractionMonitor() {
+        guard mouseCanvasMonitor == nil else { return }
+        mouseCanvasMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]
+        ) { [weak self] _ in
+            Task { @MainActor in self?.updateCanvasInteraction() }
+        }
+    }
+
+    private func updateCanvasInteraction() {
+        let mouse = NSEvent.mouseLocation
+        for p in allPanels {
+            let rect = pillRect(for: p).insetBy(dx: -8, dy: -8)
+            p.ignoresMouseEvents = !rect.contains(mouse)
+        }
+    }
+
     private func positionPanel(animated: Bool) {
+        syncPanelsForScope()
         guard let panel else { return }
         let strip = max(screenStripHeight, 25)
         if stripHeight != strip { stripHeight = strip }
         let scope = settings?.settings.notchDisplayScope ?? .main
-        let size = pillSize(for: state)
+        let canvas = canvasSize()
+
+        func place(_ p: NSPanel, on scr: NSScreen) {
+            let anchorY = shapeMode == .notch
+                ? scr.frame.maxY
+                : scr.visibleFrame.maxY
+            let frame = NSRect(
+                x: scr.frame.midX - canvas.width / 2,
+                y: anchorY - canvas.height,
+                width: canvas.width,
+                height: canvas.height)
+            p.setFrame(frame, display: true, animate: false)
+        }
 
         if scope == .all {
             let screens = NSScreen.screens
             for (index, p) in allPanels.enumerated() {
                 let scr = screens.indices.contains(index)
                     ? screens[index] : screens[0]
-                let anchorY = shapeMode == .notch
-                    ? scr.frame.maxY
-                    : scr.visibleFrame.maxY
-                let frame = NSRect(
-                    x: scr.frame.midX - size.width / 2,
-                    y: anchorY - size.height,
-                    width: size.width,
-                    height: size.height)
-                p.setFrame(frame, display: true, animate: animated)
+                place(p, on: scr)
             }
+            updateCanvasInteraction()
             return
         }
 
@@ -413,16 +473,8 @@ final class NotchController {
         guard let screen else { return }
         let inset = screen.safeAreaInsets.top
         if topInset != inset { topInset = inset }
-        // Pill mode: a capsule hanging below the menu bar. Notch mode:
-        // flush with the screen top, blacking out the menu-bar strip center
-        // like a hardware notch (Notchy's two shapes).
-        let anchorY = shapeMode == .notch
-            ? screen.frame.maxY
-            : screen.visibleFrame.maxY
-        let origin = NSPoint(
-            x: screen.frame.midX - size.width / 2,
-            y: anchorY - size.height)
-        panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
+        place(panel, on: screen)
+        updateCanvasInteraction()
     }
 
     /// The island's current size. Only the *closed* pill scales/height-
@@ -456,9 +508,16 @@ final class NotchController {
         }
     }
 
-    /// Content top inset: the reserved strip zone in Notch mode.
-    var contentTopInset: CGFloat {
-        shapeMode == .notch ? stripHeight : 0
+    /// Content top inset: the reserved strip zone in Notch mode. The bare
+    /// strip at rest keeps its content (a small centered mochi); expanded
+    /// states hang their content below the strip.
+    func contentTopInset(for state: State) -> CGFloat {
+        guard shapeMode == .notch else { return 0 }
+        if case .idle(let offer) = state, offer == nil,
+           !isHover, !isDragHover {
+            return 0
+        }
+        return stripHeight
     }
 
     /// Live task summaries shown inside the open menu.
@@ -533,11 +592,9 @@ final class NotchController {
         }
     }
 
-    /// Whether the closed pill shows *content* at rest. Notch mode keeps
-    /// the strip as a pure blackout bar (no content) — like Notchy.
+    /// Whether the closed pill shows *content* at rest.
     func showsRestContent(offer: Offer?) -> Bool {
         if isHover || isDragHover || offer != nil { return true }
-        if shapeMode == .notch { return false }
         return true
     }
 
@@ -821,9 +878,8 @@ final class NotchController {
                 collapse()
                 return
             }
-            if menuGraceElapsed,
-               let panel, !panel.frame.contains(NSEvent.mouseLocation) {
-                debugLog("collapse: outside frame")
+            if menuGraceElapsed, !pillContainsMouse() {
+                debugLog("collapse: outside pill")
                 collapse()
             }
             return
@@ -842,7 +898,7 @@ final class NotchController {
         // Self-heal hover state: tracking areas can miss an enter after a
         // resize — trust the actual cursor position once a tick.
         if !isHover, settings?.settings.notchExpandOnHover ?? true,
-           let panel, panel.frame.contains(NSEvent.mouseLocation) {
+           !allPanels.isEmpty, pillContainsMouse() {
             wantsHover = true
             isHover = true
             positionPanel(animated: true)
@@ -902,9 +958,8 @@ final class NotchController {
         clockTick &+= 1
         if settings?.settings.notchDisplayScope == .active {
             positionPanel(animated: false)
-        } else {
-            positionPanel(animated: true)
         }
+        updateCanvasInteraction()
     }
 
     // MARK: - Clipboard (copy in browser → click the pill)
@@ -1167,7 +1222,7 @@ final class NotchController {
         // cursor is *really* outside and the menu has settled, so a
         // phantom mouseExited during the window morph can't kill it.
         if !hovering, case .menu = state, menuGraceElapsed,
-           let panel, !panel.frame.contains(NSEvent.mouseLocation) {
+           !pillContainsMouse() {
             debugLog("collapse: real mouse exit")
             collapse()
             return
@@ -1331,6 +1386,8 @@ struct NotchPillView: View {
                 .buttonStyle(.plain)
             }
         }
+        .frame(
+            maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .shadow(
             color: .black.opacity(isExpanded(state) ? 0.38 : 0.12),
             radius: 12, y: 6)
@@ -1394,7 +1451,7 @@ struct NotchPillView: View {
                 }
                 shineSweep(for: state, phase: sweepRun ? 1 : 0)
                 content(for: state)
-                    .padding(.top, controller.contentTopInset)
+                    .padding(.top, controller.contentTopInset(for: state))
             }
         }
         .frame(width: size(for: state).width, height: size(for: state).height)
@@ -1570,11 +1627,13 @@ struct NotchPillView: View {
         // Reading clockTick when the clock shows makes the view re-render
         // every tick, so the time stays fresh.
         _ = clockOn ? controller.clockTick : 0
+        let mochiSize: CGFloat =
+            offer == nil ? (controller.isHover ? 26 : 22) : 24
         return HStack(spacing: 7) {
             if mochiOn {
                 mochi(
                     mood: mood,
-                    size: offer == nil ? (controller.isHover ? 26 : 22) : 24,
+                    size: mochiSize,
                     lively: controller.isHover)
             }
             if let offer {
@@ -1602,20 +1661,21 @@ struct NotchPillView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.55))
             } else if clockOn {
-                if mochiOn { Spacer(minLength: 10) }
                 Text(controller.clockText)
                     .font(.system(size: 13, weight: .heavy, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.white)
-                if mochiOn { Spacer(minLength: 10) }
             } else if !mochiOn {
                 Text("Grabbit")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.55))
             }
         }
-        .padding(.horizontal, clockOn && mochiOn ? 16 : 0)
-        .frame(maxWidth: clockOn && mochiOn ? .infinity : nil)
+        .alignmentGuide(HorizontalAlignment.center) { dims in
+            // Keep the mochi itself at the pill's exact centre — hint
+            // text grows to the right without shifting it.
+            dims[.leading] + mochiSize / 2 + (mochiOn ? 0 : dims.width / 2)
+        }
     }
 
     /// Mochi with the user's animation level applied (off = hidden).

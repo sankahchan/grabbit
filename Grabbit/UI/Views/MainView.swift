@@ -110,13 +110,16 @@ struct MainView: View {
     /// Bundled release notes shown once after an update.
     @State private var whatsNew: ReleaseNotes.Digest?
     @State private var whatsNewVersion = ""
+    /// Sidebar visibility — explicit binding so the toolbar toggle always
+    /// works (it silently no-ops without one in some macOS versions).
+    @State private var showSidebar = NavigationSplitViewVisibility.all
 
     var body: some View {
         // Keep the global theme runtime in sync before descendants render;
         // the .id() below rebuilds the tree when the style changes.
         let themeStyle = store.settings.themeStyle
         let _ = ThemeRuntime.current = themeStyle
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $showSidebar) {
             Sidebar(selection: Binding(
                 get: { navigation.selection },
                 set: { navigation.selection = $0 }))
