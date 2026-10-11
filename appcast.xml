@@ -155,12 +155,5 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.7.0/Grabbit-v1.7.0.dmg" sparkle:version="1.7.0" sparkle:shortVersionString="1.7.0" sparkle:edSignature="+g0ewtUIBVTxTPI4svfAe8ARhcyyxEoXh92Hk4ituW3DjaYqS3V3+F5xt0H+qAtIEEKKzQNyvwxTY3wrFFu4DQ==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
-    <item>
-      <title>v1.8.0</title>
-      <pubDate>Sun, 11 Oct 2026 03:16:26 +0000</pubDate>
-      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">fix(ci): split the 40-handler notch change chain into four modifiers — the single chain times out the CI type-checker (Xcode 16)</pre>]]></description>
-      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.8.0/Grabbit-v1.8.0.dmg" sparkle:version="1.8.0" sparkle:shortVersionString="1.8.0" sparkle:edSignature="5Aj4Vv5TKMB3TIrODLQ9G1ZoHOx1GesUzwsgDdepx5vupZrayzX2JMYmThgra0/MG/rxanvoUvd1gBxuyUdHBg==" type="application/octet-stream"/>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-    </item>
   </channel>
 </rss>
