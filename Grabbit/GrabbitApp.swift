@@ -353,6 +353,9 @@ struct GrabbitApp: App {
                 .onChange(of: settings.settings.runMode) { _, _ in
                     applyRunMode(initial: false)
                 }
+                .onChange(of: settings.settings.notchMenuBarAccess) { _, _ in
+                    applyRunMode(initial: false)
+                }
         }
     }
 
