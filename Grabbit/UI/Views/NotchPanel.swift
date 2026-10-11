@@ -221,13 +221,53 @@ final class NotchController {
     /// (boringNotch, NotchNook, notchy, NotchDrop, …) counts, plus a few
     /// well-known ones that don't (Alcove, MediaMate).
     nonisolated static func hasConflictingNotchApp(_ runningNames: [String]) -> Bool {
-        let extra = ["alcove", "mediamate", "sapphire"]
+        let extra = ["alcove", "mediamate", "sapphire", "coucou"]
         let lowered = runningNames.map { $0.lowercased() }
         for name in lowered {
             if name.contains("notch") { return true }
             for known in extra where name.contains(known) {
                 return true
             }
+        }
+        return false
+    }
+
+    /// Generic notch-app detection: any *third-party* window pinned to the
+    /// top-centre strip above normal window levels is another notch pill —
+    /// no name list needed (Coucou, Sapphire, Notchy, whatever comes next).
+    nonisolated static func foreignNotchWindowExists() -> Bool {
+        guard let screen = NSScreen.screens.first else { return false }
+        let totalTop = NSScreen.screens.map { $0.frame.maxY }.max() ?? 0
+        let screenCG = CGRect(
+            x: screen.frame.minX, y: totalTop - screen.frame.maxY,
+            width: screen.frame.width, height: screen.frame.height)
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        guard let list = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            as? [[String: Any]]
+        else { return false }
+        for info in list {
+            guard let pid = info[kCGWindowOwnerPID as String] as? pid_t,
+                  pid != ownPID, pid > 0,
+                  let layer = info[kCGWindowLayer as String] as? Int,
+                  layer >= 10,
+                  let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
+                  let rect = CGRect(
+                    dictionaryRepresentation: boundsDict as CFDictionary)
+            else { continue }
+            // Apple's own chrome (menu bar, Control Centre, Dock, …).
+            if let app = NSRunningApplication(processIdentifier: pid),
+               let bundle = app.bundleIdentifier,
+               bundle.hasPrefix("com.apple.") {
+                continue
+            }
+            // Attached to the top edge, horizontally centred, pill-sized.
+            guard rect.minY <= 4, rect.width >= 60, rect.width <= 900,
+                  rect.height <= 600,
+                  abs(rect.midX - screenCG.midX) <= 300,
+                  rect.intersects(screenCG)
+            else { continue }
+            return true
         }
         return false
     }
@@ -245,6 +285,7 @@ final class NotchController {
     private func updateConflictState() {
         guard !allPanels.isEmpty else { return }
         let hide = Self.otherNotchAppRunning()
+            || Self.foreignNotchWindowExists()
             || frontmostAppHidden()
             || fullscreenAppActive()
             || (settings?.settings.notchHiddenForSharing ?? false)

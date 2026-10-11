@@ -13,6 +13,7 @@ final class NotchConflictTests: XCTestCase {
         XCTAssertTrue(NotchController.hasConflictingNotchApp(["Sapphire"]))
         XCTAssertTrue(NotchController.hasConflictingNotchApp(
             ["com.shariq.sapphireHelper"]))
+        XCTAssertTrue(NotchController.hasConflictingNotchApp(["Coucou"]))
     }
 
     func testIgnoresOrdinaryApps() {
