@@ -221,12 +221,15 @@ final class NotchController {
     /// (boringNotch, NotchNook, notchy, NotchDrop, …) counts, plus a few
     /// well-known ones that don't (Alcove, MediaMate).
     nonisolated static func hasConflictingNotchApp(_ runningNames: [String]) -> Bool {
-        let extra = ["alcove", "mediamate"]
+        let extra = ["alcove", "mediamate", "sapphire"]
         let lowered = runningNames.map { $0.lowercased() }
-        for name in extra where lowered.contains(name) {
-            return true
+        for name in lowered {
+            if name.contains("notch") { return true }
+            for known in extra where name.contains(known) {
+                return true
+            }
         }
-        return lowered.contains { $0.contains("notch") }
+        return false
     }
 
     private func startConflictMonitor() {

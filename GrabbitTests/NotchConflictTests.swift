@@ -9,6 +9,10 @@ final class NotchConflictTests: XCTestCase {
         XCTAssertTrue(NotchController.hasConflictingNotchApp(["NotchDrop"]))
         XCTAssertTrue(NotchController.hasConflictingNotchApp(["Grabbit", "Alcove"]))
         XCTAssertTrue(NotchController.hasConflictingNotchApp(["MediaMate"]))
+        // Sapphire (a notch utility) runs as a helper with a dotted name.
+        XCTAssertTrue(NotchController.hasConflictingNotchApp(["Sapphire"]))
+        XCTAssertTrue(NotchController.hasConflictingNotchApp(
+            ["com.shariq.sapphireHelper"]))
     }
 
     func testIgnoresOrdinaryApps() {
