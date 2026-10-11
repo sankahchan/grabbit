@@ -653,8 +653,9 @@ final class NotchController {
         rightClickMonitor = NSEvent.addLocalMonitorForEvents(
             matching: .rightMouseDown
         ) { [weak self] event in
-            guard let self, let panel = self.panel,
-                  event.window == panel else { return event }
+            guard let self, let window = event.window,
+                  self.allPanels.contains(where: { $0 === window })
+            else { return event }
             Task { @MainActor in self.openSettings() }
             return nil
         }
@@ -1215,6 +1216,7 @@ final class NotchController {
         if !hovering {
             pendingMenuWork?.cancel()
             pendingMenuWork = nil
+            hoverX = 0
         }
         debugTouchLog(hovering ? "hoverIn" : "hoverOut")
         // Leaving the island folds an open menu back into the tab — it
