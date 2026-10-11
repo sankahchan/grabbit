@@ -300,7 +300,11 @@ final class NotchController {
 
     private static func otherNotchAppRunning() -> Bool {
         let names: [String] = NSWorkspace.shared.runningApplications.compactMap { app -> String? in
-            guard app.activationPolicy == .regular else { return nil }
+            // Notch apps are usually menu-bar utilities (LSUIElement) with
+            // an .accessory policy and no Dock icon — the old .regular-only
+            // filter meant they were never detected at all.
+            let policy = app.activationPolicy
+            guard policy == .regular || policy == .accessory else { return nil }
             guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier
             else { return nil }
             return app.executableURL?.lastPathComponent
