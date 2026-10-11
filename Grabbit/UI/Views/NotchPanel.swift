@@ -52,6 +52,14 @@ final class NotchController {
     private(set) var hoveredPanelID = 0
     /// What a drag-in-progress is carrying (drop preview).
     private(set) var dragPreview: String?
+    /// The mochi is being held (poke) — squish + hearts.
+    private(set) var poking = false
+    private var pokeSuppressTap = false
+    /// Stalled-download tracking (progress frozen > 30s).
+    private var lastProgressTick: (progress: Double, at: Date)?
+    private var stalledNow = false
+    /// First completion of the day (milestone confetti).
+    private var celebratedDay = 0
     /// Height of the physical notch (0 on non-notch Macs). The island hangs
     /// from the very top edge of the screen; content stays below this inset.
     private(set) var topInset: CGFloat = 0
@@ -99,6 +107,8 @@ final class NotchController {
         case added
         case done
         case failed
+        case drag
+        case poke
     }
 
     /// Tiny macOS system blips for Mochi's moments, per the chosen sound
@@ -117,6 +127,8 @@ final class NotchController {
             case .added: name = "Purr"
             case .done: name = "Glass"
             case .failed: name = "Basso"
+            case .drag: name = "Pop"
+            case .poke: name = "Tink"
             }
         case .subtle:
             switch event {
@@ -125,6 +137,8 @@ final class NotchController {
             case .added: name = "Pop"
             case .done: name = "Tink"
             case .failed: name = "Basso"
+            case .drag: name = "Tink"
+            case .poke: name = "Morse"
             }
         }
         guard let name else { return }
@@ -565,6 +579,10 @@ final class NotchController {
         min(1, max(0.3, settings?.settings.notchCornerScale ?? 1))
     }
     var showClock: Bool { settings?.settings.notchShowClock ?? false }
+    var mochiSkin: MochiSkin { settings?.settings.notchMochiSkin ?? .cream }
+    var mochiScale: CGFloat {
+        CGFloat(min(1.4, max(0.8, settings?.settings.notchMochiScale ?? 1)))
+    }
     /// Bumped every tick so the view re-renders the clock (minute text).
     private(set) var clockTick = 0
 
@@ -791,26 +809,30 @@ final class NotchController {
     func mochiMood(for state: State) -> MochiMood {
         switch state {
         case .idle(let offer):
+            let hour = Calendar.current.component(.hour, from: Date())
             return NotchMoodPicker.idleMood(
                 offer: offer != nil,
                 vpnBlocked: torrentEngine?.vpnHolding ?? false,
                 seeding: isSeeding,
                 probing: mediaEngine?.state == .probing,
                 diskLow: diskLow(),
-                allPausedWithTasks: allPausedWithTasks())
+                allPausedWithTasks: allPausedWithTasks(),
+                hour: hour)
         case .menu(let offer):
             return offer == nil ? .idle : .excited
         case .active(let progress, let speed):
             return NotchMoodPicker.activeMood(
                 vpnBlocked: torrentEngine?.vpnHolding ?? false,
                 speed: speed,
-                progress: progress)
+                progress: progress,
+                stalled: stalledNow)
         case .done:
             return celebration ? .confetti : .done
         case .failed:
             return .sad
         case .added:
-            return .excited
+            // The just-fed chomp.
+            return .working(0.5)
         }
     }
 
@@ -916,8 +938,24 @@ final class NotchController {
         let active = !downloads.isEmpty || !torrents.isEmpty
 
         let showProgress = settings?.settings.notchShowProgress ?? true
+        let progressClamped = min(1, max(0, progress))
+        if active {
+            if let last = lastProgressTick {
+                if abs(progressClamped - last.progress) > 0.0005 {
+                    lastProgressTick = (progressClamped, Date())
+                    stalledNow = false
+                } else if Date().timeIntervalSince(last.at) > 30 {
+                    stalledNow = true
+                }
+            } else {
+                lastProgressTick = (progressClamped, Date())
+            }
+        } else {
+            lastProgressTick = nil
+            stalledNow = false
+        }
         if active, showProgress {
-            state = .active(progress: min(1, max(0, progress)), speedBytes: speed)
+            state = .active(progress: progressClamped, speedBytes: speed)
             speedHistory.append(speed)
             if speedHistory.count > 24 {
                 speedHistory.removeFirst(speedHistory.count - 24)
@@ -939,7 +977,10 @@ final class NotchController {
                 }.count + torrentEngine.torrents.filter {
                     $0.state == .seeding || $0.state == .completed
                 }.count
-                celebration = finished >= 2
+                let day = Calendar.current.component(.day, from: Date())
+                let firstOfDay = day != celebratedDay
+                if firstOfDay { celebratedDay = day }
+                celebration = finished >= 2 || firstOfDay
             }
             transientExpiry = Date().addingTimeInterval(transientSeconds)
             wasActive = false
@@ -1029,6 +1070,11 @@ final class NotchController {
     // MARK: - Tap (open/close the action menu)
 
     func handleTap() {
+        if pokeSuppressTap {
+            // The release of a poke isn't a click.
+            pokeSuppressTap = false
+            return
+        }
         if case .menu = state {
             debugLog("handleTap: closing menu")
             collapse()
@@ -1149,7 +1195,11 @@ final class NotchController {
     func setDragHover(_ hovering: Bool) {
         guard isDragHover != hovering else { return }
         isDragHover = hovering
-        if !hovering { dragPreview = nil }
+        if hovering {
+            playSound(.drag)
+        } else {
+            dragPreview = nil
+        }
         positionPanel(animated: true)
     }
 
@@ -1157,6 +1207,20 @@ final class NotchController {
     func setDragPreview(_ text: String?) {
         guard dragPreview != text else { return }
         dragPreview = text
+    }
+
+    /// Press-and-hold on the pill: squish the mochi while held.
+    func setPoking(_ on: Bool) {
+        if poking != on { poking = on }
+    }
+
+    /// The hold reached its threshold: boop + swallow the upcoming click.
+    func triggerPoke() {
+        playSound(.poke)
+        pokeSuppressTap = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.pokeSuppressTap = false
+        }
     }
 
     /// Mouse-move parallax from the drop zone (event-driven, so it is
@@ -1383,6 +1447,15 @@ struct NotchPillView: View {
                     capsule(for: state)
                 }
                 .buttonStyle(.plain)
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5, maximumDistance: 24)
+                        .onChanged { pressing in
+                            controller.setPoking(pressing)
+                        }
+                        .onEnded { _ in
+                            controller.triggerPoke()
+                        }
+                )
             }
         }
         .frame(
@@ -1626,12 +1699,14 @@ struct NotchPillView: View {
         // Reading clockTick when the clock shows makes the view re-render
         // every tick, so the time stays fresh.
         _ = clockOn ? controller.clockTick : 0
+        let displayMood = controller.isDragHover ? MochiMood.hungry : mood
         let mochiSize: CGFloat =
-            offer == nil ? (controller.isHover ? 26 : 22) : 24
+            (offer == nil ? (controller.isHover ? 26 : 22) : 24)
+                * controller.mochiScale
         return HStack(spacing: 7) {
             if mochiOn {
                 mochi(
-                    mood: mood,
+                    mood: displayMood,
                     size: mochiSize,
                     lively: controller.isHover)
             }
@@ -1677,7 +1752,7 @@ struct NotchPillView: View {
         }
     }
 
-    /// Mochi with the user's animation level applied (off = hidden).
+    /// Mochi with the user's animation level, skin and size applied.
     @ViewBuilder
     private func mochi(
         mood: MochiMood, size: CGFloat, lively: Bool = false
@@ -1685,10 +1760,12 @@ struct NotchPillView: View {
         if controller.mochiLevel != .off {
             MochiView(
                 mood: mood,
-                size: size,
+                size: size * controller.mochiScale,
                 lively: lively,
                 gazeX: controller.hoverX,
-                animated: controller.mochiLevel == .full)
+                animated: controller.mochiLevel == .full,
+                skin: controller.mochiSkin,
+                poking: controller.poking)
         }
     }
 
@@ -2060,6 +2137,8 @@ enum MochiMood: Equatable {
     case turbo
     case confetti
     case worried
+    case hungry
+    case stretch
 }
 
 /// Pure mood resolution (unit-testable): maps the app's live conditions
@@ -2075,7 +2154,8 @@ enum NotchMoodPicker {
         seeding: Bool,
         probing: Bool,
         diskLow: Bool,
-        allPausedWithTasks: Bool
+        allPausedWithTasks: Bool,
+        hour: Int
     ) -> MochiMood {
         if offer { return .excited }
         if vpnBlocked { return .alert }
@@ -2083,13 +2163,17 @@ enum NotchMoodPicker {
         if probing { return .thinking }
         if diskLow { return .worried }
         if allPausedWithTasks { return .sleeping }
+        if hour >= 22 || hour < 5 { return .sleeping }
+        if hour >= 5, hour < 10 { return .stretch }
         return .idle
     }
 
     static func activeMood(
-        vpnBlocked: Bool, speed: Double, progress: Double
+        vpnBlocked: Bool, speed: Double, progress: Double,
+        stalled: Bool = false
     ) -> MochiMood {
         if vpnBlocked { return .alert }
+        if stalled { return .worried }
         if speed >= turboThreshold { return .turbo }
         return .working(progress)
     }
@@ -2108,6 +2192,10 @@ struct MochiView: View {
     var gazeX: CGFloat = 0
     /// Full = animated timeline; false = a calm static pose (battery).
     var animated: Bool = true
+    /// Body colour (Cream, Matcha, …).
+    var skin: MochiSkin = .cream
+    /// Being held (poke) — squish and hearts.
+    var poking: Bool = false
 
     @State private var pop = false
 
@@ -2134,6 +2222,19 @@ struct MochiView: View {
         case .turbo: Color(hex: 0xFF8A3D)
         case .confetti: Neo.yellow
         case .worried: Color(hex: 0xFFC94D)
+        case .hungry: Color(hex: 0xFF8A3D)
+        case .stretch: Color(hex: 0xB39DDB)
+        }
+    }
+
+    /// Body colours per skin.
+    private var bodyColors: (top: Color, bottom: Color) {
+        switch skin {
+        case .cream: (Color(hex: 0xFFFBF2), Color(hex: 0xFFE3C9))
+        case .matcha: (Color(hex: 0xF0F7E4), Color(hex: 0xC7DFA2))
+        case .strawberry: (Color(hex: 0xFFF1F3), Color(hex: 0xFFC8D5))
+        case .chocolate: (Color(hex: 0xF1E2D0), Color(hex: 0xC09A6E))
+        case .blueberry: (Color(hex: 0xEDF1FB), Color(hex: 0xB9C6E9))
         }
     }
 
@@ -2163,8 +2264,11 @@ struct MochiView: View {
         }
         .frame(width: size, height: size)
         .scaleEffect(
-            x: pop ? 1.10 : 1,
-            y: (pop ? 1.10 : 1) * breathing(t: t),
+            x: (pop ? 1.10 : 1) * (poking ? 0.86 : 1)
+                * (mood == .stretch ? 0.94 : 1),
+            y: (pop ? 1.10 : 1) * breathing(t: t)
+                * (poking ? 1.12 : 1)
+                * (mood == .stretch ? 1.10 : 1),
             anchor: .bottom)
         .offset(x: shake(t: t) + gazeX * size * 0.035, y: bounce(t: t))
         .rotationEffect(.degrees(tilt(t: t)))
@@ -2183,8 +2287,9 @@ struct MochiView: View {
 
     /// Slow breathing, plus a squash-and-stretch hop every ~8 seconds.
     private func breathing(t: TimeInterval) -> CGFloat {
-        guard isIdle || mood == .done || mood == .sleeping else { return 1 }
-        let period: Double = mood == .sleeping ? 4.2 : 2.8
+        guard isIdle || mood == .done || mood == .sleeping
+            || mood == .stretch else { return 1 }
+        let period: Double = mood == .sleeping || mood == .stretch ? 4.2 : 2.8
         let breath = 1 + 0.045 * sin(t * 2 * .pi / period)
         if isIdle {
             let c = t.truncatingRemainder(dividingBy: 8)
@@ -2203,6 +2308,7 @@ struct MochiView: View {
         if isWorking { return -1.6 * abs(sin(t * 7)) }
         if mood == .turbo { return -2.6 * abs(sin(t * 9)) }
         if mood == .confetti { return -4.0 * abs(sin(t * 5)) }
+        if mood == .hungry { return -1.8 * abs(sin(t * 6)) }
         if mood == .sad { return 1.2 }
         guard isIdle, !lively else { return 0 }
         let c = t.truncatingRemainder(dividingBy: 8)
@@ -2239,8 +2345,9 @@ struct MochiView: View {
     // MARK: Body
 
     private var bodyShape: some View {
+        let colors = bodyColors
         let bodyGradient = LinearGradient(
-            colors: [Color(hex: 0xFFFBF2), Color(hex: 0xFFE3C9)],
+            colors: [colors.top, colors.bottom],
             startPoint: .top, endPoint: .bottom)
         let outline = Color(hex: 0x6B4A3A).opacity(0.35)
         let highlight = Ellipse()
@@ -2329,13 +2436,14 @@ struct MochiView: View {
 
     @ViewBuilder
     private func eye(t: TimeInterval) -> some View {
-        if mood == .sleeping {
+        if mood == .sleeping || mood == .stretch {
             Capsule()
                 .fill(Color(hex: 0x2B2320))
                 .frame(width: size * 0.10, height: size * 0.022)
         } else {
             let big = isExcited || isWorking || mood == .turbo
                 || mood == .confetti || mood == .alert
+                || mood == .hungry
             ZStack {
                 Ellipse()
                     .fill(Color(hex: 0x2B2320))
@@ -2382,6 +2490,14 @@ struct MochiView: View {
             Circle()
                 .fill(Color(hex: 0x2B2320))
                 .frame(width: size * 0.07, height: size * 0.07)
+        case .hungry:
+            Ellipse()
+                .fill(Color(hex: 0x2B2320))
+                .frame(width: size * 0.20, height: size * 0.16)
+        case .stretch:
+            Ellipse()
+                .fill(Color(hex: 0x2B2320))
+                .frame(width: size * 0.11, height: size * 0.14)
         case .idle, .excited:
             Capsule()
                 .fill(Color(hex: 0x2B2320))
@@ -2419,6 +2535,7 @@ struct MochiView: View {
             sparklePair(t: t)
         case .confetti:
             confettiBurst(t: t)
+            partyHat(t: t)
         case .sleeping:
             zzz(t: t)
         case .seeding:
@@ -2461,6 +2578,52 @@ struct MochiView: View {
         default:
             EmptyView()
         }
+        if poking {
+            hearts(t: t)
+        }
+    }
+
+    /// A tiny party hat for celebrations.
+    private func partyHat(t: TimeInterval) -> some View {
+        ZStack {
+            Path { path in
+                let w = size * 0.24
+                let h = size * 0.26
+                path.move(to: CGPoint(x: -w / 2, y: 0))
+                path.addLine(to: CGPoint(x: w / 2, y: 0))
+                path.addLine(to: CGPoint(x: 0, y: -h))
+                path.closeSubpath()
+            }
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: 0xFFC94D), Color(hex: 0xFF8A3D)],
+                    startPoint: .top, endPoint: .bottom))
+            Circle()
+                .fill(.white)
+                .frame(width: size * 0.07, height: size * 0.07)
+                .offset(y: -size * 0.29)
+        }
+        .rotationEffect(.degrees(4 * sin(t * 5)))
+        .offset(y: -size * 0.40)
+        .allowsHitTesting(false)
+    }
+
+    /// Little hearts while being held.
+    private func hearts(t: TimeInterval) -> some View {
+        ZStack {
+            ForEach(0..<3, id: \.self) { i in
+                let phase = (t * 0.8 + Double(i) * 0.33)
+                    .truncatingRemainder(dividingBy: 1)
+                Image(systemName: "heart.fill")
+                    .font(.system(size: size * 0.14, weight: .bold))
+                    .foregroundStyle(Color(hex: 0xFF7C9B))
+                    .offset(
+                        x: -size * 0.30 + CGFloat(i) * size * 0.30,
+                        y: -size * (0.15 + 0.30 * phase))
+                    .opacity(1 - 0.7 * phase)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private func sparklePair(t: TimeInterval) -> some View {

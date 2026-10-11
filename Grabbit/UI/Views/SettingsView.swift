@@ -170,6 +170,8 @@ struct SettingsView: View {
                 .onChange(of: store.settings.notchHideFromCapture) { _, _ in changed() }
                 .onChange(of: store.settings.notchHideWhenOtherApp) { _, _ in changed() }
                 .onChange(of: store.settings.notchMenuBarAccess) { _, _ in changed() }
+                .onChange(of: store.settings.notchMochiSkin) { _, _ in changed() }
+                .onChange(of: store.settings.notchMochiScale) { _, _ in changed() }
         }
 
         private func changed() {
@@ -636,6 +638,23 @@ struct SettingsView: View {
             ])
             .frame(maxWidth: 300)
         }
+        HStack {
+            Text(NSLocalizedString("settings.notch.mochiSkin", comment: ""))
+                .font(NeoFont.f(.subheadline, .semibold))
+            Spacer()
+            NeoSegmented(selection: settings.notchMochiSkin, titles: [
+                (.cream, NSLocalizedString("settings.notch.skin.cream", comment: "")),
+                (.matcha, NSLocalizedString("settings.notch.skin.matcha", comment: "")),
+                (.strawberry, NSLocalizedString("settings.notch.skin.strawberry", comment: "")),
+                (.chocolate, NSLocalizedString("settings.notch.skin.chocolate", comment: "")),
+                (.blueberry, NSLocalizedString("settings.notch.skin.blueberry", comment: "")),
+            ])
+            .frame(maxWidth: 460)
+        }
+        notchStepperRow(
+            label: NSLocalizedString("settings.notch.mochiScale", comment: ""),
+            value: settings.notchMochiScale,
+            in: 0.8...1.4, step: 0.1) { "\(Int(($0 * 100).rounded()))%" }
         HStack {
             Text(NSLocalizedString("settings.notch.showOn", comment: ""))
                 .font(NeoFont.f(.subheadline, .semibold))

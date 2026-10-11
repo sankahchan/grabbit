@@ -9623,6 +9623,125 @@
           }
         }
       }
+    },
+    "settings.notch.mochiSkin": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi Skin"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi အရောင်"
+          }
+        }
+      }
+    },
+    "settings.notch.mochiScale": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi Size"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mochi အရွယ်"
+          }
+        }
+      }
+    },
+    "settings.notch.skin.cream": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cream"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မူလ"
+          }
+        }
+      }
+    },
+    "settings.notch.skin.matcha": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matcha"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matcha"
+          }
+        }
+      }
+    },
+    "settings.notch.skin.strawberry": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strawberry"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စတော်ဘယ်ရီ"
+          }
+        }
+      }
+    },
+    "settings.notch.skin.chocolate": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chocolate"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချောကလက်"
+          }
+        }
+      }
+    },
+    "settings.notch.skin.blueberry": {
+      "comment": "Notch & Pill settings",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blueberry"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဘလူးဘယ်ရီ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

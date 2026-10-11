@@ -157,6 +157,10 @@ public struct AppSettings: Codable {
     public var notchAutoAddOnCopy = false
     /// A menu-bar icon with island quick actions.
     public var notchMenuBarAccess = false
+    /// Mochi's body colour.
+    public var notchMochiSkin: MochiSkin = .cream
+    /// Mochi size multiplier (0.8–1.4).
+    public var notchMochiScale: Double = 1.0
     /// 0 = seed forever.
     public var defaultSeedRatio: Double = 0
     /// Minutes; 0 = no time limit.
@@ -233,6 +237,7 @@ extension AppSettings {
         case notchSoundPack, notchHideInFullscreen, notchHiddenApps
         case notchHiddenForSharing, notchDisplayScope
         case notchAutoAddOnCopy, notchMenuBarAccess
+        case notchMochiSkin, notchMochiScale
         case defaultSeedRatio, defaultSeedTimeMinutes
         case openAtLogin, keepWindowFrame, maxActiveTasks
         case runMode
@@ -307,6 +312,8 @@ extension AppSettings {
         notchDisplayScope = try c.decodeIfPresent(NotchDisplayScope.self, forKey: .notchDisplayScope) ?? .main
         notchAutoAddOnCopy = try c.decodeIfPresent(Bool.self, forKey: .notchAutoAddOnCopy) ?? false
         notchMenuBarAccess = try c.decodeIfPresent(Bool.self, forKey: .notchMenuBarAccess) ?? false
+        notchMochiSkin = try c.decodeIfPresent(MochiSkin.self, forKey: .notchMochiSkin) ?? .cream
+        notchMochiScale = try c.decodeIfPresent(Double.self, forKey: .notchMochiScale) ?? 1.0
         torrentPerformanceProfile = try c.decodeIfPresent(Aria2PerformanceProfile.self, forKey: .torrentPerformanceProfile) ?? .balanced
         defaultSeedRatio = try c.decodeIfPresent(Double.self, forKey: .defaultSeedRatio) ?? 0
         defaultSeedTimeMinutes = try c.decodeIfPresent(Int.self, forKey: .defaultSeedTimeMinutes) ?? 0
@@ -369,6 +376,15 @@ public enum NotchDisplayScope: String, Codable, CaseIterable, Sendable {
     case all
 }
 
+/// Mochi's body colour.
+public enum MochiSkin: String, Codable, CaseIterable, Sendable {
+    case cream
+    case matcha
+    case strawberry
+    case chocolate
+    case blueberry
+}
+
 // MARK: - Reset
 
 extension AppSettings {
@@ -414,6 +430,8 @@ extension AppSettings {
         notchDisplayScope = .main
         notchAutoAddOnCopy = false
         notchMenuBarAccess = false
+        notchMochiSkin = .cream
+        notchMochiScale = 1.0
     }
 }
 
