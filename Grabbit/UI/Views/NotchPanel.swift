@@ -508,16 +508,13 @@ final class NotchController {
         }
     }
 
-    /// Content top inset: the reserved strip zone in Notch mode. The bare
-    /// strip at rest keeps its content (a small centered mochi); expanded
-    /// states hang their content below the strip.
+    /// Content top inset in Notch mode. Only the big menu card reserves
+    /// the menu-bar strip; every other state (rest, hover, progress,
+    /// peeks) centres its content in the full pill.
     func contentTopInset(for state: State) -> CGFloat {
         guard shapeMode == .notch else { return 0 }
-        if case .idle(let offer) = state, offer == nil,
-           !isHover, !isDragHover {
-            return 0
-        }
-        return stripHeight
+        if case .menu = state { return stripHeight }
+        return 0
     }
 
     /// Live task summaries shown inside the open menu.
