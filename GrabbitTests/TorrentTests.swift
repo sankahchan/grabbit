@@ -308,8 +308,8 @@ final class TorrentTests: XCTestCase {
     func testDhtArgsContainPublicBootstrapNodes() {
         let args = Aria2Daemon.dhtArgs()
         XCTAssertEqual(args, [
-            "--dht-entry-point=dht.transmissionbt.com:6881",
-            "--dht-entry-point=router.bittorrent.com:6881",
+            "--dht-entry-point=dht.libtorrent.org:25401",
+            "--dht-entry-point=dht.anacrolix.link:42069",
         ])
     }
 
@@ -558,6 +558,33 @@ final class TorrentTests: XCTestCase {
     func testMagnetDisplayNameDecodesEntities() {
         let magnet = "magnet:?xt=urn:btih:ABCDEF1234567890&dn=DDG%20%26ndash%3B%20HIT-A-THON"
         XCTAssertEqual(MagnetParser.displayName(for: magnet), "DDG – HIT-A-THON")
+    }
+
+    func testReconcileAdoptsUnknownDaemonTorrents() {
+        let known: Set<String> = ["aaaa"]
+        let statuses: [TorrentStatus] = [
+            TorrentStatus(
+                gid: "g1", status: "active", totalLength: 100,
+                completedLength: 10, uploadLength: 0, downloadSpeed: 0,
+                uploadSpeed: 0, connections: 3, numSeeders: 2, dir: "/tmp",
+                name: "known", infoHash: "aaaa", followedBy: [],
+                following: nil, errorCode: nil, errorMessage: nil),
+            TorrentStatus(
+                gid: "g2", status: "active", totalLength: 200,
+                completedLength: 50, uploadLength: 0, downloadSpeed: 0,
+                uploadSpeed: 0, connections: 5, numSeeders: 4, dir: "/tmp",
+                name: "unknown", infoHash: "bbbb", followedBy: [],
+                following: nil, errorCode: nil, errorMessage: nil),
+            TorrentStatus(
+                gid: "g3", status: "waiting", totalLength: 0,
+                completedLength: 0, uploadLength: 0, downloadSpeed: 0,
+                uploadSpeed: 0, connections: 0, numSeeders: 0, dir: "/tmp",
+                name: nil, infoHash: "bbbb", followedBy: [],
+                following: nil, errorCode: nil, errorMessage: nil),
+        ]
+        let adopted = TorrentEngine.adoptableStatuses(statuses, knownHashes: known)
+        XCTAssertEqual(adopted.count, 1)
+        XCTAssertEqual(adopted.first?.gid, "g2")
     }
 }
 

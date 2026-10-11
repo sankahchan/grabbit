@@ -71,6 +71,8 @@ public final class TorrentEngine: TorrentEngineProtocol {
     private var rpc: Aria2RPC?
     private var lineage = GidLineage()
     private var pollTask: Task<Void, Never>?
+    /// Per-item re-add throttle (30s) — see the poll's unknown/removed paths.
+    private var lastReaddAttempt: [UUID: Date] = [:]
     private var vpnTask: Task<Void, Never>?
     private var pollFailures = 0
     /// GIDs that were active when the VPN kill-switch suspended the engine.
@@ -532,12 +534,16 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     changed = true
                 }
                 guard let st = status else {
-                    // Unknown to the daemon — re-add once per run (the
-                    // session file may be stale), then leave it alone.
-                    if item.state == .downloading || item.state == .seeding,
-                       !readdedThisRun.contains(item.id)
-                    {
-                        readdedThisRun.insert(item.id)
+                    // Unknown to the daemon — re-add (the session file may
+                    // be stale). Throttled to one attempt per 30s so a
+                    // flaky add can't hammer the daemon forever.
+                    if item.state == .downloading || item.state == .seeding {
+                        let now = Date()
+                        if let last = lastReaddAttempt[item.id],
+                           now.timeIntervalSince(last) < 30 {
+                            continue
+                        }
+                        lastReaddAttempt[item.id] = now
                         await readd(item)
                     }
                     continue
@@ -552,8 +558,35 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     continue // fresh status arrives on the next poll
                 }
                 if st.status == "removed" {
-                    toDrop.append(item.id)
-                    changed = true
+                    // A retired GID (magnet metadata migration, external
+                    // removal) must never purge the real download. Follow
+                    // the live entry with the same hash, or re-add the
+                    // torrent once — dropping the row here is how torrents
+                    // kept downloading invisibly and got lost for good.
+                    if let hash = item.infoHash?.lowercased(),
+                       let live = byInfoHash[hash], live.gid != st.gid {
+                        if let old = item.gid {
+                            lineage.forget(gid: old)
+                        }
+                        item.gid = live.gid
+                        lineage.register(gid: live.gid, item: item.id)
+                        torrents[index] = item
+                        changed = true
+                        continue
+                    }
+                    let now = Date()
+                    if lastReaddAttempt[item.id].map({
+                        now.timeIntervalSince($0) < 30
+                    }) != true {
+                        lastReaddAttempt[item.id] = now
+                        if let old = item.gid {
+                            lineage.forget(gid: old)
+                        }
+                        item.gid = nil
+                        torrents[index] = item
+                        changed = true
+                        await readd(item)
+                    }
                     continue
                 }
                 // Push the default tracker list to this download once per
@@ -609,7 +642,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.autoClearFinished {
                             toPurge.append((item.id, st.gid))
                         }
-                    } else if newState == .failed {
+                    } else if newState == .failed, st.status == "error" {
                         // The error text is parsed below; capture it here so
                         // the history entry carries the failure reason.
                         var failedItem = item
@@ -678,6 +711,28 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 pollTask = nil
                 rpc = nil
                 daemonState = .failed(error.localizedDescription)
+                // Never stay dead: restart the daemon after a short
+                // cooldown and resume polling (recoverDaemon retries with
+                // a backoff until the daemon is back).
+                Task { [weak self] in
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    await self?.recoverDaemon()
+                }
+            }
+        }
+    }
+
+    /// Brings the daemon back after a failure, retrying until it starts.
+    @MainActor
+    private func recoverDaemon() async {
+        guard rpc == nil else { return }
+        do {
+            try await ensureStarted()
+        } catch {
+            daemonState = .failed(error.localizedDescription)
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                await self?.recoverDaemon()
             }
         }
     }
@@ -702,6 +757,23 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
     }
 
+    /// Daemon statuses the app doesn't know by info hash yet — these are
+    /// torrents the daemon resumed from its session while the app's list
+    /// was lost. Pure, unit-tested.
+    nonisolated static func adoptableStatuses(
+        _ statuses: [TorrentStatus], knownHashes: Set<String>
+    ) -> [TorrentStatus] {
+        var seen = Set<String>()
+        return statuses.filter { status in
+            guard let hash = status.infoHash?.lowercased(),
+                  !knownHashes.contains(hash),
+                  !seen.contains(hash)
+            else { return false }
+            seen.insert(hash)
+            return true
+        }
+    }
+
     private func reconcileAfterStart() async {
         guard let rpc else { return }
         // Adopt whatever the daemon restored from its session file, then let
@@ -716,6 +788,26 @@ public final class TorrentEngine: TorrentEngineProtocol {
             }
         }
         var changed = false
+        // Adopt torrents the daemon knows but the app doesn't (it resumed
+        // them from its session after the app's list was lost). Invisible
+        // downloads are never acceptable.
+        let knownHashes = Set(torrents.compactMap { $0.infoHash?.lowercased() })
+        for status in Self.adoptableStatuses(active + waiting, knownHashes: knownHashes) {
+            var item = TorrentItem(
+                name: status.name ?? (status.infoHash ?? status.gid),
+                magnetURI: "",
+                infoHash: status.infoHash?.lowercased(),
+                totalBytes: status.totalLength,
+                downloadedBytes: status.completedLength,
+                numSeeders: status.numSeeders,
+                connections: status.connections,
+                state: Aria2StatusMapper.map(status),
+                savePath: URL(fileURLWithPath: status.dir))
+            item.gid = status.gid
+            lineage.register(gid: status.gid, item: item.id)
+            torrents.append(item)
+            changed = true
+        }
         for index in torrents.indices {
             var item = torrents[index]
             if item.gid == nil,

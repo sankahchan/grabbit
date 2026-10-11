@@ -200,8 +200,12 @@ public final class Aria2Daemon {
     /// points can never join the DHT network, so magnet metadata never
     /// resolves and the torrent sits at 0 peers forever.
     public static let dhtEntryPoints = [
-        "dht.transmissionbt.com:6881",
-        "router.bittorrent.com:6881",
+        // Live bootstrap nodes as of 2026 (the classic transmissionbt /
+        // router.bittorrent entries have been dead for years — a daemon
+        // bootstrapping off them never gets DHT peers, so magnet metadata
+        // stalls forever unless trackers alone deliver it).
+        "dht.libtorrent.org:25401",
+        "dht.anacrolix.link:42069",
     ]
 
     /// `--dht-entry-point=` flags for the daemon command line. Pure — tested.
@@ -333,6 +337,11 @@ public final class Aria2Daemon {
         proc.arguments = args
         proc.standardOutput = FileHandle.nullDevice
         proc.standardError = FileHandle.nullDevice
+        proc.terminationHandler = { proc in
+            NSLog(
+                "[Grabbit] aria2 daemon exited: status=%d reason=%d",
+                proc.terminationStatus, proc.terminationReason.rawValue)
+        }
         do {
             try proc.run()
         } catch {
