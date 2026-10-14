@@ -132,21 +132,25 @@ public final class DownloadEngine {
     /// `Content-Range` carries the total (QDM probe strategy).
     /// Also captures ETag / Last-Modified validators and a
     /// Content-Disposition filename when the server provides them.
-    private func probe(_ url: URL, proxy: TaskProxy? = nil) async -> ProbeResult {
+    private func probe(
+        _ url: URL, requestHeaders: [String: String]? = nil, proxy: TaskProxy? = nil
+    ) async -> ProbeResult {
         var result = ProbeResult()
-        if let (status, headers) = await fetchHeaders(url, method: "HEAD", proxy: proxy),
-           (200...299).contains(status)
+        if let (status, fields) = await fetchHeaders(
+            url, method: "HEAD", requestHeaders: requestHeaders, proxy: proxy),
+            (200...299).contains(status)
         {
-            Self.applyProbeHeaders(&result, headers: headers)
+            Self.applyProbeHeaders(&result, headers: fields)
             if result.totalBytes != nil { return result }
         }
-        if let (status, headers) = await fetchHeaders(
-            url, method: "GET", range: "bytes=0-0", proxy: proxy),
-           status == 206
+        if let (status, fields) = await fetchHeaders(
+            url, method: "GET", range: "bytes=0-0",
+            requestHeaders: requestHeaders, proxy: proxy),
+            status == 206
         {
-            Self.applyProbeHeaders(&result, headers: headers)
+            Self.applyProbeHeaders(&result, headers: fields)
             if result.totalBytes == nil,
-               let range = headers["content-range"],
+               let range = fields["content-range"],
                let total = DownloadItem.totalFromContentRange(range)
             {
                 result.totalBytes = total
@@ -248,7 +252,8 @@ public final class DownloadEngine {
     }
 
     private func fetchHeaders(
-        _ url: URL, method: String, range: String? = nil, proxy: TaskProxy? = nil
+        _ url: URL, method: String, range: String? = nil,
+        requestHeaders: [String: String]? = nil, proxy: TaskProxy? = nil
     ) async -> (status: Int, headers: [String: String])? {
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -257,6 +262,15 @@ public final class DownloadEngine {
         // the add sheet on the 60s default (x2 sequential probes). The
         // real download has its own timeouts and surfaces a proper error.
         request.timeoutInterval = 15
+        // Per-task request context (Cookie / Referer / User-Agent …): some
+        // hosts gate even HEAD/Range probes behind the browser's context
+        // and reset the connection without it. Applied before Range so the
+        // probe's own Range header always wins.
+        if let requestHeaders {
+            for (name, value) in requestHeaders where !value.isEmpty {
+                request.setValue(value, forHTTPHeaderField: name)
+            }
+        }
         if let range {
             request.setValue(range, forHTTPHeaderField: "Range")
         }
@@ -447,12 +461,31 @@ public final class DownloadEngine {
         // and user-agent for this host.
         let hostProfile = hostProfileStore?.profile(for: resolvedURL.host)
 
+        // Host profile credentials / user-agent merge into the per-task
+        // headers (explicit per-task headers win). Computed before the
+        // probe so referer-gated hosts (hotlink protection) see the same
+        // Cookie / Referer / User-Agent the download segments will send —
+        // without them some CDNs reset the connection outright.
+        var effectiveHeaders = headers ?? [:]
+        if let hostProfile {
+            if !hostProfile.userAgent.isEmpty,
+               effectiveHeaders["User-Agent"] == nil
+            {
+                effectiveHeaders["User-Agent"] = hostProfile.userAgent
+            }
+            if let auth = hostProfile.authorizationHeader(),
+               effectiveHeaders["Authorization"] == nil
+            {
+                effectiveHeaders["Authorization"] = auth
+            }
+        }
+
         // Probe the server for total size. We deliberately do NOT gate
         // multi-connection on the HEAD's Accept-Ranges header: many
         // servers/CDNs omit it on HEAD yet honor Range on GET. Like aria2
         // (Motrix's engine), we segment optimistically and collapse to a
         // single stream if a segment is answered with HTTP 200.
-        let probe = await probe(resolvedURL, proxy: proxy)
+        let probe = await probe(resolvedURL, requestHeaders: effectiveHeaders, proxy: proxy)
         guard let itemIndex = items.firstIndex(where: { $0.id == itemID })
         else { return } // removed while probing
         let totalBytes = probe.totalBytes
@@ -484,22 +517,6 @@ public final class DownloadEngine {
         // packagizer rule can pin the category instead.
         let resolvedCategory = category ?? rule?.category
             ?? DownloadCategory.infer(filename: name, contentType: probe.contentType)
-
-        // Host profile credentials / user-agent merge into the per-task
-        // headers (explicit per-task headers win).
-        var effectiveHeaders = headers ?? [:]
-        if let hostProfile {
-            if !hostProfile.userAgent.isEmpty,
-               effectiveHeaders["User-Agent"] == nil
-            {
-                effectiveHeaders["User-Agent"] = hostProfile.userAgent
-            }
-            if let auth = hostProfile.authorizationHeader(),
-               effectiveHeaders["Authorization"] == nil
-            {
-                effectiveHeaders["Authorization"] = auth
-            }
-        }
 
         // aria2-style: never split into pieces smaller than minSplitSize —
         // 16 TCP+TLS handshakes for 16 tiny segments would be pure overhead.
@@ -1526,7 +1543,22 @@ public final class DownloadEngine {
         items[itemIndex].downloadedBytes = 0
         speedSamples[id] = nil
         persistItem(id: id)
-        launchSegmentTasks(for: id)
+        // Throttle backoff: rate-limiting hosts (nginx limit_req / limit_conn)
+        // answer 503 to a connection burst and keep penalizing for several
+        // seconds — relaunching instantly just earns another 503. Wait out
+        // the penalty window, then come back with the single stream. The
+        // generation check skips the relaunch if the user paused/removed the
+        // task (or anything else relaunched it) while we waited.
+        let backoffGeneration = launchGeneration[id] ?? 0
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard let self,
+                  self.launchGeneration[id] == backoffGeneration,
+                  let idx = self.items.firstIndex(where: { $0.id == id }),
+                  self.items[idx].state == .downloading
+            else { return }
+            self.launchSegmentTasks(for: id)
+        }
     }
 
     @MainActor

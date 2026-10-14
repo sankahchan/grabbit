@@ -241,16 +241,38 @@ function filenameFromUrl(url) {
   }
 }
 
+// True when the last path segment looks like a filename
+// ("Grabbit-1.2.dmg", "visionquest.rar") rather than a bare share id
+// ("li5doeg6jrov"). Decides whether a pre-redirect URL beats the redirect
+// target the download actually resolved to (see sendToApp).
+function looksLikeFileURL(raw) {
+  try {
+    const last = new URL(raw).pathname.split('/').pop() || '';
+    let decoded = last;
+    try {
+      decoded = decodeURIComponent(last);
+    } catch {
+      // Malformed percent-encoding — test the raw segment instead.
+    }
+    return /\.[A-Za-z0-9]{1,8}$/.test(decoded);
+  } catch {
+    return false;
+  }
+}
+
 // --- App handoff ------------------------------------------------------------
 
 /// Sends a grab to the app. Native messaging is primary (it carries full
 /// headers through a payload file); the grabbit:// scheme is the fallback.
 async function sendToApp(payload) {
-  // Prefer the pre-redirect URL: it carries the real filename
-  // (e.g. github.com/.../Grabbit-v1.0.2.dmg) while the redirect target
-  // is often a UUID (release-assets...). The app follows redirects itself.
+  // Prefer the pre-redirect URL when it carries a real filename (e.g.
+  // github.com/.../Grabbit-v1.0.2.dmg) while the redirect target is often
+  // a UUID (release-assets...). Share pages are the opposite case: the
+  // chain start (send.now/li5doeg6jrov) is a CAPTCHA-gated web page and
+  // the redirect target IS the file — swapping would hand the app a web
+  // page that can't be downloaded. Only swap for file-like URLs.
   const original = redirectSource.get(payload.url);
-  if (original) {
+  if (original && looksLikeFileURL(original)) {
     payload.url = original;
     if (payload.filename) payload.filename = filenameFromUrl(original);
   }
