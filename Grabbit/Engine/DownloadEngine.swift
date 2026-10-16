@@ -34,6 +34,9 @@ public final class DownloadEngine {
     private let resumeStore: ResumeStore
     private let history: HistoryStore
     private let settings: SettingsStore
+    /// Hosts that throttle parallel connections (429/503 to a burst): their
+    /// downloads open a single stream. Seeded + learned + persisted.
+    private let throttledHosts: ThrottledHostStore
     /// Durable-finalize journal: closes the crash window between "file
     /// moved into place" and "completion persisted/recorded".
     private let finalizeJournal: FinalizeJournal
@@ -82,11 +85,12 @@ public final class DownloadEngine {
     /// exactly no matter how many connections are open.
     private let globalSpeedBucket = TokenBucket()
 
-    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore(), queues: QueueStore = QueueStore()) {
+    public init(resumeStore: ResumeStore = ResumeStore(), history: HistoryStore = HistoryStore(), settings: SettingsStore = SettingsStore(), queues: QueueStore = QueueStore(), throttledHosts: ThrottledHostStore = ThrottledHostStore()) {
         self.resumeStore = resumeStore
         self.history = history
         self.settings = settings
         self.queues = queues
+        self.throttledHosts = throttledHosts
         self.finalizeJournal = FinalizeJournal(resumeDirectory: resumeStore.directory)
         let loaded = resumeStore.loadAll()
         var migrated: [DownloadItem] = []
@@ -528,6 +532,12 @@ public final class DownloadEngine {
         connectionCount = min(connectionCount, maxConnections)
         if let totalBytes {
             connectionCount = min(connectionCount, max(1, Int(totalBytes / minSplitSize)))
+        }
+        // A host that banned our burst gets a single stream: a throttling
+        // CDN answers 429/503 to every parallel connection, so retrying the
+        // burst there just re-earns the block.
+        if throttledHosts.isThrottled(host: resolvedURL.host) {
+            connectionCount = 1
         }
 
         // Destination contract: `destination` is the containing *folder*
@@ -1225,6 +1235,10 @@ public final class DownloadEngine {
         if (status == 429 || status == 503),
            items[itemIndex].segments.count > 1
         {
+            // Server throttles our connection burst — remember the host so
+            // every future download from it opens a single stream, then
+            // collapse this one and retry on one connection.
+            throttledHosts.learn(host: items[itemIndex].url.host)
             collapseToSingleStream(id: id)
         } else {
             fail(id: id, message: "HTTP \(status)")
