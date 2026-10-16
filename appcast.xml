@@ -162,5 +162,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.8.0/Grabbit-v1.8.0.dmg" sparkle:version="1.8.0" sparkle:shortVersionString="1.8.0" sparkle:edSignature="SQQkfw3SSeBC+MnZvf/e9iUZ6Xrl+2u8O3wUt+JMApBv9JohnArFz66tLAlOG87g150z21FEZZaAsPWGeJKfCg==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.8.1</title>
+      <pubDate>Fri, 16 Oct 2026 22:01:40 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">release: v1.8.1 — send.now downloads fixed<br/><br/>New in 1.8.1<br/><br/>- The browser extension now hands Grabbit the real file link behind<br/>  redirect-protected share pages like send.now, instead of the<br/>  pre-redirect page, so grabs no longer land on an HTML page.<br/>- Probes carry the browser&#x27;s Cookies, Referer and User-Agent, so gated<br/>  CDNs answer with the file instead of resetting the connection.<br/>- Hosts that throttle bursts (send.now&#x27;s datatransfer.to) download over<br/>  a single stream, and hosts answering 429/503 are remembered so the<br/>  next attempt stays single-stream from the start — matching the<br/>  browser, which is what those servers allow.<br/><br/>464 tests / 0 failures.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.8.1/Grabbit-v1.8.1.dmg" sparkle:version="1.8.1" sparkle:shortVersionString="1.8.1" sparkle:edSignature="nFPivULsDfRTnwWL+4tbShTtclfFM/6xlXrKrpPRmKWZ+QHWcmjJGBA6o/fDPvFCOjsJih2lrtvY9Yidu1jwDQ==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
