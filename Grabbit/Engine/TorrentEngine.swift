@@ -83,6 +83,9 @@ public final class TorrentEngine: TorrentEngineProtocol {
     /// Heals torrents on a *reclaimed* daemon (spawned before --bt-tracker
     /// existed): without this they'd only discover peers via DHT/LPD.
     private var trackersPushedThisRun = Set<UUID>()
+    /// Info hashes the user removed this run: a daemon-side entry that
+    /// survives a failed `remove` must not be auto-re-adopted every poll.
+    private var purgedHashesThisRun = Set<String>()
 
     private static var storeURL: URL {
         Aria2Daemon.supportDir.appendingPathComponent("torrents.json")
@@ -430,6 +433,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
 
     public func remove(_ id: UUID, deleteData: Bool) {
         guard let item = torrents.first(where: { $0.id == id }) else { return }
+        // Remember the hash: if the daemon-side removal fails (dead RPC,
+        // removal race), the poll's adoption pass must not resurrect the
+        // row the user just removed.
+        if let hash = item.infoHash?.lowercased() {
+            purgedHashesThisRun.insert(hash)
+        }
         if let gid = item.gid, let rpc {
             if deleteData {
                 Task { await self.deleteData(gid: gid, saveDir: item.savePath) }
@@ -506,16 +515,35 @@ public final class TorrentEngine: TorrentEngineProtocol {
             let stopped = try await client.tellStopped()
             pollFailures = 0
 
-            var byGid: [String: TorrentStatus] = [:]
-            var byInfoHash: [String: TorrentStatus] = [:]
-            for status in active + waiting + stopped {
-                byGid[status.gid] = status
-                if let hash = status.infoHash {
-                    byInfoHash[hash.lowercased()] = status
-                }
-            }
+            let (byGid, byInfoHash) = Self.statusIndexes(active + waiting + stopped)
 
             var changed = false
+            // Adopt daemon-side torrents the app doesn't know about — every
+            // poll, not just once at startup. reconcileAfterStart races the
+            // daemon's session restore, and rows can vanish from the app list
+            // (auto-clear, a removal while an add was still in flight) while
+            // the daemon keeps the download alive. An invisible download is
+            // never acceptable, so it reappears here within a second.
+            let knownHashes = Set(torrents.compactMap { $0.infoHash?.lowercased() })
+            for status in Self.adoptableStatuses(active + waiting, knownHashes: knownHashes) {
+                guard let hash = status.infoHash?.lowercased(),
+                      !purgedHashesThisRun.contains(hash)
+                else { continue }
+                var item = TorrentItem(
+                    name: status.name ?? hash,
+                    magnetURI: "",
+                    infoHash: hash,
+                    totalBytes: status.totalLength,
+                    downloadedBytes: status.completedLength,
+                    numSeeders: status.numSeeders,
+                    connections: status.connections,
+                    state: Aria2StatusMapper.map(status),
+                    savePath: URL(fileURLWithPath: status.dir))
+                item.gid = status.gid
+                lineage.register(gid: status.gid, item: item.id)
+                torrents.append(item)
+                changed = true
+            }
             var toDrop: [UUID] = []
             var toPurge: [(id: UUID, gid: String)] = []
             for index in torrents.indices {
@@ -642,6 +670,26 @@ public final class TorrentEngine: TorrentEngineProtocol {
                         if settings.settings.autoClearFinished {
                             toPurge.append((item.id, st.gid))
                         }
+                    } else if newState == .failed, st.status == "error",
+                              Self.isDuplicateAdd(message: st.errorMessage),
+                              let hash = item.infoHash?.lowercased(),
+                              let live = byInfoHash[hash], live.gid != st.gid
+                    {
+                        // Duplicate-add collision: the daemon already has
+                        // this torrent under another GID (the download the
+                        // user asked for is the one already running). Attach
+                        // to the live entry instead of recording a bogus
+                        // failure — auto-clear then removed the row and the
+                        // running download went invisible.
+                        if let old = item.gid { lineage.forget(gid: old) }
+                        item.gid = live.gid
+                        item.errorMessage = nil
+                        lineage.register(gid: live.gid, item: item.id)
+                        torrents[index] = item
+                        changed = true
+                        // Drop the dead duplicate entry from the daemon.
+                        try? await client.removeDownloadResult(gid: st.gid)
+                        continue
                     } else if newState == .failed, st.status == "error" {
                         // The error text is parsed below; capture it here so
                         // the history entry carries the failure reason.
@@ -755,6 +803,37 @@ public final class TorrentEngine: TorrentEngineProtocol {
         } catch {
             // Leave the item for the next poll / manual retry.
         }
+    }
+
+    /// Daemon status index used by the poll. `byInfoHash` prefers a live
+    /// entry over an errored one sharing the same hash: a duplicate-add
+    /// collision (libtorrent code 19) parks a dead entry next to the live
+    /// download, and the poll must resolve the torrent to the live GID.
+    /// Pure, unit-tested.
+    nonisolated static func statusIndexes(
+        _ statuses: [TorrentStatus]
+    ) -> (byGid: [String: TorrentStatus], byInfoHash: [String: TorrentStatus]) {
+        var byGid: [String: TorrentStatus] = [:]
+        var byInfoHash: [String: TorrentStatus] = [:]
+        for status in statuses {
+            byGid[status.gid] = status
+            guard let hash = status.infoHash?.lowercased() else { continue }
+            if byInfoHash[hash] == nil
+                || (byInfoHash[hash]?.status == "error" && status.status != "error")
+            {
+                byInfoHash[hash] = status
+            }
+        }
+        return (byGid, byInfoHash)
+    }
+
+    /// A duplicate-add collision: the daemon already has this torrent in
+    /// its session (libtorrent error code 19, surfaced by aria2 as
+    /// "torrent already exists in session"). This is not a failure — the
+    /// download the user asked for is already running under another GID.
+    /// Pure, unit-tested.
+    nonisolated static func isDuplicateAdd(message: String?) -> Bool {
+        message?.range(of: "already exists", options: .caseInsensitive) != nil
     }
 
     /// Daemon statuses the app doesn't know by info hash yet — these are

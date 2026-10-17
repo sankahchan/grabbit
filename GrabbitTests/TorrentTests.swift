@@ -586,6 +586,59 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(adopted.count, 1)
         XCTAssertEqual(adopted.first?.gid, "g2")
     }
+
+    // MARK: - Duplicate-add attach (libtorrent code 19)
+
+    func testDuplicateAddDetection() {
+        XCTAssertTrue(TorrentEngine.isDuplicateAdd(
+            message: "torrent already exists in session"))
+        XCTAssertTrue(TorrentEngine.isDuplicateAdd(
+            message: "Torrent Already Exists In Session"))
+        XCTAssertFalse(TorrentEngine.isDuplicateAdd(message: nil))
+        XCTAssertFalse(TorrentEngine.isDuplicateAdd(
+            message: "No space left on device"))
+    }
+
+    private func indexedStatus(
+        gid: String, state: String, hash: String?, error: String? = nil
+    ) -> TorrentStatus {
+        TorrentStatus(
+            gid: gid, status: state, totalLength: 100, completedLength: 10,
+            uploadLength: 0, downloadSpeed: 0, uploadSpeed: 0, connections: 0,
+            numSeeders: 0, dir: "/tmp", name: nil, infoHash: hash,
+            followedBy: [], following: nil,
+            errorCode: error == nil ? nil : "1", errorMessage: error)
+    }
+
+    func testStatusIndexesPrefersLiveEntryOverErroredDuplicate() {
+        let live = indexedStatus(gid: "live", state: "active", hash: "ABCD")
+        let errored = indexedStatus(
+            gid: "dup", state: "error", hash: "abcd",
+            error: "torrent already exists in session")
+        let (byGid, byInfoHash) = TorrentEngine.statusIndexes([live, errored])
+        XCTAssertEqual(byGid["dup"]?.status, "error")
+        XCTAssertEqual(byGid["live"]?.status, "active")
+        XCTAssertEqual(byInfoHash["abcd"]?.gid, "live")
+    }
+
+    func testStatusIndexesFindsLiveEntryWhenErrorArrivesFirst() {
+        let errored = indexedStatus(
+            gid: "dup", state: "error", hash: "abcd",
+            error: "torrent already exists in session")
+        let live = indexedStatus(gid: "live", state: "active", hash: "abcd")
+        let (_, byInfoHash) = TorrentEngine.statusIndexes([errored, live])
+        XCTAssertEqual(byInfoHash["abcd"]?.gid, "live")
+    }
+
+    func testStatusIndexesKeepsErrorWhenNoLiveSibling() {
+        let errored = indexedStatus(
+            gid: "dup", state: "error", hash: "abcd",
+            error: "torrent already exists in session")
+        let complete = indexedStatus(gid: "old", state: "complete", hash: "beef")
+        let (_, byInfoHash) = TorrentEngine.statusIndexes([errored, complete])
+        XCTAssertEqual(byInfoHash["abcd"]?.gid, "dup")
+        XCTAssertEqual(byInfoHash["beef"]?.gid, "old")
+    }
 }
 
 // MARK: - Tracker auto-update
