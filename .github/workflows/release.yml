@@ -25,7 +25,6 @@ jobs:
       # ALLOW_UNSIGNED_RELEASE to true; otherwise the preflight below refuses
       # to publish.
       ALLOW_UNSIGNED_RELEASE: ${{ vars.ALLOW_UNSIGNED_RELEASE }}
-      SIGNING_KEYCHAIN: ${{ runner.temp }}/grabbit-signing.keychain-db
 
     steps:
       - name: Checkout
@@ -175,6 +174,7 @@ jobs:
           DEVELOPER_ID_CERTIFICATE: ${{ secrets.DEVELOPER_ID_CERTIFICATE }}
           DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
           DEVELOPER_ID_IDENTITY: ${{ secrets.DEVELOPER_ID_IDENTITY }}
+          SIGNING_KEYCHAIN: ${{ runner.temp }}/grabbit-signing.keychain-db
         run: |
           set -euo pipefail
           KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
@@ -387,4 +387,6 @@ jobs:
 
       - name: Clean up signing keychain
         if: always() && steps.signing.outputs.signed == 'true'
+        env:
+          SIGNING_KEYCHAIN: ${{ runner.temp }}/grabbit-signing.keychain-db
         run: security delete-keychain "$SIGNING_KEYCHAIN" || true
