@@ -169,5 +169,12 @@
       <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.8.1/Grabbit-v1.8.1.dmg" sparkle:version="1.8.1" sparkle:shortVersionString="1.8.1" sparkle:edSignature="nFPivULsDfRTnwWL+4tbShTtclfFM/6xlXrKrpPRmKWZ+QHWcmjJGBA6o/fDPvFCOjsJih2lrtvY9Yidu1jwDQ==" type="application/octet-stream"/>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     </item>
+    <item>
+      <title>v1.9.0</title>
+      <pubDate>Fri, 23 Oct 2026 11:34:54 +0000</pubDate>
+      <description><![CDATA[<pre style="font-family: -apple-system; white-space: pre-wrap; margin: 0">release: v1.9.0 — Telegram media workbench<br/><br/>Add the Telegram media workbench with a persistent helper, in-app previews, confirmed batch downloads, cancellation handling, progressive-photo support, and safer peer/file handling.<br/><br/>Add Classic-only Mochi/custom sticker accents for Telegram and Mini Apps.<br/><br/>Include hardened range probes, throttled-host retries, segment bounds, and torrent deduplication.<br/><br/>Fix the release workflow&#x27;s signing-keychain environment so GitHub Actions accepts the workflow.<br/><br/>This is an unsigned internal build; macOS may require Right-click → Open on first launch.</pre>]]></description>
+      <enclosure url="https://github.com/sankahchan/grabbit/releases/download/v1.9.0/Grabbit-v1.9.0.dmg" sparkle:version="1.9.0" sparkle:shortVersionString="1.9.0" sparkle:edSignature="aeZfpaTn7WFpzsERZEKz8nuochZXvLhcd0TPCJA+WB9YKujXGTcPLTyocTv8oxdBijr6Z4gCBs7XF9dtk231Dg==" type="application/octet-stream"/>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    </item>
   </channel>
 </rss>
