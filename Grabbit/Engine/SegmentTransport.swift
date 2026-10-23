@@ -111,6 +111,17 @@ final class SegmentTransport {
         client.start()
     }
 
+    /// Bytes of an incoming body chunk that belong inside this segment.
+    /// Open-ended segments (endByte == .max) accept everything.
+    static func writeCount(
+        endByte: Int64, startByte: Int64, received: Int64, incoming: Int
+    ) -> Int {
+        guard endByte != .max else { return incoming }
+        let expected = endByte - startByte + 1
+        let remaining = max(0, expected - received)
+        return Int(min(Int64(incoming), remaining))
+    }
+
     private func handleEvent(index: Int, event: HTTP1Client.Event) {
         switch event {
         case .response(let status, let headers):
@@ -135,20 +146,32 @@ final class SegmentTransport {
             // 206, or 200 covering the whole file: body follows.
         case .data(let data):
             guard var job = jobs[index] else { return }
+            // A server can answer a Range request with *more* than the
+            // requested range (broken CDNs, or a chunked body that includes
+            // extra bytes). Never write past this segment's end: those bytes
+            // belong to no segment and would make the finished file larger
+            // than its advertised total.
+            let count = Self.writeCount(
+                endByte: job.endByte,
+                startByte: job.startByte,
+                received: job.received,
+                incoming: data.count)
+            guard count > 0 else { return }
+            let chunk = data.prefix(count)
             // Phase 5 speed limiter: pace this chunk through the per-download
             // bucket first, then the shared global bucket. Runs on this
             // transport's serial queue, so the block *is* the pacing — no
             // reordering, and all of this download's segments share it.
-            itemBucket?.consume(data.count)
-            globalBucket?.consume(data.count)
+            itemBucket?.consume(chunk.count)
+            globalBucket?.consume(chunk.count)
             do {
-                try job.handle.write(contentsOf: data)
+                try job.handle.write(contentsOf: chunk)
             } catch {
                 tearDown(index: index)
                 onError?(job.segmentIndex, error)
                 return
             }
-            job.received += Int64(data.count)
+            job.received += Int64(chunk.count)
             let now = Date()
             if now.timeIntervalSince(job.lastReport) >= Self.progressInterval {
                 job.lastReport = now

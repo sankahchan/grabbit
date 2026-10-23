@@ -56,6 +56,11 @@ public final class DownloadEngine {
     /// Retryable segment errors seen in the current generation. Many at once
     /// means the server is throttling our connection count.
     private var generationErrors: [UUID: Int] = [:]
+    /// 429/503 retries after the stream has already collapsed to one
+    /// connection. A throttling CDN can keep the token/IP penalized for
+    /// longer than the 3s collapse backoff; retry with a growing delay
+    /// instead of failing the whole download on the first single-stream 503.
+    private var throttleRetries: [UUID: Int] = [:]
     /// When the current generation launched (for slowness downshift timing).
     private var generationStartTime: [UUID: Date] = [:]
     private var slowStreaks: [UUID: Int] = [:]
@@ -145,7 +150,11 @@ public final class DownloadEngine {
             (200...299).contains(status)
         {
             Self.applyProbeHeaders(&result, headers: fields)
-            if result.totalBytes != nil { return result }
+            // A 2xx HEAD is only conclusive when it gave a plausible size.
+            // A redirect/empty response can carry Content-Length: 0, and a
+            // 1-byte answer is usually a probe/error artifact — fall through
+            // to the ranged GET probe instead of trusting either.
+            if let total = result.totalBytes, total > 1 { return result }
         }
         if let (status, fields) = await fetchHeaders(
             url, method: "GET", range: "bytes=0-0",
@@ -266,6 +275,10 @@ public final class DownloadEngine {
         // the add sheet on the 60s default (x2 sequential probes). The
         // real download has its own timeouts and surfaces a proper error.
         request.timeoutInterval = 15
+        // A cached 206 from an earlier `bytes=0-0` probe describes only a
+        // one-byte slice and can mask the real object size. Discovery must
+        // always hit the network and follow the server's current redirect.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         // Per-task request context (Cookie / Referer / User-Agent …): some
         // hosts gate even HEAD/Range probes behind the browser's context
         // and reset the connection without it. Applied before Range so the
@@ -278,6 +291,13 @@ public final class DownloadEngine {
         if let range {
             request.setValue(range, forHTTPHeaderField: "Range")
         }
+        // Probe with identity so Content-Length/Content-Range describe the
+        // decoded file, not a gzip/br representation. URLSession otherwise
+        // advertises gzip by default; a plain-text GitHub raw file then
+        // reports its ~755-byte compressed length while the actual download
+        // (HTTP1Client also asks for identity) gets 1,593 bytes. Trusting
+        // the compressed length truncates the saved file.
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
         // Phase 5 proxy: run the probe through the task's effective proxy
         // (a per-task Direct/Custom override wins over the global setting).
         // This session has no proxy-auth challenge handler, so an
@@ -304,12 +324,39 @@ public final class DownloadEngine {
         return (http.statusCode, headers)
     }
 
+    /// Total size from probe headers.
+    ///
+    /// A ranged response (206) carries the object's real length only in
+    /// `Content-Range`; its `Content-Length` is the size of the returned
+    /// slice — 1 byte for the `bytes=0-0` discovery request. Trusting that
+    /// slice length makes the engine download exactly one byte and then
+    /// report success. This is exactly what happened with GitHub release
+    /// assets, whose `github.com/.../releases/download/...` URL redirects
+    /// to a signed range-capable blob URL.
+    static func totalBytes(fromProbeHeaders headers: [String: String]) -> Int64? {
+        // A compressed representation's length describes encoded bytes, not
+        // the file we will write. Discovery asks for identity, but a server
+        // may still answer with gzip/br; never use that length as total.
+        if let encoding = headers["content-encoding"]?.lowercased(),
+           !encoding.isEmpty, encoding != "identity" {
+            return nil
+        }
+        // Content-Range is authoritative whenever present, even if the
+        // slice's Content-Length is smaller (or the header is malformed).
+        if let range = headers["content-range"] {
+            return DownloadItem.totalFromContentRange(range)
+        }
+        guard let value = headers["content-length"],
+              let parsed = Int64(value.trimmingCharacters(in: .whitespaces)),
+              parsed > 0
+        else { return nil }
+        return parsed
+    }
+
     private static func applyProbeHeaders(
         _ result: inout ProbeResult, headers: [String: String]
     ) {
-        if let length = headers["content-length"], let parsed = Int64(length) {
-            result.totalBytes = parsed
-        }
+        result.totalBytes = Self.totalBytes(fromProbeHeaders: headers)
         result.eTag = headers["etag"]
         result.lastModified = headers["last-modified"]
         // Strip "; charset=…" parameters — infer() only needs the MIME type.
@@ -760,6 +807,7 @@ public final class DownloadEngine {
         case .downloading, .completed:
             return
         }
+        throttleRetries[id] = nil
         // Task Management: cap simultaneous downloads. Over-cap tasks wait
         // in .queued; kickQueue() starts the oldest when a slot frees up.
         // Phase 5 named queues: a task starts only when BOTH its queue has
@@ -1013,6 +1061,7 @@ public final class DownloadEngine {
         guard let itemIndex = items.firstIndex(where: { $0.id == id }) else { return }
         cancelSegmentTasks(for: id)
         let item = items.remove(at: itemIndex)
+        throttleRetries[id] = nil
         try? FileManager.default.removeItem(at: resumeStore.partialFileURL(for: item))
         resumeStore.delete(item.id)
         // A manual remove during finalize must not leave a stale journal
@@ -1232,16 +1281,45 @@ public final class DownloadEngine {
             fail(id: id, message: hint)
             return
         }
-        if (status == 429 || status == 503),
-           items[itemIndex].segments.count > 1
-        {
+        if status == 429 || status == 503 {
             // Server throttles our connection burst — remember the host so
-            // every future download from it opens a single stream, then
-            // collapse this one and retry on one connection.
+            // every future download from it opens a single stream.
             throttledHosts.learn(host: items[itemIndex].url.host)
-            collapseToSingleStream(id: id)
+            if items[itemIndex].segments.count > 1 {
+                collapseToSingleStream(id: id)
+            } else {
+                retryThrottled(id: id, generation: generation)
+            }
         } else {
             fail(id: id, message: "HTTP \(status)")
+        }
+    }
+
+    /// A 429/503 on the already-collapsed single stream: wait out the
+    /// server's penalty window with exponential backoff and try again.
+    /// Without this, the first burst's rate-limit can outlive the 3s
+    /// collapse backoff and a valid link fails with a bare HTTP 503.
+    @MainActor
+    private func retryThrottled(id: UUID, generation: Int) {
+        guard isCurrentGeneration(id: id, generation: generation),
+              let itemIndex = items.firstIndex(where: { $0.id == id }),
+              items[itemIndex].state == .downloading
+        else { return }
+        let attempt = (throttleRetries[id] ?? 0) + 1
+        guard attempt <= 4 else {
+            fail(id: id, message: "HTTP 503")
+            return
+        }
+        throttleRetries[id] = attempt
+        let delay = min(30.0, pow(2.0, Double(attempt)) * 3.0)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard let self,
+                  self.isCurrentGeneration(id: id, generation: generation),
+                  let idx = self.items.firstIndex(where: { $0.id == id }),
+                  self.items[idx].state == .downloading
+            else { return }
+            self.launchSegmentTasks(for: id)
         }
     }
 

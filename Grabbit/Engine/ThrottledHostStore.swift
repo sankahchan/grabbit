@@ -17,7 +17,7 @@ public final class ThrottledHostStore {
 
     /// Hosts observed to ban multi-connection bursts. Keeping the seed means
     /// a fresh install never has to fail once before learning.
-    public static let seed: Set<String> = ["datatransfer.to"]
+    public static let seed: Set<String> = ["clicknupload.net", "datatransfer.to"]
 
     public init(directory: URL? = nil) {
         let base = directory ?? FileManager.default.homeDirectoryForCurrentUser

@@ -279,6 +279,83 @@ final class EngineTests: XCTestCase {
         XCTAssertNil(DownloadItem.totalFromContentRange("garbage"))
     }
 
+    // MARK: - probeTotalBytes
+
+    /// A 206 probe response carries the object's real size in Content-Range;
+    /// Content-Length only describes the one-byte slice. Regression for
+    /// GitHub release assets being saved as a bogus 1-byte "complete" file.
+    func testProbeTotalBytesPrefersContentRangeOverPartialLength() {
+        XCTAssertEqual(
+            DownloadEngine.totalBytes(fromProbeHeaders: [
+                "content-length": "1",
+                "content-range": "bytes 0-0/18048837",
+            ]),
+            18_048_837)
+    }
+
+    func testProbeTotalBytesUsesFullContentLength() {
+        XCTAssertEqual(
+            DownloadEngine.totalBytes(fromProbeHeaders: [
+                "content-length": "18048837"
+            ]),
+            18_048_837)
+    }
+
+    func testProbeTotalBytesIgnoresZeroLength() {
+        XCTAssertNil(DownloadEngine.totalBytes(fromProbeHeaders: ["content-length": "0"]))
+    }
+
+    /// A gzip/br Content-Length is the encoded size (755 for a 1,593-byte
+    /// text file), not the decoded file. The probe asks for identity, but
+    /// if a CDN still compresses the response, never use that number as the
+    /// download size or the saved file is silently truncated.
+    func testProbeTotalBytesIgnoresCompressedLengthAndRange() {
+        XCTAssertNil(DownloadEngine.totalBytes(fromProbeHeaders: [
+            "content-length": "755",
+            "content-encoding": "gzip",
+        ]))
+        XCTAssertNil(DownloadEngine.totalBytes(fromProbeHeaders: [
+            "content-length": "1",
+            "content-range": "bytes 0-0/755",
+            "content-encoding": "br",
+        ]))
+    }
+
+    func testProbeTotalBytesAcceptsIdentityEncoding() {
+        XCTAssertEqual(DownloadEngine.totalBytes(fromProbeHeaders: [
+            "content-length": "1593",
+            "content-encoding": "identity",
+        ]), 1593)
+    }
+
+    func testProbeTotalBytesRejectsMalformedContentRange() {
+        XCTAssertNil(DownloadEngine.totalBytes(fromProbeHeaders: [
+            "content-length": "1",
+            "content-range": "bytes 0-0/*",
+        ]))
+    }
+
+    // MARK: - segment write cap
+
+    func testSegmentWriteCountStopsAtSegmentEnd() {
+        XCTAssertEqual(
+            SegmentTransport.writeCount(
+                endByte: 377, startByte: 0, received: 300, incoming: 307),
+            78)
+        XCTAssertEqual(
+            SegmentTransport.writeCount(
+                endByte: 377, startByte: 0, received: 378, incoming: 10),
+            0)
+        XCTAssertEqual(
+            SegmentTransport.writeCount(
+                endByte: 100, startByte: 50, received: 0, incoming: 10),
+            10)
+        XCTAssertEqual(
+            SegmentTransport.writeCount(
+                endByte: .max, startByte: 0, received: 0, incoming: 4096),
+            4096)
+    }
+
     // MARK: - filenameFromContentDisposition
 
     func testFilenameQuoted() {

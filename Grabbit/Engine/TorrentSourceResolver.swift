@@ -23,7 +23,21 @@ enum TorrentSourceResolver {
         request.timeoutInterval = 25
         request.setValue(
             "Grabbit/1.6 (macOS)", forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await session.data(for: request)
+
+        // A magnet redirect is deliberately cancelled by RedirectCatcher.
+        // URLSession reports that cancellation as a thrown error, so check
+        // the captured magnet before propagating it — otherwise every
+        // tracker/Jackett download link that redirects to a magnet fails.
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            if let magnet = catcher.capturedMagnet {
+                return .magnet(magnet)
+            }
+            throw error
+        }
 
         if let magnet = catcher.capturedMagnet {
             return .magnet(magnet)

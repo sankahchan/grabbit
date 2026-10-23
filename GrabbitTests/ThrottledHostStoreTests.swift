@@ -12,6 +12,8 @@ final class ThrottledHostStoreTests: XCTestCase {
         XCTAssertTrue(store.isThrottled(host: "datatransfer.to"))
         XCTAssertTrue(store.isThrottled(host: "d8177.datatransfer.to"))
         XCTAssertTrue(store.isThrottled(host: "D8177.DataTransfer.TO"))
+        XCTAssertTrue(store.isThrottled(host: "blue01.clicknupload.net"))
+        XCTAssertTrue(store.isThrottled(host: "Clicknupload.NET"))
         XCTAssertFalse(store.isThrottled(host: "example.com"))
         XCTAssertFalse(store.isThrottled(host: nil))
     }

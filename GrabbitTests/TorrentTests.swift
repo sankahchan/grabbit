@@ -587,6 +587,27 @@ final class TorrentTests: XCTestCase {
         XCTAssertEqual(adopted.first?.gid, "g2")
     }
 
+    /// One add must not become two rows before the first poll learns the
+    /// info hash. The app knows the daemon GID as soon as addUri returns;
+    /// adoption must skip that GID even when the app row's hash is still nil.
+    func testAdoptionSkipsKnownGidBeforeInfoHashResolves() {
+        let status = TorrentStatus(
+            gid: "g1", status: "active", totalLength: 100,
+            completedLength: 10, uploadLength: 0, downloadSpeed: 0,
+            uploadSpeed: 0, connections: 3, numSeeders: 2, dir: "/tmp",
+            name: "same download", infoHash: "bbbb", followedBy: [],
+            following: nil, errorCode: nil, errorMessage: nil)
+        XCTAssertTrue(
+            TorrentEngine.adoptableStatuses(
+                [status], knownHashes: [], knownGids: ["g1"]).isEmpty)
+        XCTAssertEqual(
+            TorrentEngine.adoptableStatuses(
+                [status], knownHashes: ["bbbb"], knownGids: []).count, 0)
+        XCTAssertEqual(
+            TorrentEngine.adoptableStatuses(
+                [status], knownHashes: [], knownGids: []).count, 1)
+    }
+
     // MARK: - Duplicate-add attach (libtorrent code 19)
 
     func testDuplicateAddDetection() {

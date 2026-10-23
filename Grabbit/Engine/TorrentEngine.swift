@@ -278,6 +278,16 @@ public final class TorrentEngine: TorrentEngineProtocol {
     ) async throws {
         let input = magnetOrURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { throw TorrentError.invalidInput }
+        // Adding the same magnet/URL twice must not create a second row.
+        // A duplicate add would either fail in aria2 ("already exists") or,
+        // before metadata resolves, create two items sharing the same GID.
+        let inputHash = MagnetParser.infoHash(from: input)
+        if torrents.contains(where: {
+            $0.sourceURI == input
+                || (inputHash != nil && $0.infoHash?.lowercased() == inputHash)
+        }) {
+            return
+        }
         let dir = resolvedSaveDir(savePath)
         // Any HTTP(S) source is fetched ourselves: indexers (Jackett,
         // trackers) commonly 302 their download links to a magnet, which
@@ -297,6 +307,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
                     data, savePath: dir,
                     name: Self.resolveDisplayName(
                         magnetOrURL: input, displayName: displayName),
+                    sourceURI: input,
                     proxy: proxy)
             }
             return
@@ -336,7 +347,31 @@ public final class TorrentEngine: TorrentEngineProtocol {
         _ data: Data, savePath: URL, name: String? = nil,
         proxy: TaskProxy? = nil
     ) async throws {
+        try await addTorrentFile(
+            data, savePath: savePath, name: name,
+            sourceURI: "", proxy: proxy)
+    }
+
+    /// Internal variant that keeps the original HTTP URL for dedup/retry.
+    private func addTorrentFile(
+        _ data: Data, savePath: URL, name: String? = nil,
+        sourceURI: String,
+        proxy: TaskProxy? = nil
+    ) async throws {
         guard !data.isEmpty else { throw TorrentError.invalidInput }
+        // Exact same URL, or the exact same (small) .torrent payload, is
+        // already queued/downloading — do not create a duplicate row.
+        if !sourceURI.isEmpty,
+           torrents.contains(where: { $0.sourceURI == sourceURI })
+        {
+            return
+        }
+        if data.count < 2_000_000 {
+            let encoded = data.base64EncodedString()
+            if torrents.contains(where: { $0.torrentFileBase64 == encoded }) {
+                return
+            }
+        }
         let dir = resolvedSaveDir(savePath)
         try await ensureStarted()
         guard let rpc else { throw TorrentError.daemonFailed("RPC not connected") }
@@ -344,7 +379,7 @@ public final class TorrentEngine: TorrentEngineProtocol {
         var item = TorrentItem(
             name: name ?? "torrent",
             magnetURI: "",
-            sourceURI: "",
+            sourceURI: sourceURI,
             state: .downloading,
             savePath: dir,
             proxy: proxy)
@@ -441,9 +476,17 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
         if let gid = item.gid, let rpc {
             if deleteData {
-                Task { await self.deleteData(gid: gid, saveDir: item.savePath) }
+                Task {
+                    // Stop writes before enumerating files. Removing the
+                    // daemon entry first makes getFiles fail, which used to
+                    // leave the payload behind on "delete data" removals.
+                    try? await rpc.pause(gid: gid)
+                    await self.deleteData(gid: gid, saveDir: item.savePath)
+                    await self.removeDaemonEntry(gid: gid, rpc: rpc)
+                }
+            } else {
+                Task { await self.removeDaemonEntry(gid: gid, rpc: rpc) }
             }
-            Task { try? await rpc.remove(gid: gid) }
         } else if deleteData {
             // No daemon entry — best effort on this torrent's own file/folder
             // inside the save directory. Never delete `savePath` itself: it is
@@ -518,6 +561,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
             let (byGid, byInfoHash) = Self.statusIndexes(active + waiting + stopped)
 
             var changed = false
+            // Add-time dedup handles new adds, but older duplicates can
+            // already share one daemon GID (two rows, one download) or the
+            // same info hash. Collapse them before mapping statuses so the
+            // status loop only sees one row per torrent.
+            if consolidateDuplicateTorrents(byGid: byGid) {
+                changed = true
+            }
             // Adopt daemon-side torrents the app doesn't know about — every
             // poll, not just once at startup. reconcileAfterStart races the
             // daemon's session restore, and rows can vanish from the app list
@@ -525,7 +575,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
             // the daemon keeps the download alive. An invisible download is
             // never acceptable, so it reappears here within a second.
             let knownHashes = Set(torrents.compactMap { $0.infoHash?.lowercased() })
-            for status in Self.adoptableStatuses(active + waiting, knownHashes: knownHashes) {
+            let knownGids = Set(torrents.compactMap { $0.gid })
+            for status in Self.adoptableStatuses(
+                active + waiting,
+                knownHashes: knownHashes,
+                knownGids: knownGids)
+            {
                 guard let hash = status.infoHash?.lowercased(),
                       !purgedHashesThisRun.contains(hash)
                 else { continue }
@@ -542,6 +597,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
                 item.gid = status.gid
                 lineage.register(gid: status.gid, item: item.id)
                 torrents.append(item)
+                changed = true
+            }
+            // Adoption can race the first metadata poll: an existing row
+            // may have its GID but not its info hash yet. Collapse any
+            // just-adopted duplicate before the status loop records history.
+            if consolidateDuplicateTorrents(byGid: byGid) {
                 changed = true
             }
             var toDrop: [UUID] = []
@@ -789,7 +850,13 @@ public final class TorrentEngine: TorrentEngineProtocol {
     /// info hash, so this is idempotent — a duplicate add resolves to the
     /// existing download instead of double-adding.
     private func readd(_ item: TorrentItem) async {
-        guard let rpc else { return }
+        // The poll may have captured this item just before the user removed
+        // it. Re-adding then would leave an invisible daemon-side torrent
+        // that the adoption pass deliberately skips.
+        guard let rpc,
+              torrents.contains(where: { $0.id == item.id }),
+              !(item.infoHash.map { purgedHashesThisRun.contains($0.lowercased()) } ?? false)
+        else { return }
         do {
             if !item.sourceURI.isEmpty {
                 let gid = try await rpc.addUri([item.sourceURI], options: addOptions(dir: item.savePath))
@@ -803,6 +870,67 @@ public final class TorrentEngine: TorrentEngineProtocol {
         } catch {
             // Leave the item for the next poll / manual retry.
         }
+    }
+
+    /// Collapses rows that point at the same daemon download (same GID) or
+    /// the same content (same info hash). The first row is the keeper; the
+    /// others are merged into it so retry metadata (source/magnet/torrent
+    /// bytes) is not lost. A live GID wins over a missing/errored one.
+    @MainActor
+    private func consolidateDuplicateTorrents(
+        byGid: [String: TorrentStatus]
+    ) -> Bool {
+        var seenGid: [String: UUID] = [:]
+        var seenHash: [String: UUID] = [:]
+        var remove = Set<UUID>()
+        var changed = false
+        for item in torrents {
+            let gidKey = item.gid.map { "gid:\($0)" }
+            let hashKey = item.infoHash.map { "hash:\($0.lowercased())" }
+            let keeperID = gidKey.flatMap { seenGid[$0] }
+                ?? hashKey.flatMap { seenHash[$0] }
+            guard let keeperID,
+                  let keeperIndex = torrents.firstIndex(where: { $0.id == keeperID })
+            else {
+                if let gidKey { seenGid[gidKey] = item.id }
+                if let hashKey { seenHash[hashKey] = item.id }
+                continue
+            }
+            var keeper = torrents[keeperIndex]
+            if keeper.sourceURI.isEmpty { keeper.sourceURI = item.sourceURI }
+            if keeper.magnetURI.isEmpty { keeper.magnetURI = item.magnetURI }
+            if keeper.torrentFileBase64 == nil {
+                keeper.torrentFileBase64 = item.torrentFileBase64
+            }
+            if keeper.infoHash == nil { keeper.infoHash = item.infoHash }
+            if keeper.name.isEmpty || keeper.name == "torrent" {
+                keeper.name = item.name
+            }
+            // Prefer a healthy GID over an errored/removed duplicate.
+            let keeperLive = keeper.gid.flatMap { byGid[$0] }.map {
+                $0.status != "error" && $0.status != "removed"
+            } ?? false
+            let itemLive = item.gid.flatMap { byGid[$0] }.map {
+                $0.status != "error" && $0.status != "removed"
+            } ?? false
+            if !keeperLive, itemLive {
+                keeper.gid = item.gid
+                keeper.state = item.state
+            } else if keeper.state == .failed, item.state != .failed {
+                keeper.state = item.state
+            }
+            torrents[keeperIndex] = keeper
+            remove.insert(item.id)
+            lineage.forgetItem(item.id)
+            if let gid = keeper.gid {
+                lineage.register(gid: gid, item: keeper.id)
+            }
+            changed = true
+        }
+        if !remove.isEmpty {
+            torrents.removeAll { remove.contains($0.id) }
+        }
+        return changed
     }
 
     /// Daemon status index used by the poll. `byInfoHash` prefers a live
@@ -840,12 +968,15 @@ public final class TorrentEngine: TorrentEngineProtocol {
     /// torrents the daemon resumed from its session while the app's list
     /// was lost. Pure, unit-tested.
     nonisolated static func adoptableStatuses(
-        _ statuses: [TorrentStatus], knownHashes: Set<String>
+        _ statuses: [TorrentStatus],
+        knownHashes: Set<String>,
+        knownGids: Set<String> = []
     ) -> [TorrentStatus] {
         var seen = Set<String>()
         return statuses.filter { status in
             guard let hash = status.infoHash?.lowercased(),
                   !knownHashes.contains(hash),
+                  !knownGids.contains(status.gid),
                   !seen.contains(hash)
             else { return false }
             seen.insert(hash)
@@ -871,7 +1002,12 @@ public final class TorrentEngine: TorrentEngineProtocol {
         // them from its session after the app's list was lost). Invisible
         // downloads are never acceptable.
         let knownHashes = Set(torrents.compactMap { $0.infoHash?.lowercased() })
-        for status in Self.adoptableStatuses(active + waiting, knownHashes: knownHashes) {
+        let knownGids = Set(torrents.compactMap { $0.gid })
+        for status in Self.adoptableStatuses(
+            active + waiting,
+            knownHashes: knownHashes,
+            knownGids: knownGids)
+        {
             var item = TorrentItem(
                 name: status.name ?? (status.infoHash ?? status.gid),
                 magnetURI: "",
@@ -1023,6 +1159,17 @@ public final class TorrentEngine: TorrentEngineProtocol {
         }
     }
 
+    /// `aria2.remove` only accepts active/waiting/paused entries. A
+    /// completed torrent lives in the stopped list and needs
+    /// `removeDownloadResult`; otherwise the daemon keeps a stale result.
+    private func removeDaemonEntry(gid: String, rpc: Aria2RPC) async {
+        do {
+            try await rpc.remove(gid: gid)
+        } catch {
+            try? await rpc.removeDownloadResult(gid: gid)
+        }
+    }
+
     /// Deletes downloaded files, staying strictly inside the torrent dir.
     private func deleteData(gid: String, saveDir: URL) async {
         guard let rpc else { return }
@@ -1030,7 +1177,10 @@ public final class TorrentEngine: TorrentEngineProtocol {
         guard let files = try? await rpc.getFiles(gid: gid) else { return }
         for file in files {
             let url = URL(fileURLWithPath: file.path).standardizedFileURL
-            guard url.path.hasPrefix(dir.path + "/") || url.path == dir.path else { continue }
+            // Never allow a file entry equal to saveDir itself: that is the
+            // shared destination folder, not a torrent payload. A bare
+            // prefix check would also match a sibling like "Downloads2".
+            guard url.path.hasPrefix(dir.path + "/") else { continue }
             try? FileManager.default.removeItem(at: url)
         }
         // Remove newly-emptied parent dirs, up to (not including) saveDir.
