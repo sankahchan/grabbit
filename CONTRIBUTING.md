@@ -47,14 +47,21 @@ git push origin v1.2.3
 
 The `release.yml` workflow then:
 
-1. Generates the Xcode project and vendors `yt-dlp` + `ffmpeg` into `Grabbit/Resources/bin/`.
-2. Builds the Release configuration (currently unsigned — see signing TODO).
-3. Packages `Grabbit.app` into a DMG with `hdiutil`.
-4. Creates the GitHub Release and attaches the DMG.
-5. Updates `appcast.xml` on `main` with a new `<item>` so Sparkle notifies existing users.
+1. Generates the Xcode project and vendors `yt-dlp` + `ffmpeg` + `aria2-next` into `Grabbit/Resources/bin/`.
+2. Builds the Telegram helper from `Tools/telegram-helper/` (app-level API credentials come from Actions secrets).
+3. Builds the Release configuration, then signs the app, vendored helpers, and Sparkle framework with a Developer ID identity and Hardened Runtime.
+4. Packages `Grabbit.app` into a DMG and notarizes + staples it.
+5. Creates the GitHub Release and attaches the DMG.
+6. Updates `appcast.xml` on `main` with a new `<item>` so Sparkle notifies existing users.
+
+Public tags **fail closed** if the Developer ID/notary secrets are missing. For an
+internal unsigned test tag only, set the repository variable
+`ALLOW_UNSIGNED_RELEASE=true`; remove it before a public release.
 
 ### Before the first public release
 
 - [ ] Pin `yt-dlp`/`ffmpeg` binary URLs to fixed release tags (see `DEPENDENCIES.md`).
-- [ ] Set up Developer ID signing + notarization + Hardened Runtime in `release.yml`.
-- [ ] Configure `SUPublicEDKey` and generate `sparkle:edSignature` via Sparkle's `generate_appcast` tool.
+- [ ] Configure the Developer ID certificate and notary secrets in [SIGNING.md](SIGNING.md).
+- [ ] Configure `SPARKLE_PRIVATE_KEY`; `SUPublicEDKey` is already in `project.yml`.
+- [ ] Resolve any exposed Telegram API credentials with Telegram support (Telegram has no self-service API hash rotation), then set `TELEGRAM_API_ID` / `TELEGRAM_API_HASH`.
+- [ ] Run the full Swift suite plus Debug/Release builds, and `go test ./...` in `Tools/telegram-helper`.

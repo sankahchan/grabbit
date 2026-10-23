@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum SidebarSelection: String, Hashable, CaseIterable {
-    case downloads, torrents, media, rss, linkgrabber, scheduler, history, settings, about
+    case downloads, torrents, media, miniapps, rss, linkgrabber, scheduler, history, settings, about
 
     /// Main tabs, top-to-bottom order. History is content (the record of
     /// finished work), so it lives with the work areas rather than with the
     /// app-level utilities pinned to the bottom.
     static let mainTabs: [SidebarSelection] = [
-        .downloads, .torrents, .media, .rss, .linkgrabber, .scheduler, .history,
+        .downloads, .torrents, .media, .miniapps, .rss, .linkgrabber, .scheduler, .history,
     ]
     /// Utility buttons pinned to the sidebar bottom (macOS convention).
     static let bottomTabs: [SidebarSelection] = [.settings, .about]
@@ -19,6 +19,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .linkgrabber: "IconLinkGrabber"
         case .torrents: "IconMagnet"
         case .media: "IconMedia"
+        case .miniapps: "IconMiniApps"
         case .rss: "IconRSS"
         case .history: "IconHistory"
         case .scheduler: "IconScheduler"
@@ -33,6 +34,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .linkgrabber: "link"
         case .torrents: "arrow.triangle.2.circlepath" // "magnet" is not a real SF Symbol — renders blank
         case .media: "play.rectangle"
+        case .miniapps: "square.grid.2x2"
         case .rss: "dot.radiowaves.left.and.right"
         case .history: "clock.arrow.circlepath"
         case .scheduler: "clock"
@@ -47,6 +49,7 @@ enum SidebarSelection: String, Hashable, CaseIterable {
         case .linkgrabber: NSLocalizedString("nav.linkgrabber", comment: "")
         case .torrents: NSLocalizedString("nav.torrents", comment: "")
         case .media: NSLocalizedString("nav.media", comment: "")
+        case .miniapps: NSLocalizedString("nav.miniapps", comment: "")
         case .rss: NSLocalizedString("nav.rss", comment: "")
         case .history: NSLocalizedString("nav.history", comment: "")
         case .scheduler: NSLocalizedString("nav.scheduler", comment: "")
@@ -63,6 +66,7 @@ struct Sidebar: View {
     @Environment(DownloadEngine.self) private var engine: DownloadEngine
     @Environment(TorrentEngine.self) private var torrentEngine: TorrentEngine
     @Environment(MediaEngine.self) private var mediaEngine: MediaEngine
+    @Environment(TelegramService.self) private var telegramService: TelegramService
     @Environment(LinkGrabberStore.self) private var linkGrabberStore: LinkGrabberStore
     @Environment(SettingsStore.self) private var settings: SettingsStore
     @Environment(\.colorScheme) private var scheme
@@ -210,6 +214,7 @@ struct Sidebar: View {
         case .downloads: return Neo.blue
         case .torrents: return Neo.green
         case .media: return Neo.orange
+        case .miniapps: return Neo.purple
         case .rss: return Neo.red
         case .linkgrabber: return Neo.blue
         case .scheduler: return Neo.orange
@@ -250,6 +255,8 @@ struct Sidebar: View {
             n = active ? 1 : 0
         case .linkgrabber:
             n = linkGrabberStore.stagedCount
+        case .miniapps:
+            n = telegramService.activeDownloadCount
         case .rss, .history, .scheduler, .settings, .about:
             return nil
         }

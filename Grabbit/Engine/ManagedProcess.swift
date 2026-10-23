@@ -36,6 +36,7 @@ public final class ManagedProcess: @unchecked Sendable {
 
     private let lock = NSLock()
     private var process: Process?
+    private var stdinPipe: Pipe?
     private var cancelled = false
     private var stderrBuffer = Data()
 
@@ -56,11 +57,14 @@ public final class ManagedProcess: @unchecked Sendable {
             if let environment { proc.environment = environment }
             let outPipe = Pipe()
             let errPipe = Pipe()
+            let inPipe = Pipe()
             proc.standardOutput = outPipe
             proc.standardError = errPipe
+            proc.standardInput = inPipe
 
             lock.withLock {
                 self.process = proc
+                self.stdinPipe = inPipe
                 self.cancelled = false
                 self.stderrBuffer.removeAll(keepingCapacity: true)
             }
@@ -104,7 +108,10 @@ public final class ManagedProcess: @unchecked Sendable {
                     let tail = self?.lock.withLock {
                         String(decoding: (self?.stderrBuffer ?? Data()), as: UTF8.self)
                     } ?? ""
-                    self?.lock.withLock { self?.process = nil }
+                    self?.lock.withLock {
+                        self?.process = nil
+                        self?.stdinPipe = nil
+                    }
                     continuation.resume(returning: RunResult(
                         exitCode: p.terminationStatus,
                         stderrTail: tail,
@@ -117,12 +124,30 @@ public final class ManagedProcess: @unchecked Sendable {
             } catch {
                 outHandle.readabilityHandler = nil
                 errHandle.readabilityHandler = nil
-                lock.withLock { self.process = nil }
+                lock.withLock {
+                    self.process = nil
+                    self.stdinPipe = nil
+                }
                 continuation.resume(returning: RunResult(
                     exitCode: -1,
                     stderrTail: "Couldn't launch \(executable.lastPathComponent): \(error.localizedDescription)",
                     wasCancelled: false))
             }
+        }
+    }
+
+    /// Sends one line to the process's stdin. Used by the Telegram login flow
+    /// to keep the QR-approved helper alive while the user enters a 2FA
+    /// password, instead of restarting login and invalidating the QR token.
+    @discardableResult
+    public func sendLine(_ line: String) -> Bool {
+        let pipe: Pipe? = lock.withLock { stdinPipe }
+        guard let pipe, let data = "\(line)\n".data(using: .utf8) else { return false }
+        do {
+            try pipe.fileHandleForWriting.write(contentsOf: data)
+            return true
+        } catch {
+            return false
         }
     }
 

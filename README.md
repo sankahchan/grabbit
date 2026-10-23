@@ -27,6 +27,7 @@
 - **Crash-safe resume** — download state is autosaved every ~5s atomically; killing the app mid-download resumes cleanly on next launch. Applies to direct downloads **and** torrents.
 - **Torrent & magnet support** — via a managed [aria2-next](https://github.com/AnInsomniacy/aria2-next) daemon (JSON-RPC), with per-torrent file selection, share-ratio / seed-time limits, session persistence across restarts, and an optional VPN-interface kill-switch.
 - **yt-dlp site downloads** — YouTube, X, TikTok, Instagram, and more via a bundled `yt-dlp` binary.
+- **Telegram media workbench** — sign in with QR + 2FA, browse channels, preview photos/video/audio in-app, and download individual or confirmed batches. A bundled helper owns the MTProto session; previews stay in the cache, not Downloads.
 - **Telegram Web grab** — a Chrome / Safari browser extension (Native Messaging) captures blob videos from `web.telegram.org`.
 - **MP3 extraction** — bundled `ffmpeg` converts videos to audio with one click.
 - **Download scheduler** — queue downloads for off-peak hours.
@@ -37,14 +38,15 @@
 
 1. Download the latest `Grabbit-*.dmg` from [Releases](https://github.com/sankahchan/grabbit/releases/latest).
 2. Open it, drag **Grabbit.app** to Applications.
-3. **First launch:** Right-click Grabbit.app → **Open** → click **Open** in the dialog.
-   (This is needed once because early builds are unsigned. Double-clicking may
-   show a "damaged" warning — that's macOS Gatekeeper, not a broken download.)
+3. Launch Grabbit normally. Release builds are Developer ID signed and
+   notarized when the signing secrets are configured.
 4. macOS 14+ on Apple Silicon required.
 
-> ⚠️ Early builds are unsigned. Developer ID signing + notarization are planned —
-> until then, use Right-click → Open on first launch. Advanced users can also run:
-> `sudo xattr -cr /Applications/Grabbit.app`
+> If you are running an unsigned development/internal build, first launch
+> needs **Right-click → Open**. Double-clicking may show a "damaged" warning —
+> that's macOS Gatekeeper, not a broken download. Advanced users can also run:
+> `sudo xattr -cr /Applications/Grabbit.app`. See [SIGNING.md](SIGNING.md) for
+> the release-signing setup.
 
 ## Browser Extension
 

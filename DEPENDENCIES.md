@@ -45,6 +45,15 @@ Everything Grabbit depends on that isn't Apple's SDK, and why it's there.
 - **Resolution order** (`TorrentRuntimeResolver`): bundled Resources → `~/Library/Application Support/Grabbit/bin` → `ARIA2_NEXT_PATH` env override → Homebrew (`aria2-next`, then upstream `aria2c` fallback) → `PATH`.
 - **License:** GPL-2.0-or-later. The binary is a separate program communicated with over JSON-RPC; Grabbit's own source stays MIT. The vendoring script lives next to this manifest so the attribution/source-offer obligation stays visible. Mention in release notes.
 
+## gotd/td (Telegram helper)
+
+- **What:** a Go MTProto client library used by `Tools/telegram-helper`, a separate process that owns the Telegram account session, dialog/message listing, and media downloads.
+- **Why:** a separate helper keeps MTProto/session state out of Grabbit's address space, can be replaced independently, and avoids TDLib's CMake build requirement on macOS. The SDK is MIT-licensed and auditable.
+- **How it's vendored:** source lives in `Tools/telegram-helper/`; `scripts/vendor-telegram-helper.sh` builds `Grabbit/Resources/bin/grabbit-telegram-helper`. The binary is **not** committed to git. Release builds inject Grabbit's app-level API ID/hash with `-ldflags` so users never enter them; debug builds read `~/.config/grabbit/telegram.env` at runtime.
+- **Storage:** session and peer cache under `~/Library/Application Support/Grabbit/Telegram/` (`0600`); downloads under `~/Downloads/Grabbit/Telegram/<channel>/`.
+- **License:** MIT. Compatible with Grabbit's MIT license.
+- **Safety:** only downloads files the signed-in account can access; batch downloads require explicit confirmation. No OmniGet code/assets are used.
+
 ## Browser extension (no dependencies)
 
 - **What:** Chrome MV3 + Safari Web Extension built from shared JS in `extension/`.
@@ -60,4 +69,5 @@ Everything Grabbit depends on that isn't Apple's SDK, and why it's there.
 | ffmpeg / ffprobe (static binary) | GPL or LGPL (verify at pinning) | ⚠️ verify build flags before public release |
 | Deno | MIT | ✅ yes |
 | aria2-next (binary) | GPL-2.0-or-later | ⚠️ separate program over JSON-RPC; attribute + source offer in release notes |
+| gotd/td (Telegram helper) | MIT | ✅ yes |
 | Extension | none (own code) | ✅ yes |

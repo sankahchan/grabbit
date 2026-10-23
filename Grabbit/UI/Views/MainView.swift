@@ -221,6 +221,8 @@ struct MainView: View {
             TorrentsView()
         case .media:
             MediaView()
+        case .miniapps:
+            MiniAppsView()
         case .rss:
             RSSFeedsView()
         case .history:

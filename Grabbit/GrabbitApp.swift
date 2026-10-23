@@ -24,6 +24,7 @@ struct GrabbitApp: App {
     @State private var downloadEngine: DownloadEngine
     @State private var torrentEngine: TorrentEngine
     @State private var mediaEngine: MediaEngine
+    @State private var telegramService: TelegramService
     @State private var historyStore: HistoryStore
     @State private var settings: SettingsStore
     @State private var schedulerStore: SchedulerStore
@@ -99,6 +100,11 @@ struct GrabbitApp: App {
         _downloadEngine.wrappedValue.completionCenter = _completionCenter.wrappedValue
         _torrentEngine.wrappedValue.completionCenter = _completionCenter.wrappedValue
         _mediaEngine = State(initialValue: MediaEngine(history: sharedHistory))
+        // Telegram browser: helper-backed session + per-channel downloads.
+        let sharedTelegram = TelegramService()
+        sharedTelegram.historyStore = sharedHistory
+        sharedTelegram.toastCenter = _toastCenter.wrappedValue
+        _telegramService = State(initialValue: sharedTelegram)
         // Media downloads should surface completion/failure the same way
         // direct downloads do (extension-triggered yt-dlp runs have no
         // visible Media tab otherwise).
@@ -187,6 +193,7 @@ struct GrabbitApp: App {
                 .environment(downloadEngine)
                 .environment(torrentEngine)
                 .environment(mediaEngine)
+                .environment(telegramService)
                 .environment(historyStore)
                 .environment(settings)
                 .environment(schedulerStore)

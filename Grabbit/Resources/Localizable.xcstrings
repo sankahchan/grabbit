@@ -9742,6 +9742,1388 @@
           }
         }
       }
+    },
+    "telegram.title": {
+      "comment": "Telegram page title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တယ်လီဂရမ်"
+          }
+        }
+      }
+    },
+    "telegram.status.connected": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချိတ်ဆက်ထားသည်"
+          }
+        }
+      }
+    },
+    "telegram.status.waiting": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for confirmation"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အတည်ပြုချက်ကို စောင့်နေသည်"
+          }
+        }
+      }
+    },
+    "telegram.status.offline": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မချိတ်ဆက်ထားပါ"
+          }
+        }
+      }
+    },
+    "telegram.status.error": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection error"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချိတ်ဆက်မှု အမှား"
+          }
+        }
+      }
+    },
+    "telegram.status.checking": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking Telegram session…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram session ကို စစ်ဆေးနေသည်…"
+          }
+        }
+      }
+    },
+    "telegram.search": {
+      "comment": "Telegram media search placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search media"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာ ရှာရန်"
+          }
+        }
+      }
+    },
+    "telegram.refresh": {
+      "comment": "Telegram refresh button help",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြန်လည်စတင်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.connect": {
+      "comment": "Telegram login button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Telegram"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram ချိတ်ဆက်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.cancel": {
+      "comment": "Telegram login cancel button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပယ်ဖျက်"
+          }
+        }
+      }
+    },
+    "telegram.retry": {
+      "comment": "Telegram login retry button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထပ်စမ်းကြည့်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.login.title": {
+      "comment": "Telegram login heading",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Telegram account"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့် Telegram အကောင့်ကို ချိတ်ဆက်ပါ"
+          }
+        }
+      }
+    },
+    "telegram.login.body": {
+      "comment": "Telegram login explanation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the QR code with Telegram to browse channels and download only media you own or are authorized to access."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့်ပိုင်ဆိုင်သော သို့မဟုတ် ခွင့်ပြုချက်ရှိသော မီဒီယာများကိုသာ ကြည့်ရှု/download လုပ်ရန် Telegram ဖြင့် QR ကုဒ်ကို စကင်ဖတ်ပါ။"
+          }
+        }
+      }
+    },
+    "telegram.login.hint": {
+      "comment": "Telegram login privacy hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The login session stays on this Mac. Grabbit never uploads your session or credentials."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login session သည် ဤ Mac ပေါ်တွင်သာ ရှိမည်။ Grabbit သည် သင့် session သို့မဟုတ် credentials များကို upload မလုပ်ပါ။"
+          }
+        }
+      }
+    },
+    "telegram.login.waiting": {
+      "comment": "Telegram QR waiting status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Telegram…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram ကို စောင့်နေသည်…"
+          }
+        }
+      }
+    },
+    "telegram.login.qr": {
+      "comment": "Telegram QR instructions",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram → Settings → Devices → Link Desktop Device"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram → Settings → Devices → Link Desktop Device"
+          }
+        }
+      }
+    },
+    "telegram.destination": {
+      "comment": "Telegram download destination hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saves to Downloads/Grabbit/Telegram/<channel>"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads/Grabbit/Telegram/<channel> သို့ သိမ်းမည်"
+          }
+        }
+      }
+    },
+    "telegram.downloadAll": {
+      "comment": "Telegram batch download button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download all"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး download"
+          }
+        }
+      }
+    },
+    "telegram.files": {
+      "comment": "Telegram media count unit",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "files"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်"
+          }
+        }
+      }
+    },
+    "telegram.download": {
+      "comment": "Telegram per-file download button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        }
+      }
+    },
+    "telegram.downloaded": {
+      "comment": "Telegram downloaded badge",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download ပြီး"
+          }
+        }
+      }
+    },
+    "telegram.filter.all": {
+      "comment": "Telegram media filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး"
+          }
+        }
+      }
+    },
+    "telegram.filter.video": {
+      "comment": "Telegram media filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယို"
+          }
+        }
+      }
+    },
+    "telegram.filter.photo": {
+      "comment": "Telegram media filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဓာတ်ပုံများ"
+          }
+        }
+      }
+    },
+    "telegram.filter.audio": {
+      "comment": "Telegram media filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံ"
+          }
+        }
+      }
+    },
+    "telegram.filter.file": {
+      "comment": "Telegram media filter",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်များ"
+          }
+        }
+      }
+    },
+    "telegram.batch.title": {
+      "comment": "Telegram batch confirmation title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download all media?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မီဒီယာအားလုံး download လုပ်မလား?"
+          }
+        }
+      }
+    },
+    "telegram.batch.body": {
+      "comment": "Telegram batch confirmation body",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only download media you own or have permission to use. Grabbit will download %d files into this channel folder."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင်ပိုင်ဆိုင်သော သို့မဟုတ် ခွင့်ပြုချက်ရှိသော မီဒီယာများကိုသာ download လုပ်ပါ။ Grabbit သည် ဖိုင် %d ကို ဤ channel folder ထဲ သိမ်းမည်။"
+          }
+        }
+      }
+    },
+    "telegram.batch.action": {
+      "comment": "Telegram batch confirmation action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download all"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အားလုံး download"
+          }
+        }
+      }
+    },
+    "telegram.status.2fa": {
+      "comment": "Telegram connection status",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two-step verification needed"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two-step verification လိုအပ်သည်"
+          }
+        }
+      }
+    },
+    "telegram.2fa.body": {
+      "comment": "Telegram 2FA prompt",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your two-step verification password. It is sent only to Telegram by the local helper."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့် two-step verification စကားဝှက်ကို ထည့်ပါ။ ၎င်းကို local helper မှ Telegram သို့သာ ပေးပို့သည်။"
+          }
+        }
+      }
+    },
+    "telegram.2fa.placeholder": {
+      "comment": "Telegram 2FA password placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စကားဝှက်"
+          }
+        }
+      }
+    },
+    "telegram.2fa.verify": {
+      "comment": "Telegram 2FA verify button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အတည်ပြုရန်"
+          }
+        }
+      }
+    },
+    "telegram.logout": {
+      "comment": "Telegram sign out help",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of Telegram"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram မှ ထွက်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.logout.title": {
+      "comment": "Telegram sign out confirmation title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of Telegram?"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram မှ ထွက်မလား?"
+          }
+        }
+      }
+    },
+    "telegram.logout.body": {
+      "comment": "Telegram sign out confirmation body",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the local Telegram session from this Mac. Your Telegram account and messages are not affected."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဤ Mac ပေါ်မှ local Telegram session ကို ဖယ်ရှားမည်။ သင့် Telegram အကောင့်နှင့် မက်ဆေ့ချ်များ ထိခိုက်မည်မဟုတ်ပါ။"
+          }
+        }
+      }
+    },
+    "telegram.logout.action": {
+      "comment": "Telegram sign out confirmation action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ထွက်ရန်"
+          }
+        }
+      }
+    },
+    "nav.miniapps": {
+      "comment": "Sidebar tab",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini Apps"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini App များ"
+          }
+        }
+      }
+    },
+    "miniapps.sticker": {
+      "comment": "Mini Apps page sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MINI APPS"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MINI APPS"
+          }
+        }
+      }
+    },
+    "miniapps.title": {
+      "comment": "Mini Apps page title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini Apps"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini App များ"
+          }
+        }
+      }
+    },
+    "miniapps.subtitle": {
+      "comment": "Mini Apps page description",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focused tools that plug into Grabbit. More arrive over time — each one stays isolated from the core downloader."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabbit နှင့် ချိတ်ဆက်ထားသော ကိရိယာငယ်များ။ နောက်ထပ် ထပ်တိုးလာမည် — တစ်ခုချင်းစီသည် core downloader နှင့် သီးခြားလည်ပတ်သည်။"
+          }
+        }
+      }
+    },
+    "miniapps.telegram.description": {
+      "comment": "Telegram mini app card description",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse dialogs, preview photos and video in-app, and download only files you are authorized to access."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့် chat များကို ကြည့်ရှု၊ ဓာတ်ပုံနှင့် ဗီဒီယိုကို အက်ပ်ထဲတွင် အစမ်းကြည့်ပြီး ခွင့်ပြုချက်ရှိသော ဖိုင်များကိုသာ download လုပ်ပါ။"
+          }
+        }
+      }
+    },
+    "miniapps.telegram.open": {
+      "comment": "Mini app card open action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖွင့်ရန်"
+          }
+        }
+      }
+    },
+    "miniapps.comingSoon.title": {
+      "comment": "Mini Apps placeholder card title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More mini apps"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ထပ် Mini App များ"
+          }
+        }
+      }
+    },
+    "miniapps.comingSoon.body": {
+      "comment": "Mini Apps placeholder card body",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Future tools drop into this catalog — no new sidebar rows, no clutter."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောင်လာမည့် ကိရိယာများ ဤနေရာတွင် ထည့်မည် — sidebar တွင် နေရာမယူပါ။"
+          }
+        }
+      }
+    },
+    "miniapps.back": {
+      "comment": "Mini app back button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini Apps"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini App များ"
+          }
+        }
+      }
+    },
+    "miniapps.chats.format": {
+      "comment": "Mini app chat count format",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d chats"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "chat %d ခု"
+          }
+        }
+      }
+    },
+    "telegram.chooseChannel": {
+      "comment": "Telegram channel picker button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a channel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channel ရွေးပါ"
+          }
+        }
+      }
+    },
+    "telegram.picker.title": {
+      "comment": "Telegram channel picker sheet title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your dialogs"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့် chat များ"
+          }
+        }
+      }
+    },
+    "telegram.picker.search": {
+      "comment": "Telegram channel picker search placeholder",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search dialogs"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat ရှာရန်"
+          }
+        }
+      }
+    },
+    "telegram.picker.empty": {
+      "comment": "Telegram channel picker empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No dialogs match that search."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရှာဖွေမှုနှင့် ကိုက်ညီသော chat မရှိပါ။"
+          }
+        }
+      }
+    },
+    "telegram.media.empty": {
+      "comment": "Telegram media filter empty state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No media matches this filter."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဤ filter နှင့် ကိုက်ညီသော မီဒီယာမရှိပါ။"
+          }
+        }
+      }
+    },
+    "telegram.media.emptyChannel": {
+      "comment": "Telegram no channel selected state",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a channel to see its downloadable media."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download လုပ်နိုင်သော မီဒီယာကြည့်ရန် channel တစ်ခု ရွေးပါ။"
+          }
+        }
+      }
+    },
+    "telegram.quickPick": {
+      "comment": "Telegram recent dialogs quick pick label",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent dialogs"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "မကြာသေးမီ chat များ"
+          }
+        }
+      }
+    },
+    "telegram.sticker": {
+      "comment": "Telegram hero sticker",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRIVATE RELAY"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သီးသန့် လိုင်း"
+          }
+        }
+      }
+    },
+    "telegram.hero.subtitle": {
+      "comment": "Telegram hero subtitle",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SECURE MEDIA WORKBENCH"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "လုံခြုံသော မီဒီယာ စင်တာ"
+          }
+        }
+      }
+    },
+    "telegram.switch": {
+      "comment": "Telegram channel switcher button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ပြောင်းရန်"
+          }
+        }
+      }
+    },
+    "telegram.pick": {
+      "comment": "Telegram pick-a-dialog button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a dialog"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat ရွေးပါ"
+          }
+        }
+      }
+    },
+    "telegram.savedMessages": {
+      "comment": "Synthetic Saved Messages dialog title",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved Messages"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သိမ်းထားသော မက်ဆေ့ချ်များ"
+          }
+        }
+      }
+    },
+    "telegram.safety": {
+      "comment": "Telegram authorized-content note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only media you're authorized to access"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့်တွင် ခွင့်ပြုချက်ရှိသော မီဒီယာများသာ"
+          }
+        }
+      }
+    },
+    "telegram.picker.note": {
+      "comment": "Telegram dialog picker footer note",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only dialogs you can already access are listed."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သင့်တွင် ဝင်ရောက်ခွင့်ရှိသော chat များသာ ပြထားသည်။"
+          }
+        }
+      }
+    },
+    "telegram.view": {
+      "comment": "Telegram photo preview action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကြည့်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.play": {
+      "comment": "Telegram video play action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖွင့်မည်"
+          }
+        }
+      }
+    },
+    "telegram.listen": {
+      "comment": "Telegram audio preview action",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နားထောင်ရန်"
+          }
+        }
+      }
+    },
+    "telegram.preview.preparing": {
+      "comment": "Telegram preview loading message",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing preview…"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အစမ်းကြည့်ရန် ပြင်ဆင်နေသည်…"
+          }
+        }
+      }
+    },
+    "telegram.preview.failed": {
+      "comment": "Telegram preview failure message",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file can't be previewed."
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဤဖိုင်ကို အစမ်းကြည့်၍ မရပါ။"
+          }
+        }
+      }
+    },
+    "telegram.preview.openDownloaded": {
+      "comment": "Telegram preview action for an already downloaded file",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open downloaded"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဒေါင်းလုဒ်လုပ်ထားသောဖိုင်ကို ဖွင့်ပါ"
+          }
+        }
+      }
+    },
+    "telegram.preview.hint": {
+      "comment": "Telegram preview keyboard hint",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use ← → to browse"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ရွှေ့ကြည့်ရန် ← → ကို သုံးပါ"
+          }
+        }
+      }
+    },
+    "telegram.preview.previous": {
+      "comment": "Telegram preview previous file tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ယခင်ဖိုင်"
+          }
+        }
+      }
+    },
+    "telegram.preview.next": {
+      "comment": "Telegram preview next file tooltip",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "နောက်ဖိုင်"
+          }
+        }
+      }
+    },
+    "telegram.chat.channel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channel"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချန်နယ်"
+          }
+        }
+      }
+    },
+    "telegram.chat.group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အဖွဲ့"
+          }
+        }
+      }
+    },
+    "telegram.chat.private": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private chat"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ကိုယ်ပိုင် chat"
+          }
+        }
+      }
+    },
+    "telegram.kind.channel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CHANNEL"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ချန်နယ်"
+          }
+        }
+      }
+    },
+    "telegram.kind.direct": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DIRECT"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "တိုက်ရိုက်"
+          }
+        }
+      }
+    },
+    "telegram.kind.group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GROUP"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အဖွဲ့"
+          }
+        }
+      }
+    },
+    "telegram.kind.private": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRIVATE"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "သီးသန့်"
+          }
+        }
+      }
+    },
+    "telegram.media.audio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUDIO"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "အသံ"
+          }
+        }
+      }
+    },
+    "telegram.media.photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PHOTO"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဓာတ်ပုံ"
+          }
+        }
+      }
+    },
+    "telegram.media.video": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIDEO"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဗီဒီယို"
+          }
+        }
+      }
+    },
+    "telegram.media.file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FILE"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ဖိုင်"
+          }
+        }
+      }
+    },
+    "telegram.media.sticker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STICKER"
+          }
+        },
+        "my": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "စတစ်ကာ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

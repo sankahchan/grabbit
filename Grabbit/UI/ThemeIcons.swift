@@ -91,3 +91,71 @@ struct ThemedIcon: View {
         }
     }
 }
+
+/// Colored die-cut sticker used only by the Classic skin's decorative empty
+/// states. Unlike `ThemedIcon`, this preserves the artwork's own palette and
+/// must not be used for small toolbar/action labels.
+struct StickerIcon: View {
+    var asset: String
+    var size: CGFloat
+    var fallback: String
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if NSImage(named: asset) != nil {
+            Image(asset)
+                .renderingMode(.original)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: fallback)
+                .font(.system(size: size * 0.52, weight: .bold))
+                .foregroundStyle(Neo.ink2(scheme))
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// A Mochi-style sticker on a hard-offset paper tile. This is deliberately
+/// decorative: empty states get a little personality while navigation and
+/// actions stay on the shared, tintable line-icon set.
+struct StickerPlate: View {
+    var asset: String
+    var fallback: String
+    var size: CGFloat = 96
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
+                .fill(Neo.card(scheme))
+
+            RoundedRectangle(cornerRadius: size * 0.17, style: .continuous)
+                .stroke(
+                    Neo.ink3(scheme).opacity(0.45),
+                    style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .padding(size * 0.10)
+
+            StickerIcon(
+                asset: asset,
+                size: size * 0.70,
+                fallback: fallback)
+        }
+        .frame(width: size, height: size)
+        .overlay(
+            RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
+                .stroke(Neo.ink(scheme), lineWidth: 2.5)
+                .allowsHitTesting(false))
+        .background(
+            RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
+                .fill(Neo.ink(scheme))
+                .offset(x: 5, y: 5))
+        .rotationEffect(.degrees(-2))
+    }
+}
