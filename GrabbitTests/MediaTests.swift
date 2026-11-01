@@ -98,6 +98,66 @@ final class MediaTests: XCTestCase {
         }
     }
 
+    func testRunnableCheckRejectsNonBinary() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("grabbit-test-not-a-binary-\(UUID().uuidString)")
+        XCTAssertTrue(FileManager.default.createFile(
+            atPath: tmp.path, contents: Data("this is not a Mach-O".utf8)))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tmp.path)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        XCTAssertFalse(MediaRuntimeResolver.isRunnable(tmp, component: .ffmpeg))
+    }
+
+    func testRunnableCheckAcceptsExecutableScript() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("grabbit-test-script-\(UUID().uuidString)")
+        XCTAssertTrue(FileManager.default.createFile(
+            atPath: tmp.path, contents: Data("#!/bin/sh\nexit 0\n".utf8)))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tmp.path)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        XCTAssertTrue(MediaRuntimeResolver.isRunnable(tmp, component: .ffmpeg))
+    }
+
+    /// A broken env override (wrong architecture, not a binary) must never be
+    /// returned: the resolver falls through to a working candidate, or reports
+    /// it as the unrunnable path.
+    func testResolverNeverReturnsUnrunnableOverride() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("grabbit-test-broken-ffmpeg-\(UUID().uuidString)")
+        XCTAssertTrue(FileManager.default.createFile(
+            atPath: tmp.path, contents: Data("not a binary".utf8)))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tmp.path)
+        setenv("FFMPEG_PATH", tmp.path, 1)
+        defer {
+            unsetenv("FFMPEG_PATH")
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
+        switch MediaRuntimeResolver.resolve(.ffmpeg) {
+        case .success(let url):
+            XCTAssertNotEqual(url.path, tmp.path)
+        case .failure(let error):
+            XCTAssertEqual(error.unrunnable?.path, tmp.path)
+            XCTAssertTrue(error.localizedDescription.contains("can't run"))
+        }
+    }
+
+    /// The component updater writes newer binaries into Application Support;
+    /// they must be tried before the bundled copy or updates are ignored.
+    func testSearchOrderPutsUserUpdatesBeforeBundledCopy() {
+        let order = MediaRuntimeResolver.searchOrder(for: .ffmpeg).map(\.path)
+        let user = MediaRuntimeResolver.userBinDirectory
+            .appendingPathComponent("ffmpeg").path
+        let bundled = Bundle.main.resourceURL?
+            .appendingPathComponent("bin/ffmpeg").path ?? ""
+        guard let userIndex = order.firstIndex(of: user),
+              let bundledIndex = order.firstIndex(of: bundled)
+        else { return XCTFail("both candidates should be in the search order") }
+        XCTAssertLessThan(userIndex, bundledIndex)
+    }
+
     // MARK: - MediaEngine.safeFilename
 
     func testSafeFilenameStripsIllegalChars() {
