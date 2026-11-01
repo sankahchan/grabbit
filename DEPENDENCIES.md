@@ -17,14 +17,14 @@ Everything Grabbit depends on that isn't Apple's SDK, and why it's there.
 - **How it's vendored:** `scripts/vendor-media-runtime.sh` (run by `release.yml`) downloads the pinned universal2 macOS build (`yt-dlp_macos`) into `Grabbit/Resources/bin/`; the `Install media runtime into Resources` post-build script copies it to `App.app/Contents/Resources/bin/` at build time. The binary is **not** committed to git (see `.gitignore`).
 - **Version pinning:** pinned to a fixed tag inside the vendor script (e.g. `2026.09.27`) so builds are reproducible; bump on a cadence — monthly, or whenever a supported site breaks.
 - **Independent updates:** `MediaComponentUpdater` can replace yt-dlp on its own cadence (sites break weekly) by dropping a newer binary into `~/Library/Application Support/Grabbit/bin/`, which `MediaRuntimeResolver` prefers over the bundled copy.
-- **Resolution order** (`MediaRuntimeResolver`): bundled Resources → user-updated copies → `YTDLP_PATH` env override → `/opt/homebrew/bin` → `PATH`. Failures produce human-readable install hints.
+- **Resolution order** (`MediaRuntimeResolver`): `YTDLP_PATH` env override → user-updated copies → bundled Resources → `/opt/homebrew/bin` → `PATH`. A candidate is only accepted if it actually runs (`--version`), so a wrong-architecture or broken binary cannot shadow a working copy. Failures produce human-readable install hints.
 - **License:** The Unlicense (public domain). Compatible with MIT; attribution kept in the About box.
 
 ## ffmpeg / ffprobe (bundled binaries)
 
 - **What:** the standard media transcoder; used for MP3 extraction (`-x --audio-format mp3`), stream merging (`bv*+ba`), and remuxing.
 - **Why:** a battle-tested static binary beats shipping our own encoder.
-- **How it's vendored:** same pipeline as yt-dlp — `scripts/vendor-media-runtime.sh` downloads a static **arm64** build (evermeet.cx) into `Grabbit/Resources/bin/`; the post-build script installs it into the app. When `VENDOR_FROM_HOMEBREW=1`, Homebrew's ffmpeg/ffprobe are copied instead and non-system dylibs are relocated into `Grabbit/Resources/lib/` via `install_name_tool` (`@executable_path/../lib/<name>`), then everything is ad-hoc re-signed. Not committed to git.
+- **How it's vendored:** same pipeline as yt-dlp — `scripts/vendor-media-runtime.sh` downloads a static **arm64** build (`ffmpeg-static` release `b6.1.1`, an osxexperts.net build) into `Grabbit/Resources/bin/`; the post-build script installs it into the app. When `VENDOR_FROM_HOMEBREW=1`, Homebrew's ffmpeg/ffprobe are copied instead and non-system dylibs are relocated into `Grabbit/Resources/lib/` via `install_name_tool` (`@executable_path/../lib/<name>`), then everything is ad-hoc re-signed. The script fails the build if `lipo -archs` does not contain `arm64` — evermeet.cx only ships x86_64, which previously slipped through and broke post-processing on Apple Silicon without Rosetta. Not committed to git.
 - **Version pinning:** pinned alongside yt-dlp in the vendor script.
 - **License:** ffmpeg static builds are typically GPL or LGPL depending on compile flags. The maintainer's build used here should be checked at pinning time: prefer an LGPL build, and if a GPL build is unavoidable, keep the binary clearly separated and note it in the release notes. This is the one dependency to double-check before shipping publicly.
 

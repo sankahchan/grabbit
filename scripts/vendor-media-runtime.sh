@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 
 # --- Pinned versions ---------------------------------------------------------
 YTDLP_VERSION="2026.08.19"
-FFMPEG_VERSION="7.1.1"     # evermeet.cx static arm64 build
+FFMPEG_STATIC_TAG="b6.1.1"  # eugeneware/ffmpeg-static (darwin-arm64)
 DENO_VERSION="2.4.5"
 
 OUT="Grabbit/Resources/bin"
@@ -80,6 +80,11 @@ chmod +x "$OUT/deno"
 sign "$OUT/deno"
 
 # --- ffmpeg + ffprobe (static arm64; no dylibs to relocate) --------------------
+# evermeet.cx only publishes x86_64 builds. Downloading it here shipped an
+# x86_64 ffmpeg inside an arm64-only app: on Apple Silicon without Rosetta
+# every post-processing step failed with "ffmpeg not found". ffmpeg-static
+# publishes real arm64 binaries that link only system frameworks.
+FFMPEG_STATIC_BASE="https://github.com/eugeneware/ffmpeg-static/releases/download/${FFMPEG_STATIC_TAG}"
 if [[ "${VENDOR_FROM_HOMEBREW:-0}" == "1" && -x /opt/homebrew/bin/ffmpeg ]]; then
     echo "vendoring ffmpeg/ffprobe from Homebrew"
     cp -f /opt/homebrew/bin/ffmpeg "$OUT/ffmpeg"
@@ -87,28 +92,46 @@ if [[ "${VENDOR_FROM_HOMEBREW:-0}" == "1" && -x /opt/homebrew/bin/ffmpeg ]]; the
     relocate_dylibs "$OUT/ffmpeg" "$LIB"
     [[ -x "$OUT/ffprobe" ]] && relocate_dylibs "$OUT/ffprobe" "$LIB" || true
 else
-    echo "downloading static ffmpeg $FFMPEG_VERSION (evermeet.cx, arm64)"
-    tmp=$(mktemp -d)
-    curl -fL -o "$tmp/ffmpeg.zip" "https://evermeet.cx/ffmpeg/ffmpeg-${FFMPEG_VERSION}.zip"
-    unzip -o -q "$tmp/ffmpeg.zip" -d "$tmp"
-    cp -f "$tmp/ffmpeg" "$OUT/ffmpeg"
-    rm -rf "$tmp"
-    # ffprobe: best-effort — evermeet doesn't keep ffprobe zips for every
-    # ffmpeg version, and nothing in the app needs ffprobe today.
-    # (The resolver still knows how to find a Homebrew/system ffprobe.)
-    tmp=$(mktemp -d)
-    if curl -fL -o "$tmp/ffprobe.zip" "https://evermeet.cx/ffmpeg/ffprobe-${FFMPEG_VERSION}.zip"; then
-        unzip -o -q "$tmp/ffprobe.zip" -d "$tmp"
-        cp -f "$tmp/ffprobe" "$OUT/ffprobe"
-    else
-        echo "  WARNING: no static ffprobe for $FFMPEG_VERSION; ffprobe-dependent features disabled"
-    fi
-    rm -rf "$tmp"
+    echo "downloading static ffmpeg/ffprobe $FFMPEG_STATIC_TAG (arm64)"
+    curl -fL -o "$OUT/ffmpeg" "${FFMPEG_STATIC_BASE}/ffmpeg-darwin-arm64"
+    curl -fL -o "$OUT/ffprobe" "${FFMPEG_STATIC_BASE}/ffprobe-darwin-arm64"
 fi
 chmod +x "$OUT/ffmpeg"
 [[ -f "$OUT/ffprobe" ]] && chmod +x "$OUT/ffprobe" || true
 sign "$OUT/ffmpeg"
 [[ -f "$OUT/ffprobe" ]] && sign "$OUT/ffprobe" || true
+
+# --- Architecture guard --------------------------------------------------------
+# A binary with the wrong CPU type still passes `chmod +x` and looks fine to the
+# resolver, but fails at exec ("bad CPU type"). Fail the build instead of
+# shipping a helper that only works when Rosetta happens to be installed.
+check_binary() {
+    local bin="$1"
+    if [[ ! -f "$bin" ]]; then
+        echo "ERROR: $bin was not vendored" >&2
+        exit 1
+    fi
+    local archs
+    archs=$(lipo -archs "$bin" 2>/dev/null || echo "unknown")
+    if [[ "$archs" != *arm64* ]]; then
+        echo "ERROR: $bin has arch '$archs', expected arm64" >&2
+        exit 1
+    fi
+}
+check_binary "$OUT/yt-dlp"
+check_binary "$OUT/deno"
+check_binary "$OUT/ffmpeg"
+check_binary "$OUT/ffprobe"
+
+# Running the helpers catches missing dylibs too, but only on an arm64 host.
+if [[ "$(uname -m)" == "arm64" ]]; then
+    for helper in ffmpeg ffprobe; do
+        if ! "$OUT/$helper" -version >/dev/null 2>&1; then
+            echo "ERROR: $OUT/$helper does not run on this machine" >&2
+            exit 1
+        fi
+    done
+fi
 
 # --- Sign relocated dylibs -----------------------------------------------------
 for lib in "$LIB"/*.dylib; do
